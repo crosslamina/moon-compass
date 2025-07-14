@@ -20,10 +20,9 @@ function updateDisplay() {
     if (!currentPosition) return;
 
     const { latitude, longitude } = currentPosition.coords;
-const library = suncalcRadioButton.checked ? 'suncalc' : (astronomiaRadioButton.checked ? 'astronomia' : 'suncalc');
 
-    const moonData = getMoonData(latitude, longitude, library);
-    const moonTimes = getMoonTimes(latitude, longitude, library);
+    const moonData = getMoonData(latitude, longitude);
+    const moonTimes = getMoonTimes(latitude, longitude);
     const directionName = getDirectionName(moonData.azimuth);
 
     if (moonDirectionElement) {

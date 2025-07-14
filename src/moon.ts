@@ -16,12 +16,8 @@ export type MoonTimes = {
     set: Date | null;
 };
 
-import { getMoonDataAstronomia } from './astronomia-wrapper';
 
-export function getMoonData(lat: number, lon: number, library: 'suncalc' | 'astronomia' = 'suncalc'): MoonData {
-  if (library === 'astronomia') {
-    return getMoonDataAstronomia(lat, lon);
-  } else {
+export function getMoonData(lat: number, lon: number, ): MoonData {
     const now = new Date();
     const moonPosition = SunCalc.getMoonPosition(now, lat, lon);
     const moonIllumination = SunCalc.getMoonIllumination(now);
@@ -37,7 +33,7 @@ export function getMoonData(lat: number, lon: number, library: 'suncalc' | 'astr
       altitude: altitudeDegrees,
     };
   }
-}
+
 
 export function getMoonTimes(lat: number, lon: number, library: 'suncalc' | 'astronomia' = 'suncalc'): MoonTimes {
 
