@@ -11,8 +11,6 @@
     "vite": "^7.0.4"
   },
   "dependencies": {
-    "aa-js": "^4.0.1",
-    "astronomia": "^4.1.1",
     "suncalc": "^1.9.0"
   }
 }

@@ -1,3 +1,5 @@
+const deviceOrientationElement = document.getElementById('device-orientation');
+const geoInfoElement = document.getElementById('geo-info');
 import { getMoonData, getMoonTimes, MoonData, MoonTimes } from './moon';
 // ...existing code...
 const illuminationElement = document.getElementById('illumination');
@@ -11,12 +13,22 @@ const altitudeElement = document.getElementById('altitude');
 const moonRiseElement = document.getElementById('moon-rise');
 const moonSetElement = document.getElementById('moon-set');
 const mapLinkElement = document.getElementById('map-link') as HTMLAnchorElement;
-const suncalcRadioButton = document.getElementById('suncalc') as HTMLInputElement;
-const astronomiaRadioButton = document.getElementById('astronomia') as HTMLInputElement;
+
 
 let currentPosition: GeolocationPosition | null = null;
 
 function updateDisplay() {
+    // 位置情報の表示
+    if (geoInfoElement && currentPosition) {
+        const coords = currentPosition.coords;
+        let info = `緯度: ${coords.latitude}<br>経度: ${coords.longitude}`;
+        info += `<br>標高: ${coords.altitude ?? 'N/A'}`;
+        info += `<br>高度精度: ${coords.altitudeAccuracy ?? 'N/A'}`;
+        info += `<br>位置精度: ${coords.accuracy}`;
+        info += `<br>方角: ${coords.heading ?? 'N/A'}`;
+        info += `<br>速度: ${coords.speed ?? 'N/A'}`;
+        geoInfoElement.innerHTML = info;
+    }
     if (!currentPosition) return;
 
     const { latitude, longitude } = currentPosition.coords;
@@ -35,7 +47,6 @@ function updateDisplay() {
         currentTimeElement.textContent = `現在時刻: ${new Date().toLocaleTimeString()}`;
     }
     if (moonPhaseElement) {
-      console.log(moonData);
         moonPhaseElement.textContent = `月齢: ${getPhaseName(moonData.phase)} (${(moonData.phase * 29.53).toFixed(1)})`;
     }
     if (illuminationElement ) {
@@ -69,9 +80,36 @@ function getPhaseName(phase: number): string {
 
 function handleOrientation(event: DeviceOrientationEvent) {
     const alpha = event.alpha;
+    const beta = event.beta;
+    const gamma = event.gamma;
+    if (deviceOrientationElement) {
+        deviceOrientationElement.innerHTML = `デバイス方位（alpha/方角）: ${alpha?.toFixed(1) ?? 'N/A'}°<br>` +
+            `上下傾き（beta）: ${beta?.toFixed(1) ?? 'N/A'}°<br>` +
+            `左右傾き（gamma）: ${gamma?.toFixed(1) ?? 'N/A'}°`;
+    }
     if (alpha !== null && moonDirectionElement) {
-        // This is a simplified representation. A real implementation would need more complex calculations.
         moonDirectionElement.style.transform = `rotate(${alpha}deg)`;
+    }
+}
+
+// DeviceOrientationEventのサポート判定とイベント登録
+if (window.DeviceOrientationEvent) {
+    if (deviceOrientationElement) {
+        window.addEventListener('deviceorientation', handleOrientation);
+    }
+} else {
+    if (deviceOrientationElement) {
+        deviceOrientationElement.innerHTML = 'このブラウザはデバイスの向き取得（DeviceOrientationEvent）に対応していません。';
+    }
+}
+
+if (window.DeviceOrientationEvent) {
+    if (deviceOrientationElement) {
+        window.addEventListener('deviceorientation', handleOrientation);
+    }
+} else {
+    if (deviceOrientationElement) {
+        deviceOrientationElement.innerHTML = 'このブラウザはデバイスの向き取得（DeviceOrientationEvent）に対応していません。';
     }
 }
 
@@ -89,7 +127,3 @@ if ('geolocation' in navigator) {
         moonDirectionElement.textContent = 'Geolocation is not supported by your browser.';
     }
 }
-
-suncalcRadioButton.addEventListener('change', updateDisplay);
-
-astronomiaRadioButton.addEventListener('change', updateDisplay);
