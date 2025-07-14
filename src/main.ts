@@ -1,4 +1,6 @@
 import { getMoonData, getMoonTimes, MoonData, MoonTimes } from './moon';
+// ...existing code...
+const illuminationElement = document.getElementById('illumination');
 import { getDirectionName } from './direction';
 
 const moonDirectionElement = document.getElementById('moon-direction');
@@ -34,7 +36,11 @@ const library = suncalcRadioButton.checked ? 'suncalc' : (astronomiaRadioButton.
         currentTimeElement.textContent = `現在時刻: ${new Date().toLocaleTimeString()}`;
     }
     if (moonPhaseElement) {
+      console.log(moonData);
         moonPhaseElement.textContent = `月齢: ${getPhaseName(moonData.phase)} (${(moonData.phase * 29.53).toFixed(1)})`;
+    }
+    if (illuminationElement ) {
+        illuminationElement.textContent = `照明率: ${(moonData.illumination * 100).toFixed(1)}%`;
     }
     if (altitudeElement) {
         altitudeElement.textContent = `高度: ${moonData.altitude.toFixed(2)}°`;

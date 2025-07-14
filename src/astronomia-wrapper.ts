@@ -1,17 +1,14 @@
+function getMoonPhase(date: Date): number {
+  const jd = astronomia.julian.DateToJD(date);
+  const dyear = date.getFullYear() + (date.getMonth() + 1 - 0.5) / 12;
+  const newMoonJD = astronomia.moonphase.newMoon(dyear);
+  let age = jd - newMoonJD;
+  if (age < 0) age += 29.53058867;
+  return age / 29.53058867;
+}
 import * as astronomia from 'astronomia';
 import * as SunCalc from 'suncalc';
 console.log(astronomia.moonmaxdec)
-// 月齢を計算する関数（簡易版）
-function getMoonAge(date: Date): number {
-  const jd = astronomia.julian.DateToJD(date);
-  // 直近の新月のJDを取得
-  const dyear = date.getFullYear() + (date.getMonth() + 1 - 0.5) / 12; // 年を小数で表現
-  const newMoonJD = astronomia.moonphase.newMoon(dyear); // 直近の新月
-  let age = jd - newMoonJD;
-  // 0未満の場合は1周期分加算
-  if (age < 0) age += 29.53058867;
-  return getMoonIllumination(0, 0, date);
-}
 
 function getMoonIllumination(lat: number, lon: number, date: Date = new Date()): number {
   const jd = astronomia.julian.DateToJD(date);
@@ -36,7 +33,7 @@ function getMoonIllumination(lat: number, lon: number, date: Date = new Date()):
   return illuminated; // 0.0（新月）～1.0（満月）
 }
 
-export function getMoonDataAstronomia(lat: number, lon: number): { azimuth: number; altitude: number; phase: number; distance: number; age: number } {
+export function getMoonDataAstronomia(lat: number, lon: number): { azimuth: number; altitude: number; phase: number; distance: number; illumination: number } {
   const date = new Date();
   const jd = astronomia.julian.DateToJD(date);
   
@@ -101,17 +98,16 @@ export function getMoonDataAstronomia(lat: number, lon: number): { azimuth: numb
   console.log('Debug - Final Azimuth (deg):', azimuthDeg);
   console.log('Debug - Final Altitude (deg):', altitudeDeg);
   
-  // 月齢を計算
-  const moonAge = getMoonAge(date);
   
   const illumination = getMoonIllumination(lat, lon, date);
+  const phase = getMoonPhase(date);
 
   return {
     azimuth: azimuthDeg,
     altitude: altitudeDeg,
-    phase: illumination,
+    phase: phase,
     distance: moonPos.range || 384400,
-    age: moonAge,
+    illumination: illumination,
   };
 }
 

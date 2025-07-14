@@ -1,3 +1,5 @@
+// ...existing code...
+
 import * as SunCalc from 'suncalc';
 
 
@@ -6,7 +8,7 @@ export type MoonData = {
     distance: number;
     phase: number;
     altitude: number;
-    age?: number; // astronomiaライブラリ使用時のみ
+    illumination: number; // 照明率
 };
 
 export type MoonTimes = {
@@ -14,7 +16,7 @@ export type MoonTimes = {
     set: Date | null;
 };
 
-import { getMoonDataAstronomia, getMoonTimesAstronomia } from './astronomia-wrapper';
+import { getMoonDataAstronomia } from './astronomia-wrapper';
 
 export function getMoonData(lat: number, lon: number, library: 'suncalc' | 'astronomia' = 'suncalc'): MoonData {
   if (library === 'astronomia') {
@@ -31,21 +33,19 @@ export function getMoonData(lat: number, lon: number, library: 'suncalc' | 'astr
       azimuth: azimuthDegrees,
       distance: moonPosition.distance,
       phase: moonIllumination.phase,
+      illumination: moonIllumination.fraction,
       altitude: altitudeDegrees,
-      age: undefined, // SunCalcでは月齢を計算しない
     };
   }
 }
 
 export function getMoonTimes(lat: number, lon: number, library: 'suncalc' | 'astronomia' = 'suncalc'): MoonTimes {
-  if (library === 'astronomia') {
-    return getMoonTimesAstronomia(lat, lon);
-  } else {
+
     const now = new Date();
     const moonTimes = SunCalc.getMoonTimes(now, lat, lon);
     return {
       rise: moonTimes.rise ?? null,
       set: moonTimes.set ?? null,
     };
-  }
+  
 }
