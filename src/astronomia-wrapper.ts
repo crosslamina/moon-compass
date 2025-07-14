@@ -1,28 +1,44 @@
 import * as astronomia from 'astronomia';
 import * as SunCalc from 'suncalc';
-
+console.log(astronomia.moonmaxdec)
 // 月齢を計算する関数（簡易版）
 function getMoonAge(date: Date): number {
-  // 既知の新月日付（2024年1月11日）からの経過日数を使用
-  const knownNewMoon = new Date('2024-01-11T11:57:00Z');
-  const lunarCycle = 29.53058867; // 朔望月の平均日数
-  
-  const daysSinceKnownNewMoon = (date.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24);
-  const moonAge = daysSinceKnownNewMoon % lunarCycle;
-  
-  return moonAge >= 0 ? moonAge : moonAge + lunarCycle;
+  const jd = astronomia.julian.DateToJD(date);
+  // 直近の新月のJDを取得
+  const dyear = date.getFullYear() + (date.getMonth() + 1 - 0.5) / 12; // 年を小数で表現
+  const newMoonJD = astronomia.moonphase.newMoon(dyear); // 直近の新月
+  let age = jd - newMoonJD;
+  // 0未満の場合は1周期分加算
+  if (age < 0) age += 29.53058867;
+  return getMoonIllumination(0, 0, date);
+}
+
+function getMoonIllumination(lat: number, lon: number, date: Date = new Date()): number {
+  const jd = astronomia.julian.DateToJD(date);
+
+  // 月の位置（黄道座標）
+  const moonPos = astronomia.moonposition.position(jd);
+
+  // 太陽の位置（黄道経度・距離）
+  const T = astronomia.base.J2000Century(jd);
+  const lambdaSun = astronomia.solar.apparentLongitude(T);
+  const rSun = astronomia.solar.radius(T) * astronomia.base.AU;
+  const sunPos = new astronomia.base.Coord(lambdaSun, 0, rSun);
+
+  // 位相角（黄道座標で計算）
+  const phaseAngle = astronomia.moonillum.phaseAngleEcliptic(moonPos, sunPos);
+
+  // 照明率（満ち欠けの割合）
+  const illuminated = astronomia.base.illuminated(phaseAngle);
+
+  console.log('Debug - Moon illuminated:', illuminated);
+
+  return illuminated; // 0.0（新月）～1.0（満月）
 }
 
 export function getMoonDataAstronomia(lat: number, lon: number): { azimuth: number; altitude: number; phase: number; distance: number; age: number } {
   const date = new Date();
-  // 時刻を10秒単位で丸めて安定性を大幅に向上させる
-  date.setSeconds(Math.floor(date.getSeconds() / 10) * 10);
-  date.setMilliseconds(0);
   const jd = astronomia.julian.DateToJD(date);
-  
-  console.log('Debug - Date (10s rounded):', date.toISOString());
-  console.log('Debug - JD:', jd);
-  console.log('Debug - Lat/Lon:', lat, lon);
   
   // 月の黄道座標を取得
   const moonPos = astronomia.moonposition.position(jd);
@@ -32,12 +48,6 @@ export function getMoonDataAstronomia(lat: number, lon: number): { azimuth: numb
     range: moonPos.range,
   });
   
-  // SunCalcとの比較用データ
-  const suncalcMoon = SunCalc.getMoonPosition(date, lat, lon);
-  console.log('Debug - SunCalc comparison:', {
-    azimuth: (suncalcMoon.azimuth * 180 / Math.PI + 180) % 360,
-    altitude: suncalcMoon.altitude * 180 / Math.PI
-  });
   
   // 正しい恒星時計算
   // astronomiaのsidereal関数は度単位で返すため、ラジアンに変換が必要
@@ -94,9 +104,7 @@ export function getMoonDataAstronomia(lat: number, lon: number): { azimuth: numb
   // 月齢を計算
   const moonAge = getMoonAge(date);
   
-  // SunCalcと同じ照明率計算を使用
-  const suncalcIllum = SunCalc.getMoonIllumination(date);
-  const illumination = suncalcIllum.fraction;
+  const illumination = getMoonIllumination(lat, lon, date);
 
   return {
     azimuth: azimuthDeg,
