@@ -23,6 +23,11 @@ const permissionButton = document.getElementById('permission-button') as HTMLBut
 const locationPermissionButton = document.getElementById('location-permission-button') as HTMLButtonElement;
 const locationStatusElement = document.getElementById('location-status');
 
+// ダイアログ関連の要素
+const infoButton = document.getElementById('info-button') as HTMLButtonElement;
+const infoDialog = document.getElementById('info-dialog');
+const closeDialogButton = document.getElementById('close-dialog') as HTMLButtonElement;
+
 // デバイスの向きを保存する変数
 let deviceOrientation = {
     alpha: null as number | null,  // 方位角（コンパス方向）
@@ -463,3 +468,54 @@ function updateMoonDetector(moonData: MoonData) {
         altitudeDifferenceElement.innerHTML += '<br><small>月は現在見えません</small>';
     }
 }
+
+/**
+ * ダイアログを開く
+ */
+function openDialog() {
+    if (infoDialog) {
+        infoDialog.style.display = 'flex';
+        // フェードイン効果
+        setTimeout(() => {
+            infoDialog.style.opacity = '1';
+        }, 10);
+    }
+}
+
+/**
+ * ダイアログを閉じる
+ */
+function closeDialog() {
+    if (infoDialog) {
+        infoDialog.style.opacity = '0';
+        // フェードアウト後に非表示
+        setTimeout(() => {
+            infoDialog.style.display = 'none';
+        }, 300);
+    }
+}
+
+// ダイアログのイベントリスナー設定
+if (infoButton) {
+    infoButton.onclick = openDialog;
+}
+
+if (closeDialogButton) {
+    closeDialogButton.onclick = closeDialog;
+}
+
+// ダイアログの背景をクリックしても閉じる
+if (infoDialog) {
+    infoDialog.onclick = (event) => {
+        if (event.target === infoDialog) {
+            closeDialog();
+        }
+    };
+}
+
+// ESCキーでダイアログを閉じる
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && infoDialog && infoDialog.style.display === 'flex') {
+        closeDialog();
+    }
+});

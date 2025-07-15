@@ -8,7 +8,6 @@
 </head>
 <body>
     <div id="container">
-        <div id="device-orientation"></div>
         <h1>月が綺麗ですね</h1>
         <div id="moon-display-container">
             <canvas id="moon-canvas" width="200" height="200"></canvas>
@@ -28,16 +27,32 @@
                 <p>方向と高度が一致すると通知されます</p>
             </div>
         </div>
-        <div id="moon-direction"></div>
-        <div id="geo-info"></div>
-        <div id="distance"></div>
-        <div id="current-time"></div>
-        <p id="moon-phase"></p>
-        <p id="illumination"></p>
-        <p id="altitude"></p>
-        <p id="moon-rise"></p>
-        <p id="moon-set"></p>
-        <p><a id="map-link" href="#" target="_blank">Show my location on map</a></p>
+        
+        <!-- 情報ボタン -->
+        <button id="info-button" class="info-btn">ℹ️ 詳細情報</button>
+        
+        <!-- 詳細情報ダイアログ -->
+        <div id="info-dialog" class="dialog-overlay" style="display: none;">
+            <div class="dialog-content">
+                <div class="dialog-header">
+                    <h3>月の詳細情報</h3>
+                    <button id="close-dialog" class="close-btn">×</button>
+                </div>
+                <div class="dialog-body">
+                    <div id="device-orientation"></div>
+                    <div id="moon-direction"></div>
+                    <div id="geo-info"></div>
+                    <div id="distance"></div>
+                    <div id="current-time"></div>
+                    <p id="moon-phase"></p>
+                    <p id="illumination"></p>
+                    <p id="altitude"></p>
+                    <p id="moon-rise"></p>
+                    <p id="moon-set"></p>
+                    <p><a id="map-link" href="#" target="_blank">Show my location on map</a></p>
+                </div>
+            </div>
+        </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
 </body>
