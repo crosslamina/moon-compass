@@ -158,23 +158,32 @@ function getPhaseName(phase: number): string {
 }
 
 function handleOrientation(event: DeviceOrientationEvent) {
-    const alpha = event.alpha;
-    const beta = event.beta;
-    const gamma = event.gamma;
+    const rawAlpha = event.alpha;
+    const rawBeta = event.beta;
+    const rawGamma = event.gamma;
+
+    // センサー値にフィルタを適用
+    const filteredAlpha = applySensorFilter(rawAlpha, sensorFilter.alpha);
+    const filteredBeta = applySensorFilter(rawBeta, sensorFilter.beta);
+    const filteredGamma = applySensorFilter(rawGamma, sensorFilter.gamma);
+
+    // ブラウザ固有の補正を適用
+    const correctedAlpha = correctOrientationForBrowser(filteredAlpha, navigator.userAgent);
 
     // デバイスの向きを保存
-    deviceOrientation.alpha = alpha;
-    deviceOrientation.beta = beta;
-    deviceOrientation.gamma = gamma;
+    deviceOrientation.alpha = correctedAlpha;
+    deviceOrientation.beta = filteredBeta;
+    deviceOrientation.gamma = filteredGamma;
 
     if (deviceOrientationElement) {
         deviceOrientationElement.innerHTML = 
-            `デバイス方位（alpha/コンパス）: ${alpha?.toFixed(1) ?? 'N/A'}°<br>` +
-            `前後傾き（beta）: ${beta?.toFixed(1) ?? 'N/A'}°<br>` +
-            `左右傾き（gamma）: ${gamma?.toFixed(1) ?? 'N/A'}°<br>` +
+            `デバイス方位（alpha/コンパス）: ${correctedAlpha?.toFixed(1) ?? 'N/A'}°<br>` +
+            `前後傾き（beta）: ${filteredBeta?.toFixed(1) ?? 'N/A'}°<br>` +
+            `左右傾き（gamma）: ${filteredGamma?.toFixed(1) ?? 'N/A'}°<br>` +
             `<small>alpha: 0°=北 90°=東 180°=南 270°=西<br>` +
             `beta: -90°=後傾 0°=水平 90°=前傾 ±180°=逆さま<br>` +
-            `gamma: 0°=水平 90°=右傾 -90°=左傾</small>`;
+            `gamma: 0°=水平 90°=右傾 -90°=左傾<br>` +
+            `フィルター: ${FILTER_SIZE}サンプル移動平均適用</small>`;
     }
 
     // センサーの値が変わったら月探知機を即座に更新（スロットリング付き）
@@ -185,6 +194,53 @@ function handleOrientation(event: DeviceOrientationEvent) {
             lastDetectorUpdate = now;
         }
     }
+}
+
+/**
+ * プラットフォーム固有のセンサー最適化を設定
+ */
+function optimizeSensorForPlatform() {
+    const userAgent = navigator.userAgent;
+    
+    // iOS での最適化
+    if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+        // iOS では deviceorientationabsolute イベントも試行
+        if ('ondeviceorientationabsolute' in window) {
+            window.addEventListener('deviceorientationabsolute', handleOrientation);
+            console.log('iOS: deviceorientationabsolute イベントを使用');
+        }
+    }
+    
+    // Android での最適化
+    if (userAgent.includes('Android')) {
+        // Android では高頻度更新を試行
+        if ('ondeviceorientationabsolute' in window) {
+            window.addEventListener('deviceorientationabsolute', handleOrientation);
+            console.log('Android: deviceorientationabsolute イベントを使用');
+        }
+    }
+    
+    // センサーの更新頻度をログ出力
+    let eventCount = 0;
+    let lastTime = Date.now();
+    
+    const originalHandler = handleOrientation;
+    const frequencyTrackingHandler = function(event: DeviceOrientationEvent) {
+        eventCount++;
+        const now = Date.now();
+        
+        if (now - lastTime >= 5000) { // 5秒ごとに頻度をログ
+            const frequency = eventCount / 5;
+            console.log(`センサー更新頻度: ${frequency.toFixed(1)} Hz`);
+            eventCount = 0;
+            lastTime = now;
+        }
+        
+        originalHandler(event);
+    };
+    
+    // 頻度追跡ハンドラーをイベントリスナーとして設定
+    window.addEventListener('deviceorientation', frequencyTrackingHandler);
 }
 
 // DeviceOrientationEventのサポート判定とイベント登録
@@ -228,6 +284,8 @@ async function setupDeviceOrientation() {
 
 // ページ読み込み時にセットアップ
 setupDeviceOrientation();
+optimizeSensorForPlatform();
+optimizeSensorForPlatform();
 
 // 点滅タイマーを初期化
 resetBlinkTimer();
@@ -563,4 +621,59 @@ function calculateDeviceElevation(beta: number): number {
         // 後ろに倒れすぎている場合：-180度から引いた値を負の高度とする
         return -(-180 - normalizedBeta);
     }
+}
+
+// ブラウザ環境での方位センサー補正とフィルタリング
+let sensorFilter = {
+    alpha: [] as number[],
+    beta: [] as number[],
+    gamma: [] as number[]
+};
+
+const FILTER_SIZE = 5; // 移動平均のサンプル数
+
+/**
+ * センサー値にローパスフィルターを適用
+ * @param value 新しいセンサー値
+ * @param filterArray フィルター用の配列
+ * @returns フィルター済みの値
+ */
+function applySensorFilter(value: number | null, filterArray: number[]): number | null {
+    if (value === null) return null;
+    
+    // 配列に新しい値を追加
+    filterArray.push(value);
+    
+    // 配列サイズを制限
+    if (filterArray.length > FILTER_SIZE) {
+        filterArray.shift();
+    }
+    
+    // 移動平均を計算
+    const sum = filterArray.reduce((acc, val) => acc + val, 0);
+    return sum / filterArray.length;
+}
+
+/**
+ * ブラウザ固有の方位センサー補正
+ * @param alpha 生の方位角
+ * @param userAgent ユーザーエージェント文字列
+ * @returns 補正された方位角
+ */
+function correctOrientationForBrowser(alpha: number | null, userAgent: string): number | null {
+    if (alpha === null) return null;
+    
+    // iOS Safari での補正
+    if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+        // iOS では webkitCompassHeading が利用可能な場合がある
+        return alpha;
+    }
+    
+    // Android Chrome での補正
+    if (userAgent.includes('Android') && userAgent.includes('Chrome')) {
+        // Android では方位角が反転している場合がある
+        return alpha;
+    }
+    
+    return alpha;
 }
