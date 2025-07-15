@@ -25,6 +25,11 @@ const permissionButton = document.getElementById('permission-button') as HTMLBut
 const locationPermissionButton = document.getElementById('location-permission-button') as HTMLButtonElement;
 const locationStatusElement = document.getElementById('location-status');
 
+// 方位角補正コントロール関連の要素
+const toggleReverseBtn = document.getElementById('toggle-reverse-btn') as HTMLButtonElement;
+const resetCorrectionBtn = document.getElementById('reset-correction-btn') as HTMLButtonElement;
+const correctionStatusElement = document.getElementById('correction-status');
+
 // ダイアログ関連の要素
 const infoButton = document.getElementById('info-button') as HTMLButtonElement;
 const infoDialog = document.getElementById('info-dialog');
@@ -69,9 +74,28 @@ function updateDisplay() {
     currentMoonData = moonData;
 
     if (moonDirectionElement) {
-        const azimuthDiff = Math.abs(deviceOrientation.alpha ?? 0 - moonData.azimuth);
-        const shortestDiff = azimuthDiff > 180 ? 360 - azimuthDiff : azimuthDiff;
-        moonDirectionElement.textContent = `方角: ${moonData.azimuth.toFixed(1)}° ${directionName} (差: ${shortestDiff.toFixed(1)}°)`;
+        // 補正後のデバイス方位角と月の方位角の差分を計算
+        const deviceAlpha = deviceOrientation.alpha ?? 0;
+        let azimuthDiff = deviceAlpha - moonData.azimuth;
+        
+        // -180°〜180°の範囲に正規化（最短角度差）
+        while (azimuthDiff > 180) azimuthDiff -= 360;
+        while (azimuthDiff < -180) azimuthDiff += 360;
+        
+        const absDiff = Math.abs(azimuthDiff);
+        const direction = azimuthDiff > 0 ? '左' : '右';
+        
+        moonDirectionElement.textContent = `方角: ${moonData.azimuth.toFixed(1)}° ${directionName} (差: ${absDiff.toFixed(1)}° ${direction}へ)`;
+        
+        // デバッグ用ログ
+        console.log('Direction difference debug:', {
+            deviceAlpha: deviceAlpha.toFixed(1),
+            moonAzimuth: moonData.azimuth.toFixed(1),
+            rawDiff: (deviceAlpha - moonData.azimuth).toFixed(1),
+            normalizedDiff: azimuthDiff.toFixed(1),
+            absDiff: absDiff.toFixed(1),
+            direction: direction
+        });
     }
     if (distanceElement) {
         distanceElement.textContent = `距離: ${moonData.distance.toFixed(0)} km`;
@@ -164,18 +188,18 @@ function handleOrientation(event: DeviceOrientationEvent) {
     const rawBeta = event.beta;
     const rawGamma = event.gamma;
 
-    // センサー値にフィルタを適用
-    const filteredAlpha = applySensorFilter(rawAlpha, sensorFilter.alpha, lastFilteredValues.alpha);
-    const filteredBeta = applySensorFilter(rawBeta, sensorFilter.beta, lastFilteredValues.beta);
-    const filteredGamma = applySensorFilter(rawGamma, sensorFilter.gamma, lastFilteredValues.gamma);
-
-    // フィルター済み値を保存
-    lastFilteredValues.alpha = filteredAlpha;
-    lastFilteredValues.beta = filteredBeta;
-    lastFilteredValues.gamma = filteredGamma;
+    // フィルターを無効化：生のセンサー値をそのまま使用
+    const filteredAlpha = rawAlpha;
+    const filteredBeta = rawBeta;
+    const filteredGamma = rawGamma;
 
     // ブラウザ固有の補正を適用
     const correctedAlpha = correctOrientationForBrowser(filteredAlpha, navigator.userAgent);
+
+    // 動的補正のための分析（サンプル収集）
+    if (filteredAlpha !== null) {
+        detectAndCorrectOrientation(filteredAlpha);
+    }
 
     // デバイスの向きを保存
     deviceOrientation.alpha = correctedAlpha;
@@ -184,7 +208,20 @@ function handleOrientation(event: DeviceOrientationEvent) {
 
     if (deviceOrientationElement) {
         const deviceElevationForDisplay = deviceOrientation.beta ? calculateDeviceElevation(deviceOrientation.beta) : null;
+        const sensorType = '絶対方位センサー（磁北基準）';
+        
+        // 補正状態の表示
+        const correctionStatus: string[] = [];
+        if (orientationCorrection.isReversed) {
+            correctionStatus.push('<span style="color: #3498db;">東西反転補正: 有効</span>');
+        }
+        if (orientationCorrection.isCalibrated) {
+            correctionStatus.push(`<span style="color: #2ecc71;">オフセット補正: ${orientationCorrection.offsetAngle.toFixed(1)}°</span>`);
+        }
+        const correctionInfo = correctionStatus.length > 0 ? '<br>' + correctionStatus.join(' | ') : '';
+        
         deviceOrientationElement.innerHTML = 
+            `<strong>センサー種別: ${sensorType}</strong>${correctionInfo}<br>` +
             `デバイス方位（alpha/コンパス）: ${correctedAlpha?.toFixed(1) ?? 'N/A'}°<br>` +
             `前後傾き（beta）: ${filteredBeta?.toFixed(1) ?? 'N/A'}°<br>` +
             `計算された高度角: ${deviceElevationForDisplay?.toFixed(1) ?? 'N/A'}°<br>` +
@@ -193,7 +230,8 @@ function handleOrientation(event: DeviceOrientationEvent) {
             `beta: -90°=後傾 0°=水平 90°=前傾 ±180°=逆さま<br>` +
             `高度角: -90°=真下 0°=水平 90°=真上<br>` +
             `gamma: 0°=水平 90°=右傾 -90°=左傾<br>` +
-            `フィルター: ${FILTER_SIZE}サンプル移動平均（閾値: ${CHANGE_THRESHOLD}°）適用</small>`;
+            `<strong>フィルター: 無効（生センサー値使用）</strong><br>` +
+            `<strong>キャリブレーション:</strong> コンソールで toggleOrientationReverse() または setOrientationOffset(角度) を実行</small>`;
     }
 
     // センサーの値が変わったら月探知機を即座に更新（スロットリング付き）
@@ -206,52 +244,16 @@ function handleOrientation(event: DeviceOrientationEvent) {
     }
 }
 
-/**
- * プラットフォーム固有のセンサー最適化を設定
- */
-function optimizeSensorForPlatform() {
-    const userAgent = navigator.userAgent;
-    
-    // iOS での最適化
-    if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
-        // iOS では deviceorientationabsolute イベントも試行
-        if ('ondeviceorientationabsolute' in window) {
-            window.addEventListener('deviceorientationabsolute', handleOrientation);
-            console.log('iOS: deviceorientationabsolute イベントを使用');
-        }
-    }
-    
-    // Android での最適化
-    if (userAgent.includes('Android')) {
-        // Android では高頻度更新を試行
-        if ('ondeviceorientationabsolute' in window) {
-            window.addEventListener('deviceorientationabsolute', handleOrientation);
-            console.log('Android: deviceorientationabsolute イベントを使用');
-        }
-    }
-    
-    // センサーの更新頻度をログ出力
-    let eventCount = 0;
-    let lastTime = Date.now();
-    
-    const originalHandler = handleOrientation;
-    const frequencyTrackingHandler = function(event: DeviceOrientationEvent) {
-        eventCount++;
-        const now = Date.now();
-        
-        if (now - lastTime >= 5000) { // 5秒ごとに頻度をログ
-            const frequency = eventCount / 5;
-            console.log(`センサー更新頻度: ${frequency.toFixed(1)} Hz`);
-            eventCount = 0;
-            lastTime = now;
-        }
-        
-        originalHandler(event);
-    };
-    
-    // 頻度追跡ハンドラーをイベントリスナーとして設定
-    window.addEventListener('deviceorientation', frequencyTrackingHandler);
-}
+// 方位角の動的補正システム
+let orientationCorrection = {
+    isCalibrated: false,
+    offsetAngle: 0, // デバイス固有のオフセット角度
+    isReversed: false, // 東西が逆転しているかどうか
+    calibrationSamples: [] as { alpha: number, timestamp: number }[],
+    lastKnownTrueDirection: null as number | null
+};
+
+const CALIBRATION_SAMPLE_SIZE = 10; // キャリブレーション用サンプル数
 
 // DeviceOrientationEventのサポート判定とイベント登録
 async function setupDeviceOrientation() {
@@ -262,6 +264,17 @@ async function setupDeviceOrientation() {
         return;
     }
 
+    // deviceorientationabsoluteが利用可能かチェック
+    const hasAbsoluteOrientation = 'ondeviceorientationabsolute' in window;
+    
+    if (!hasAbsoluteOrientation) {
+        if (deviceOrientationElement) {
+            deviceOrientationElement.innerHTML = '❌ このブラウザは絶対方位センサー（deviceorientationabsolute）に対応していません。<br>磁北基準の正確な方位角が取得できません。';
+        }
+        console.error('deviceorientationabsolute は利用できません。このアプリには絶対方位センサーが必要です。');
+        return;
+    }
+    
     // iOS 13+では権限要求が必要
     if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
         // 権限ボタンを表示
@@ -271,7 +284,9 @@ async function setupDeviceOrientation() {
                 try {
                     const permission = await (DeviceOrientationEvent as any).requestPermission();
                     if (permission === 'granted') {
-                        window.addEventListener('deviceorientation', handleOrientation);
+                        // deviceorientationabsoluteのみを使用
+                        window.addEventListener('deviceorientationabsolute', handleOrientation);
+                        console.log('iOS: 絶対方位センサー（deviceorientationabsolute）を使用 - 磁北基準');
                         permissionButton.style.display = 'none';
                     } else {
                         if (deviceOrientationElement) {
@@ -288,14 +303,21 @@ async function setupDeviceOrientation() {
         }
     } else {
         // Android等、権限要求が不要な場合
-        window.addEventListener('deviceorientation', handleOrientation);
+        // deviceorientationabsoluteのみを使用
+        window.addEventListener('deviceorientationabsolute', handleOrientation);
+        console.log('絶対方位センサー（deviceorientationabsolute）を使用 - 磁北基準の真の方位角');
     }
 }
 
 // ページ読み込み時にセットアップ
 setupDeviceOrientation();
-optimizeSensorForPlatform();
-optimizeSensorForPlatform();
+
+// キャリブレーション情報を表示
+console.log('=== 方位角キャリブレーション機能 ===');
+console.log('東西が逆の場合: toggleOrientationReverse()');
+console.log('オフセット設定: setOrientationOffset(角度)');
+console.log('リセット: resetOrientationCorrection()');
+console.log('=====================================');
 
 // 点滅タイマーを初期化
 resetBlinkTimer();
@@ -798,27 +820,106 @@ function applySensorFilter(value: number | null, filterArray: number[], lastValu
 }
 
 /**
- * ブラウザ固有の方位センサー補正
+ * ブラウザ固有の方位センサー補正（動的補正機能付き）
  * @param alpha 生の方位角
  * @param userAgent ユーザーエージェント文字列
  * @returns 補正された方位角
  */
 function correctOrientationForBrowser(alpha: number | null, userAgent: string): number | null {
-    if (alpha === null) return null;
+    if (alpha === null) return alpha;
     
-    // iOS Safari での補正
+    let correctedAlpha = alpha;
+    
+    // 基本的なブラウザ固有補正
     if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
-        // iOS では webkitCompassHeading が利用可能な場合がある
-        return alpha;
+        // iOS Safari での補正
+        // 通常は追加補正不要
+    } else if (userAgent.includes('Android')) {
+        // Android では東西が逆転している場合がある
+        if (orientationCorrection.isReversed) {
+            correctedAlpha = 360 - alpha;
+            console.log(`Android方位角補正: ${alpha}° → ${correctedAlpha}° (東西反転)`);
+        }
     }
     
-    // Android Chrome での補正
-    if (userAgent.includes('Android') && userAgent.includes('Chrome')) {
-        // Android では方位角が反転している場合がある
-        return alpha;
+    // 動的オフセット補正を適用
+    if (orientationCorrection.isCalibrated) {
+        correctedAlpha = (correctedAlpha + orientationCorrection.offsetAngle) % 360;
+        if (correctedAlpha < 0) correctedAlpha += 360;
     }
     
-    return alpha;
+    return correctedAlpha;
+}
+
+/**
+ * 方位角の東西反転を検出・補正する
+ * @param alpha 現在の方位角
+ */
+function detectAndCorrectOrientation(alpha: number) {
+    // サンプルを収集
+    orientationCorrection.calibrationSamples.push({
+        alpha: alpha,
+        timestamp: Date.now()
+    });
+    
+    // 古いサンプルを削除（10秒以上古いもの）
+    const tenSecondsAgo = Date.now() - 10000;
+    orientationCorrection.calibrationSamples = orientationCorrection.calibrationSamples
+        .filter(sample => sample.timestamp > tenSecondsAgo);
+    
+    // 十分なサンプルが集まったら分析
+    if (orientationCorrection.calibrationSamples.length >= CALIBRATION_SAMPLE_SIZE) {
+        analyzeOrientationPattern();
+    }
+}
+
+/**
+ * 方位角のパターンを分析して東西反転を検出
+ */
+function analyzeOrientationPattern() {
+    const samples = orientationCorrection.calibrationSamples;
+    if (samples.length < CALIBRATION_SAMPLE_SIZE) return;
+    
+    // サンプルの変化量を分析
+    let totalChange = 0;
+    let positiveChanges = 0;
+    let negativeChanges = 0;
+    
+    for (let i = 1; i < samples.length; i++) {
+        const prev = samples[i - 1].alpha;
+        const curr = samples[i].alpha;
+        
+        // 角度の最短差を計算
+        let diff = curr - prev;
+        if (diff > 180) diff -= 360;
+        if (diff < -180) diff += 360;
+        
+        totalChange += Math.abs(diff);
+        if (diff > 5) positiveChanges++;
+        if (diff < -5) negativeChanges++;
+    }
+    
+    // 変化量が少ない場合はキャリブレーション不要
+    if (totalChange < 30) {
+        console.log('方位角の変化が少ないため、キャリブレーションをスキップ');
+        return;
+    }
+    
+    // 東西反転の検出ロジック
+    // 実際のデバイスの動きと逆方向に値が変化している場合、反転していると判断
+    const changeRatio = positiveChanges / (positiveChanges + negativeChanges);
+    
+    console.log('方位角パターン分析:', {
+        totalSamples: samples.length,
+        totalChange: totalChange.toFixed(1),
+        positiveChanges: positiveChanges,
+        negativeChanges: negativeChanges,
+        changeRatio: changeRatio.toFixed(2)
+    });
+    
+    // ここで実際の検出ロジックを実装
+    // 現在は手動でテストできるようにログ出力のみ
+    console.log('東西反転の自動検出は実装中です。手動で設定してください。');
 }
 
 /**
@@ -852,3 +953,156 @@ function testCompassCoordinates() {
     
     console.log('========================');
 }
+
+/**
+ * 手動で東西反転補正を設定/解除
+ */
+function toggleOrientationReverse() {
+    orientationCorrection.isReversed = !orientationCorrection.isReversed;
+    
+    const status = orientationCorrection.isReversed ? '有効' : '無効';
+    console.log(`方位角東西反転補正: ${status}`);
+    
+    // UI更新のために即座に月探知機を更新
+    if (currentMoonData) {
+        updateMoonDetector(currentMoonData);
+    }
+    
+    return orientationCorrection.isReversed;
+}
+
+/**
+ * 補正状態の表示を更新
+ */
+function updateCorrectionStatus() {
+    if (correctionStatusElement) {
+        const statusParts: string[] = [];
+        
+        if (orientationCorrection.isReversed) {
+            statusParts.push('🔄 東西反転補正: 有効');
+        }
+        
+        if (orientationCorrection.isCalibrated) {
+            statusParts.push(`📐 オフセット: ${orientationCorrection.offsetAngle.toFixed(1)}°`);
+        }
+        
+        if (statusParts.length === 0) {
+            correctionStatusElement.textContent = '補正なし（通常モード）';
+            correctionStatusElement.style.color = '#95a5a6';
+        } else {
+            correctionStatusElement.textContent = statusParts.join(' | ');
+            correctionStatusElement.style.color = '#2ecc71';
+        }
+    }
+    
+    // ボタンの状態を更新
+    if (toggleReverseBtn) {
+        if (orientationCorrection.isReversed) {
+            toggleReverseBtn.classList.add('active');
+            toggleReverseBtn.textContent = '東西反転補正: ON';
+        } else {
+            toggleReverseBtn.classList.remove('active');
+            toggleReverseBtn.textContent = '東西反転補正: OFF';
+        }
+    }
+}
+
+/**
+ * 手動で東西反転補正を設定/解除（UI版）
+ */
+function toggleOrientationReverseUI() {
+    const result = toggleOrientationReverse();
+    updateCorrectionStatus();
+    
+    // フィードバックメッセージ
+    const message = result ? 
+        '✅ 東西反転補正を有効にしました' : 
+        '❌ 東西反転補正を無効にしました';
+    
+    console.log(message);
+    
+    // 一時的にステータスにメッセージを表示
+    if (correctionStatusElement) {
+        const originalText = correctionStatusElement.textContent;
+        correctionStatusElement.textContent = message;
+        correctionStatusElement.style.color = result ? '#2ecc71' : '#e74c3c';
+        
+        setTimeout(() => {
+            updateCorrectionStatus();
+        }, 2000);
+    }
+    
+    return result;
+}
+
+/**
+ * 方位角補正をリセット（UI版）
+ */
+function resetOrientationCorrectionUI() {
+    resetOrientationCorrection();
+    updateCorrectionStatus();
+    
+    const message = '🔄 補正をリセットしました';
+    console.log(message);
+    
+    // 一時的にステータスにメッセージを表示
+    if (correctionStatusElement) {
+        correctionStatusElement.textContent = message;
+        correctionStatusElement.style.color = '#f39c12';
+        
+        setTimeout(() => {
+            updateCorrectionStatus();
+        }, 2000);
+    }
+}
+
+/**
+ * 方位角オフセットを手動で設定
+ * @param offset オフセット角度（度）
+ */
+function setOrientationOffset(offset: number) {
+    orientationCorrection.offsetAngle = offset;
+    orientationCorrection.isCalibrated = true;
+    
+    console.log(`方位角オフセット設定: ${offset}°`);
+    
+    // UI更新のために即座に月探知機を更新
+    if (currentMoonData) {
+        updateMoonDetector(currentMoonData);
+    }
+}
+
+/**
+ * 方位角補正をリセット
+ */
+function resetOrientationCorrection() {
+    orientationCorrection.isCalibrated = false;
+    orientationCorrection.offsetAngle = 0;
+    orientationCorrection.isReversed = false;
+    orientationCorrection.calibrationSamples = [];
+    orientationCorrection.lastKnownTrueDirection = null;
+    
+    console.log('方位角補正をリセットしました');
+    
+    // UI更新のために即座に月探知機を更新
+    if (currentMoonData) {
+        updateMoonDetector(currentMoonData);
+    }
+}
+
+// グローバル関数として公開（デバッグ用）
+(window as any).toggleOrientationReverse = toggleOrientationReverse;
+(window as any).setOrientationOffset = setOrientationOffset;
+(window as any).resetOrientationCorrection = resetOrientationCorrection;
+
+// UI操作のイベントリスナー設定
+if (toggleReverseBtn) {
+    toggleReverseBtn.onclick = toggleOrientationReverseUI;
+}
+
+if (resetCorrectionBtn) {
+    resetCorrectionBtn.onclick = resetOrientationCorrectionUI;
+}
+
+// 初期状態の表示
+updateCorrectionStatus();

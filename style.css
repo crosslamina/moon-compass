@@ -533,3 +533,60 @@ h1 {
 .dialog-body::-webkit-scrollbar-thumb:hover {
     background: #2980b9;
 }
+
+/* 方位角補正コントロール */
+#orientation-controls {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(52, 73, 94, 0.3);
+    border-radius: 10px;
+    border: 1px solid rgba(149, 165, 166, 0.3);
+}
+
+.controls-label {
+    font-size: 1.1em;
+    color: #f39c12;
+    margin-bottom: 10px;
+    text-shadow: 0 0 5px rgba(243, 156, 18, 0.3);
+}
+
+.control-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.control-btn {
+    padding: 8px 15px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.control-btn:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+.control-btn:active {
+    transform: translateY(0);
+}
+
+.control-btn.active {
+    background: #e67e22;
+    box-shadow: 0 0 10px rgba(230, 126, 34, 0.5);
+}
+
+#correction-status {
+    font-size: 0.9em;
+    color: #ecf0f1;
+    min-height: 20px;
+    margin-top: 5px;
+}

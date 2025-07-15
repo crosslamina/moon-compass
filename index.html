@@ -19,6 +19,16 @@
             <div id="location-status"></div>
             <div id="detector-status" class="detector-inactive">月を探しています...</div>
             
+            <!-- 方位角補正コントロール -->
+            <div id="orientation-controls">
+                <div class="controls-label">方位角補正</div>
+                <div class="control-buttons">
+                    <button id="toggle-reverse-btn" class="control-btn">東西反転補正</button>
+                    <button id="reset-correction-btn" class="control-btn">補正リセット</button>
+                </div>
+                <div id="correction-status"></div>
+            </div>
+            
             <!-- 直感的な方向指示器 -->
             <div id="direction-compass">
                 <div class="compass-label">コンパス（青針：デバイスの向き、🌙：月の位置）</div>
