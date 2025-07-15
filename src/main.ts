@@ -102,8 +102,9 @@ function updateDisplay() {
         let blinkIntensity = 1; // デフォルトは点滅なし
         
         if (deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
-            // デバイスの高度を計算（betaから変換、-90〜90度の範囲）
-            const deviceElevation = Math.max(-90, Math.min(90, 90 - deviceOrientation.beta));
+            // デバイスの高度を計算（betaから変換）
+            // beta: -180°〜180°の範囲（-90°=後傾、0°=水平、90°=前傾、±180°=逆さま）
+            let deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
             
             // 角度差を計算
             const angleDiff = calculateAngleDifference(
@@ -131,7 +132,7 @@ setInterval(() => {
         
         // 月の点滅効果を更新（安定したタイミングで）
         if (moonCanvas) {
-            const deviceElevation = Math.max(-90, Math.min(90, 90 - deviceOrientation.beta));
+            const deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
             const angleDiff = calculateAngleDifference(
                 deviceOrientation.alpha,
                 deviceElevation,
@@ -172,7 +173,7 @@ function handleOrientation(event: DeviceOrientationEvent) {
             `前後傾き（beta）: ${beta?.toFixed(1) ?? 'N/A'}°<br>` +
             `左右傾き（gamma）: ${gamma?.toFixed(1) ?? 'N/A'}°<br>` +
             `<small>alpha: 0°=北 90°=東 180°=南 270°=西<br>` +
-            `beta: 0°=水平 90°=前傾 -90°=後傾<br>` +
+            `beta: -90°=後傾 0°=水平 90°=前傾 ±180°=逆さま<br>` +
             `gamma: 0°=水平 90°=右傾 -90°=左傾</small>`;
     }
 
@@ -382,7 +383,8 @@ function updateMoonDetector(moonData: MoonData) {
     // デバイスセンサーの値をログ出力（デバッグ用）
     console.log('Device orientation:', {
         alpha: deviceAlpha,  // コンパス方位
-        beta: deviceBeta,    // 前後傾き  
+        beta: deviceBeta,    // 前後傾き（生値）
+        elevation: calculateDeviceElevation(deviceBeta), // 計算された高度角
         gamma: deviceOrientation.gamma // 左右傾き
     });
     console.log('Moon position:', {
@@ -412,7 +414,7 @@ function updateMoonDetector(moonData: MoonData) {
 
     // === 高度インジケーター更新 ===
     
-    const deviceElevation = Math.max(-90, Math.min(90, 90 - deviceBeta)); // betaから高度に変換（-90〜90度）
+    const deviceElevation = calculateDeviceElevation(deviceBeta);
     const clampedMoonAltitude = Math.max(-90, Math.min(90, moonAltitude)); // 月の高度も-90〜90度に制限
     
     // デバイス高度マーカー（青）
@@ -533,3 +535,32 @@ document.addEventListener('keydown', (event) => {
         closeDialog();
     }
 });
+
+/**
+ * デバイスのベータ値から高度角を計算する
+ * @param beta デバイスの前後傾き（-180度〜180度）
+ * @returns 高度角（-90度〜90度）
+ */
+function calculateDeviceElevation(beta: number): number {
+    // betaを-180〜180度の範囲に正規化
+    let normalizedBeta = beta;
+    while (normalizedBeta > 180) normalizedBeta -= 360;
+    while (normalizedBeta < -180) normalizedBeta += 360;
+    
+    // betaから高度角への変換
+    // beta: -90° = 後傾（下向き） → 高度: -90°
+    // beta: 0° = 水平 → 高度: 0°
+    // beta: 90° = 前傾（上向き） → 高度: 90°
+    // beta: ±180° = 逆さま → 高度: 0°（水平とみなす）
+    
+    if (normalizedBeta >= -90 && normalizedBeta <= 90) {
+        // 通常の範囲：betaをそのまま高度として使用
+        return normalizedBeta;
+    } else if (normalizedBeta > 90 && normalizedBeta <= 180) {
+        // 前に倒れすぎている場合：180度から引いた値を負の高度とする
+        return -(180 - normalizedBeta);
+    } else {
+        // 後ろに倒れすぎている場合：-180度から引いた値を負の高度とする
+        return -(-180 - normalizedBeta);
+    }
+}
