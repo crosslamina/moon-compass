@@ -65,6 +65,113 @@ h1 {
     text-shadow: 0 0 5px rgba(231, 76, 60, 0.7);
 }
 
+#moon-detector {
+    margin: 20px 0;
+    padding: 20px;
+    border: 2px solid #3498db;
+    border-radius: 10px;
+    background: rgba(52, 73, 94, 0.3);
+}
+
+#moon-detector h2 {
+    margin: 0 0 15px 0;
+    color: #3498db;
+    font-size: 1.5em;
+}
+
+#permission-button,
+#location-permission-button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    margin: 5px;
+    transition: background 0.3s ease;
+}
+
+#permission-button:hover,
+#location-permission-button:hover {
+    background: #2980b9;
+}
+
+#location-permission-button {
+    background: #e67e22;
+}
+
+#location-permission-button:hover {
+    background: #d35400;
+}
+
+#location-status {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 0.9em;
+}
+
+#detector-status {
+    font-size: 1.3em;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    transition: all 0.3s ease;
+}
+
+.detector-inactive {
+    background: rgba(231, 76, 60, 0.3);
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+}
+
+.detector-close {
+    background: rgba(241, 196, 15, 0.3);
+    color: #f1c40f;
+    border: 1px solid #f1c40f;
+}
+
+.detector-found {
+    background: rgba(46, 204, 113, 0.3);
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+#direction-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin: 15px 0;
+}
+
+#azimuth-difference,
+#altitude-difference {
+    flex: 1;
+    margin: 0 5px;
+    padding: 10px;
+    background: rgba(44, 62, 80, 0.5);
+    border-radius: 5px;
+    font-size: 0.9em;
+}
+
+#detector-instructions {
+    font-size: 0.8em;
+    color: #bdc3c7;
+    margin-top: 10px;
+}
+
+#detector-instructions p {
+    margin: 5px 0;
+}
+
 #geo-info,
 #device-orientation {
     font-size: 0.9em;

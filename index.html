@@ -13,6 +13,21 @@
         <div id="moon-display-container">
             <canvas id="moon-canvas" width="200" height="200"></canvas>
         </div>
+        <div id="moon-detector">
+            <h2>🌙 月探知機</h2>
+            <button id="location-permission-button" style="display: none;">位置情報の許可</button>
+            <button id="permission-button" style="display: none;">センサー権限を許可</button>
+            <div id="location-status"></div>
+            <div id="detector-status" class="detector-inactive">月を探しています...</div>
+            <div id="direction-indicator">
+                <div id="azimuth-difference"></div>
+                <div id="altitude-difference"></div>
+            </div>
+            <div id="detector-instructions">
+                <p>デバイスを月の方向に向けてください</p>
+                <p>方向と高度が一致すると通知されます</p>
+            </div>
+        </div>
         <div id="moon-direction"></div>
         <div id="geo-info"></div>
         <div id="distance"></div>
