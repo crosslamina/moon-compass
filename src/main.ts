@@ -1,6 +1,6 @@
 const deviceOrientationElement = document.getElementById('device-orientation');
 const geoInfoElement = document.getElementById('geo-info');
-import { getMoonData, getMoonTimes, MoonData, MoonTimes, drawMoonPhase } from './moon';
+import { getMoonData, getMoonTimes, MoonData, MoonTimes, drawMoonPhase, calculateAngleDifference, calculateBlinkIntensity } from './moon';
 // ...existing code...
 const illuminationElement = document.getElementById('illumination');
 import { getDirectionName } from './direction';
@@ -91,9 +91,28 @@ function updateDisplay() {
         mapLinkElement.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
     }
 
-    // 月の形を描画
+    // 月の形を描画（点滅機能付き）
     if (moonCanvas) {
-        drawMoonPhase(moonCanvas, moonData);
+        // 角度差を計算して点滅強度を決定
+        let blinkIntensity = 1; // デフォルトは点滅なし
+        
+        if (deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
+            // デバイスの高度を計算（betaから変換）
+            const deviceElevation = Math.max(0, Math.min(90, 90 - deviceOrientation.beta));
+            
+            // 角度差を計算
+            const angleDiff = calculateAngleDifference(
+                deviceOrientation.alpha,
+                deviceElevation,
+                moonData.azimuth,
+                moonData.altitude
+            );
+            
+            // 点滅強度を計算
+            blinkIntensity = calculateBlinkIntensity(angleDiff, Date.now());
+        }
+        
+        drawMoonPhase(moonCanvas, moonData, blinkIntensity);
     }
 
     // 月探知機の更新
@@ -104,6 +123,19 @@ function updateDisplay() {
 setInterval(() => {
     if (currentMoonData && (deviceOrientation.alpha !== null && deviceOrientation.beta !== null)) {
         updateMoonDetector(currentMoonData);
+        
+        // 月の点滅効果を更新
+        if (moonCanvas) {
+            const deviceElevation = Math.max(0, Math.min(90, 90 - deviceOrientation.beta));
+            const angleDiff = calculateAngleDifference(
+                deviceOrientation.alpha,
+                deviceElevation,
+                currentMoonData.azimuth,
+                currentMoonData.altitude
+            );
+            const blinkIntensity = calculateBlinkIntensity(angleDiff, Date.now());
+            drawMoonPhase(moonCanvas, currentMoonData, blinkIntensity);
+        }
     }
 }, 100); // 100ms間隔でスムーズな応答性を保持
 
@@ -371,14 +403,19 @@ function updateMoonDetector(moonData: MoonData) {
     const deviceElevation = Math.max(0, Math.min(90, 90 - deviceBeta)); // betaから高度に変換
     const altitudeDiff = Math.abs(deviceElevation - moonAltitude);
 
-    // 方向差と高度差を表示
+    // 全体の角度差を計算（点滅情報として表示）
+    const totalAngleDiff = calculateAngleDifference(deviceAlpha, deviceElevation, moonAzimuth, moonAltitude);
+    const blinkIntensity = calculateBlinkIntensity(totalAngleDiff, Date.now());
+    
+    // 方向差と高度差を表示（点滅情報を追加）
     const altitudeDirection = altitudeDiff > 5 ? (deviceElevation > moonAltitude ? '↓下に' : '↑上に') : '';
     
     azimuthDifferenceElement.innerHTML = `方向差: ${azimuthDiff.toFixed(1)}° ${azimuthDirection}<br>` +
         `デバイス: ${deviceAlpha.toFixed(1)}° / 月: ${moonAzimuth.toFixed(1)}°`;
     
     altitudeDifferenceElement.innerHTML = `高度差: ${altitudeDiff.toFixed(1)}° ${altitudeDirection}<br>` +
-        `デバイス: ${deviceElevation.toFixed(1)}° / 月: ${moonAltitude.toFixed(1)}°`;
+        `デバイス: ${deviceElevation.toFixed(1)}° / 月: ${moonAltitude.toFixed(1)}°<br>` +
+        `<small>総角度差: ${totalAngleDiff.toFixed(1)}° (点滅強度: ${(blinkIntensity * 100).toFixed(0)}%)</small>`;
 
     // 探知状態の判定
     const azimuthThreshold = 10; // 方向の許容差（度）
@@ -386,7 +423,7 @@ function updateMoonDetector(moonData: MoonData) {
 
     if (azimuthDiff <= azimuthThreshold && altitudeDiff <= altitudeThreshold) {
         // 月を発見！
-        detectorStatusElement.textContent = '🌙 月を発見しました！';
+        detectorStatusElement.textContent = '🌙 月を発見しました！（点滅停止）';
         detectorStatusElement.className = 'detector-found';
         
         // バイブレーション（対応デバイスのみ）
@@ -395,11 +432,13 @@ function updateMoonDetector(moonData: MoonData) {
         }
     } else if (azimuthDiff <= azimuthThreshold * 2 && altitudeDiff <= altitudeThreshold * 2) {
         // 月に近づいている
-        detectorStatusElement.textContent = '🔍 月に近づいています...';
+        const blinkStatus = totalAngleDiff <= 30 ? '高速点滅' : '点滅中';
+        detectorStatusElement.textContent = `🔍 月に近づいています...（${blinkStatus}）`;
         detectorStatusElement.className = 'detector-close';
     } else {
         // 月を探している
-        detectorStatusElement.textContent = '🔭 月を探しています...';
+        const blinkStatus = totalAngleDiff >= 60 ? '点滅なし' : '低速点滅';
+        detectorStatusElement.textContent = `🔭 月を探しています...（${blinkStatus}）`;
         detectorStatusElement.className = 'detector-inactive';
     }
 

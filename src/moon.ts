@@ -50,8 +50,9 @@ export function getMoonTimes(lat: number, lon: number, library: 'suncalc' | 'ast
  * 月の形をキャンバスに描画する
  * @param canvas - 描画対象のcanvas要素
  * @param moonData - 月のデータ
+ * @param blinkIntensity - 点滅の強度 (0-1)
  */
-export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData): void {
+export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData, blinkIntensity: number = 1): void {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -68,6 +69,10 @@ export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData): vo
     gradient.addColorStop(1, '#0f0f1a');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 点滅効果のためのアルファ値を計算
+    const alpha = 0.3 + (0.7 * blinkIntensity); // 最小30%、最大100%の透明度
+    ctx.globalAlpha = alpha;
 
     const phase = moonData.phase;
     const illumination = moonData.illumination;
@@ -101,6 +106,9 @@ export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData): vo
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     ctx.stroke();
+
+    // アルファ値をリセット
+    ctx.globalAlpha = 1;
 
     // 照明率、位相、月相名の情報表示
     ctx.fillStyle = '#ecf0f1';
@@ -267,4 +275,65 @@ function drawGibbousShape(
     
     ctx.closePath();
     ctx.fill();
+}
+
+/**
+ * デバイスの向きと月の位置の角度差を計算
+ * @param deviceAzimuth - デバイスの方位角（度）
+ * @param deviceAltitude - デバイスの高度角（度）
+ * @param moonAzimuth - 月の方位角（度）
+ * @param moonAltitude - 月の高度角（度）
+ * @returns 角度差（度）
+ */
+export function calculateAngleDifference(
+    deviceAzimuth: number,
+    deviceAltitude: number,
+    moonAzimuth: number,
+    moonAltitude: number
+): number {
+    // 方位角の差（360度を考慮）
+    let azimuthDiff = Math.abs(deviceAzimuth - moonAzimuth);
+    if (azimuthDiff > 180) {
+        azimuthDiff = 360 - azimuthDiff;
+    }
+    
+    // 高度角の差
+    const altitudeDiff = Math.abs(deviceAltitude - moonAltitude);
+    
+    // 3D空間での角度差を計算
+    const totalDiff = Math.sqrt(azimuthDiff * azimuthDiff + altitudeDiff * altitudeDiff);
+    
+    return totalDiff;
+}
+
+/**
+ * 角度差に基づいて点滅パターンを計算
+ * @param angleDifference - 角度差（度）
+ * @param timestamp - 現在時刻（ミリ秒）
+ * @returns 点滅強度（0-1）
+ */
+export function calculateBlinkIntensity(angleDifference: number, timestamp: number): number {
+    // 角度差が小さいほど高速点滅
+    const maxAngle = 90; // 最大角度差
+    const minAngle = 5;  // 最小角度差（これ以下で最高速点滅）
+    
+    // 角度差を0-1の範囲に正規化（小さいほど1に近づく）
+    const normalizedAngle = Math.max(0, Math.min(1, (maxAngle - angleDifference) / (maxAngle - minAngle)));
+    
+    if (angleDifference <= minAngle) {
+        // 非常に近い場合：常時点灯
+        return 1;
+    } else if (angleDifference >= maxAngle) {
+        // 遠い場合：点滅なし
+        return 1;
+    } else {
+        // 距離に応じた点滅速度
+        const blinkSpeed = 0.5 + (normalizedAngle * 4); // 0.5Hz〜4.5Hzの範囲
+        const blinkCycle = Math.sin(timestamp * blinkSpeed * Math.PI / 1000);
+        
+        // 点滅の振幅も距離に応じて調整
+        const amplitude = 0.3 + (normalizedAngle * 0.7); // 30%〜100%の振幅
+        
+        return 0.5 + (blinkCycle * amplitude * 0.5);
+    }
 }
