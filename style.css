@@ -295,22 +295,53 @@ h1 {
     color: #ecf0f1;
 }
 
-.dialog-body > div,
-.dialog-body > p {
-    margin: 15px 0;
-    padding: 10px;
-    background: rgba(44, 62, 80, 0.3);
-    border-radius: 8px;
+/* 情報セクションのスタイル */
+.info-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(44, 62, 80, 0.4);
+    border-radius: 10px;
     border-left: 4px solid #3498db;
 }
 
-.dialog-body #device-orientation {
-    font-size: 0.9em;
-    border-left-color: #e67e22;
+.info-section:first-child {
+    border-left-color: #f39c12; /* 月の情報 - オレンジ */
 }
 
-.dialog-body #geo-info {
-    border-left-color: #2ecc71;
+.info-section:nth-child(2) {
+    border-left-color: #2ecc71; /* 現在時刻・位置 - 緑 */
+}
+
+.info-section:nth-child(3) {
+    border-left-color: #e74c3c; /* デバイス情報 - 赤 */
+}
+
+.info-section h4 {
+    margin: 0 0 15px 0;
+    color: #ecf0f1;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-bottom: 1px solid rgba(236, 240, 241, 0.2);
+    padding-bottom: 8px;
+}
+
+.dialog-body > div > div,
+.dialog-body > div > p {
+    margin: 10px 0;
+    padding: 8px 12px;
+    background: rgba(52, 73, 94, 0.3);
+    border-radius: 6px;
+    border: none;
+    font-size: 0.95em;
+}
+
+.dialog-body .info-section > div,
+.dialog-body .info-section > p {
+    margin: 8px 0;
+    padding: 8px 12px;
+    background: rgba(52, 73, 94, 0.5);
+    border-radius: 6px;
+    border: none;
 }
 
 .dialog-body #map-link {
@@ -321,6 +352,7 @@ h1 {
     text-decoration: none;
     border-radius: 5px;
     transition: background 0.3s ease;
+    margin: 5px 0;
 }
 
 .dialog-body #map-link:hover {
