@@ -23,9 +23,5 @@ export function getDirectionName(azimuth: number): string {
             return direction.name;
         }
     }
-    // Handle the case where azimuth is close to 360 (N)
-    if (azimuth >= 348.75 || azimuth < 11.25) {
-        return 'N';
-    }
     return '';
 }
