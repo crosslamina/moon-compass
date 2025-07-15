@@ -23,10 +23,32 @@ export function getMoonData(lat: number, lon: number, ): MoonData {
     const moonIllumination = SunCalc.getMoonIllumination(now);
 
     // SunCalcの方位角を正しいコンパス方位角に変換
-    // SunCalc: 南=0度, 西=π/2, 北=π, 東=3π/2 (ラジアン, 南から西向きに測定)
-    // コンパス: 北=0度, 東=90度, 南=180度, 西=270度 (北から時計回りに測定)
-    // 変換式: コンパス方位 = (SunCalc方位 + π) * 180 / π = SunCalc度数 + 180
-    const azimuthDegrees = (moonPosition.azimuth * 180 / Math.PI + 180) % 360;
+    // SunCalc実際の座標系:
+    // - azimuth: 南=0, 西=+π/2, 北=±π, 東=-π/2 (南から時計回りに測定、-π〜+πの範囲)
+    // - altitude: 地平線=0, 天頂=+π/2, 地平線下=-π/2
+    // 目標のコンパス座標系:
+    // - azimuth: 北=0°, 東=90°, 南=180°, 西=270° (北から時計回りに測定、0°〜360°)
+    // - altitude: 地平線=0°, 天頂=90°, 地平線下=-90°
+    
+    // 変換手順:
+    // 1. ラジアンを度に変換
+    // 2. 南基準から北基準に変換（+180°）
+    // 3. 0°〜360°の範囲に正規化
+    let azimuthDegrees = (moonPosition.azimuth * 180 / Math.PI + 180);
+    
+    // 0°〜360°の範囲に正規化
+    while (azimuthDegrees < 0) azimuthDegrees += 360;
+    while (azimuthDegrees >= 360) azimuthDegrees -= 360;
+    
+    // デバッグ情報をログ出力
+    console.log('SunCalc raw data:', {
+        azimuthRadians: moonPosition.azimuth,
+        azimuthDegrees: moonPosition.azimuth * 180 / Math.PI,
+        convertedAzimuth: azimuthDegrees,
+        altitudeRadians: moonPosition.altitude,
+        altitudeDegrees: moonPosition.altitude * 180 / Math.PI
+    });
+    
     const altitudeDegrees = moonPosition.altitude * 180 / Math.PI;
 
     return {
@@ -37,6 +59,36 @@ export function getMoonData(lat: number, lon: number, ): MoonData {
       altitude: altitudeDegrees,
     };
   }
+
+/**
+ * SunCalcの座標系をテストするための関数
+ */
+export function testSunCalcCoordinates(lat: number, lon: number): void {
+    const now = new Date();
+    const sunPosition = SunCalc.getPosition(now, lat, lon);
+    const moonPosition = SunCalc.getMoonPosition(now, lat, lon);
+    
+    console.log('=== SunCalc座標系テスト ===');
+    console.log('現在時刻:', now.toLocaleString());
+    console.log('位置:', { lat, lon });
+    console.log('太陽位置 (ラジアン):', {
+        azimuth: sunPosition.azimuth,
+        altitude: sunPosition.altitude
+    });
+    console.log('太陽位置 (度):', {
+        azimuth: sunPosition.azimuth * 180 / Math.PI,
+        altitude: sunPosition.altitude * 180 / Math.PI
+    });
+    console.log('月位置 (ラジアン):', {
+        azimuth: moonPosition.azimuth,
+        altitude: moonPosition.altitude
+    });
+    console.log('月位置 (度):', {
+        azimuth: moonPosition.azimuth * 180 / Math.PI,
+        altitude: moonPosition.altitude * 180 / Math.PI
+    });
+    console.log('========================');
+}
 
 
 export function getMoonTimes(lat: number, lon: number, library: 'suncalc' | 'astronomia' = 'suncalc'): MoonTimes {

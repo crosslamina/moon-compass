@@ -1,6 +1,6 @@
 const deviceOrientationElement = document.getElementById('device-orientation');
 const geoInfoElement = document.getElementById('geo-info');
-import { getMoonData, getMoonTimes, MoonData, MoonTimes, drawMoonPhase, calculateAngleDifference, calculateBlinkIntensity, resetBlinkTimer } from './moon';
+import { getMoonData, getMoonTimes, MoonData, MoonTimes, drawMoonPhase, calculateAngleDifference, calculateBlinkIntensity, resetBlinkTimer, testSunCalcCoordinates } from './moon';
 // ...existing code...
 const illuminationElement = document.getElementById('illumination');
 import { getDirectionName } from './direction';
@@ -302,6 +302,15 @@ resetBlinkTimer();
 
 function positionUpdate(position: GeolocationPosition) {
     currentPosition = position;
+    
+    // SunCalcの座標系をテスト（デバッグ用）
+    testSunCalcCoordinates(position.coords.latitude, position.coords.longitude);
+    
+    // コンパス座標系をテスト（デバッグ用） - 初回のみ
+    if (!currentMoonData) {
+        testCompassCoordinates();
+    }
+    
     updateDisplay();
     
     // 位置情報取得成功時のステータス更新
@@ -454,21 +463,32 @@ function updateMoonDetector(moonData: MoonData) {
     if (compassNeedle) {
         // コンパス針をデバイスの向きに合わせて回転
         // deviceAlpha: 0°=北, 90°=東, 180°=南, 270°=西
-        // CSS: 上=0°, 右=90°, 下=180°, 左=270° (時計回り)
+        // CSS rotate: 0°=上, 90°=右, 180°=下, 270°=左 (時計回り)
         // 両方の座標系が一致しているので、そのまま使用
         compassNeedle.style.transform = `translate(-50%, -100%) rotate(${deviceAlpha}deg)`;
+        
+        // デバッグ用：デバイス方位の詳細を出力
+        console.log('Compass needle position debug:', {
+            deviceAlpha: deviceAlpha,
+            finalTransform: `translate(-50%, -100%) rotate(${deviceAlpha}deg)`
+        });
     }
     
     // 月のターゲット位置（コンパス円周上）
     if (moonTarget) {
         // 月の方位角をコンパス円周上の位置に変換
-        // moonAzimuth: 0°=北, 90°=東, 180°=南, 270°=西
-        // CSS座標系: 上=0°, 右=90度 なので、-90度で調整
-        const moonRadians = (moonAzimuth - 90) * Math.PI / 180;
-        const radius = 65; // コンパス半径から少し内側
-        const x = Math.cos(moonRadians) * radius;
-        const y = Math.sin(moonRadians) * radius;
-        moonTarget.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+        // moonAzimuth: 0°=北, 90°=東, 180°=南, 270°=西 (北から時計回り)
+        // CSS rotate: 0°=上, 90°=右, 180°=下, 270°=左 (上から時計回り)
+        // 
+        // コンパス針と同じ座標系を使用するため、rotate変換を使用
+        // 針と同様に、デバイスの方位角をそのまま使用
+        moonTarget.style.transform = `translate(-50%, -50%) rotate(${moonAzimuth}deg) translateY(-65px)`;
+        
+        // デバッグ用：月の位置計算の詳細を出力
+        console.log('Moon target position debug (rotate method):', {
+            moonAzimuth: moonAzimuth,
+            finalTransform: `translate(-50%, -50%) rotate(${moonAzimuth}deg) translateY(-65px)`
+        });
     }
 
     // === 高度インジケーター更新 ===
@@ -499,6 +519,7 @@ function updateMoonDetector(moonData: MoonData) {
     const totalAngleDiff = calculateAngleDifference(deviceAlpha, deviceElevation, moonAzimuth, clampedMoonAltitude);
     
     // 詳細なデバッグ情報を追加
+    console.log('=== コンパス位置の詳細デバッグ ===');
     console.log('Angle differences:', {
         deviceAlpha: deviceAlpha,
         moonAzimuth: moonAzimuth,
@@ -508,6 +529,26 @@ function updateMoonDetector(moonData: MoonData) {
         altitudeDiff: altitudeDiff,
         totalAngleDiff: totalAngleDiff
     });
+    
+    // 方位角の方向名を表示（分かりやすさのため）
+    const getDirectionFromAngle = (angle: number) => {
+        if (angle >= 0 && angle < 22.5) return '北';
+        if (angle >= 22.5 && angle < 67.5) return '北東';
+        if (angle >= 67.5 && angle < 112.5) return '東';
+        if (angle >= 112.5 && angle < 157.5) return '南東';
+        if (angle >= 157.5 && angle < 202.5) return '南';
+        if (angle >= 202.5 && angle < 247.5) return '南西';
+        if (angle >= 247.5 && angle < 292.5) return '西';
+        if (angle >= 292.5 && angle < 337.5) return '北西';
+        return '北';
+    };
+    
+    console.log('Direction comparison:', {
+        deviceDirection: `${deviceAlpha.toFixed(1)}° (${getDirectionFromAngle(deviceAlpha)})`,
+        moonDirection: `${moonAzimuth.toFixed(1)}° (${getDirectionFromAngle(moonAzimuth)})`,
+        shouldPointSameWay: azimuthDiff < 5 ? 'YES - ほぼ同じ方向' : 'NO - 異なる方向'
+    });
+    console.log('===========================');
 
     // === 探知状態の判定 ===
     
@@ -719,4 +760,36 @@ function correctOrientationForBrowser(alpha: number | null, userAgent: string): 
     }
     
     return alpha;
+}
+
+/**
+ * コンパス座標系の計算をテストする関数（デバッグ用）
+ */
+function testCompassCoordinates() {
+    console.log('=== コンパス座標系テスト ===');
+    
+    const testAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+    const radius = 65;
+    
+    testAngles.forEach(angle => {
+        const radians = angle * Math.PI / 180;
+        const x = Math.sin(radians) * radius;
+        const y = -Math.cos(radians) * radius;
+        
+        let expectedDirection = '';
+        switch(angle) {
+            case 0: expectedDirection = '上（北）'; break;
+            case 45: expectedDirection = '右上（北東）'; break;
+            case 90: expectedDirection = '右（東）'; break;
+            case 135: expectedDirection = '右下（南東）'; break;
+            case 180: expectedDirection = '下（南）'; break;
+            case 225: expectedDirection = '左下（南西）'; break;
+            case 270: expectedDirection = '左（西）'; break;
+            case 315: expectedDirection = '左上（北西）'; break;
+        }
+        
+        console.log(`${angle}° → (${x.toFixed(1)}, ${y.toFixed(1)}) - ${expectedDirection}`);
+    });
+    
+    console.log('========================');
 }
