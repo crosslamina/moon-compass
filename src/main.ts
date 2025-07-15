@@ -1,6 +1,6 @@
 const deviceOrientationElement = document.getElementById('device-orientation');
 const geoInfoElement = document.getElementById('geo-info');
-import { getMoonData, getMoonTimes, MoonData, MoonTimes } from './moon';
+import { getMoonData, getMoonTimes, MoonData, MoonTimes, drawMoonPhase } from './moon';
 // ...existing code...
 const illuminationElement = document.getElementById('illumination');
 import { getDirectionName } from './direction';
@@ -13,6 +13,7 @@ const altitudeElement = document.getElementById('altitude');
 const moonRiseElement = document.getElementById('moon-rise');
 const moonSetElement = document.getElementById('moon-set');
 const mapLinkElement = document.getElementById('map-link') as HTMLAnchorElement;
+const moonCanvas = document.getElementById('moon-canvas') as HTMLCanvasElement;
 
 
 let currentPosition: GeolocationPosition | null = null;
@@ -36,6 +37,8 @@ function updateDisplay() {
     const moonData = getMoonData(latitude, longitude);
     const moonTimes = getMoonTimes(latitude, longitude);
     const directionName = getDirectionName(moonData.azimuth);
+
+    console.log(moonData)
 
     if (moonDirectionElement) {
         moonDirectionElement.textContent = `方角: ${moonData.azimuth.toFixed(2)}° ${directionName}`;
@@ -63,6 +66,11 @@ function updateDisplay() {
     }
     if (mapLinkElement) {
         mapLinkElement.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
+    }
+
+    // 月の形を描画
+    if (moonCanvas) {
+        drawMoonPhase(moonCanvas, moonData);
     }
 }
 
