@@ -496,6 +496,9 @@ function updateMoonDetector(moonData: MoonData) {
     const deviceElevation = calculateDeviceElevation(deviceBeta);
     const clampedMoonAltitude = Math.max(-90, Math.min(90, moonAltitude)); // 月の高度も-90〜90度に制限
     
+    // 高度インジケーターのマーカー位置を更新
+    updateAltitudeMarkers(deviceElevation, clampedMoonAltitude);
+    
     // デバイスセンサーの値をログ出力（デバッグ用）
     console.log('Device orientation debug:', {
         rawBeta: deviceBeta,
@@ -548,6 +551,14 @@ function updateMoonDetector(moonData: MoonData) {
         moonDirection: `${moonAzimuth.toFixed(1)}° (${getDirectionFromAngle(moonAzimuth)})`,
         shouldPointSameWay: azimuthDiff < 5 ? 'YES - ほぼ同じ方向' : 'NO - 異なる方向'
     });
+    
+    console.log('Altitude comparison:', {
+        deviceElevation: `${deviceElevation.toFixed(1)}° (${deviceElevation >= 0 ? '地平線上' : '地平線下'})`,
+        moonAltitude: `${clampedMoonAltitude.toFixed(1)}° (${clampedMoonAltitude >= 0 ? '地平線上' : '地平線下'})`,
+        altitudeDiff: `${altitudeDiff.toFixed(1)}°`,
+        shouldPointSameElevation: altitudeDiff < 10 ? 'YES - ほぼ同じ高度' : 'NO - 異なる高度'
+    });
+    
     console.log('===========================');
 
     // === 探知状態の判定 ===
@@ -580,19 +591,6 @@ function updateMoonDetector(moonData: MoonData) {
         const locationText = moonAltitude < 0 ? '（地平線下）' : '';
         detectorStatusElement.textContent = `🔭 月を探しています...${locationText}（${blinkFreq}点滅）`;
         detectorStatusElement.className = 'detector-inactive';
-    }
-
-    // 月高度マーカーの表示調整（地平線下でも表示）
-    if (moonAltitudeMarker) {
-        if (moonAltitude < 0) {
-            // 地平線下では少し薄く表示
-            moonAltitudeMarker.style.opacity = '0.7';
-            moonAltitudeMarker.style.background = '#e67e22'; // オレンジ色に変更
-        } else {
-            // 地平線上では通常表示
-            moonAltitudeMarker.style.opacity = '1';
-            moonAltitudeMarker.style.background = '#2ecc71'; // 緑色
-        }
     }
 }
 
@@ -677,6 +675,67 @@ function calculateDeviceElevation(beta: number): number {
         // -90°を超えた分を徐々に下向きに変換
         // beta: -91° → 高度: -89°、beta: -180° → 高度: 0°
         return -180 - normalizedBeta;
+    }
+}
+
+/**
+ * 高度インジケーターのマーカー位置を更新
+ * @param deviceElevation デバイスの高度角（-90°〜90°）
+ * @param moonAltitude 月の高度角（-90°〜90°）
+ */
+function updateAltitudeMarkers(deviceElevation: number, moonAltitude: number) {
+    // 高度インジケーターのゲージ幅（CSSから取得）
+    const gaugeWidth = 200; // px（CSSの#altitude-gaugeのwidthと一致）
+    
+    /**
+     * 高度角（-90°〜90°）を高度ゲージの位置（0〜100%）に変換
+     * @param altitude 高度角（-90°〜90°）
+     * @returns ゲージ上の位置（0〜100%）
+     */
+    const altitudeToPosition = (altitude: number): number => {
+        // -90°〜90°の範囲を0〜100%にマッピング
+        // -90° → 0%（左端）
+        // 0°（地平線） → 50%（中央）
+        // 90° → 100%（右端）
+        return ((altitude + 90) / 180) * 100;
+    };
+    
+    // デバイス高度マーカーの位置を更新
+    if (deviceAltitudeMarker) {
+        const devicePosition = altitudeToPosition(deviceElevation);
+        const deviceLeftPx = (devicePosition / 100) * gaugeWidth - 4; // マーカー幅の半分（8px/2）をオフセット
+        deviceAltitudeMarker.style.left = `${deviceLeftPx}px`;
+        
+        console.log('Device altitude marker debug:', {
+            deviceElevation: deviceElevation,
+            devicePosition: devicePosition,
+            deviceLeftPx: deviceLeftPx
+        });
+    }
+    
+    // 月高度マーカーの位置を更新
+    if (moonAltitudeMarker) {
+        const moonPosition = altitudeToPosition(moonAltitude);
+        const moonLeftPx = (moonPosition / 100) * gaugeWidth - 4; // マーカー幅の半分（8px/2）をオフセット
+        moonAltitudeMarker.style.left = `${moonLeftPx}px`;
+        
+        // 月の高度に応じて色を変更（地平線下/上）
+        if (moonAltitude < 0) {
+            // 地平線下では少し薄く表示
+            moonAltitudeMarker.style.opacity = '0.7';
+            moonAltitudeMarker.style.background = '#e67e22'; // オレンジ色に変更
+        } else {
+            // 地平線上では通常表示
+            moonAltitudeMarker.style.opacity = '1';
+            moonAltitudeMarker.style.background = '#2ecc71'; // 緑色
+        }
+        
+        console.log('Moon altitude marker debug:', {
+            moonAltitude: moonAltitude,
+            moonPosition: moonPosition,
+            moonLeftPx: moonLeftPx,
+            isUnderHorizon: moonAltitude < 0
+        });
     }
 }
 
