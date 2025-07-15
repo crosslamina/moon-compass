@@ -22,6 +22,10 @@ export function getMoonData(lat: number, lon: number, ): MoonData {
     const moonPosition = SunCalc.getMoonPosition(now, lat, lon);
     const moonIllumination = SunCalc.getMoonIllumination(now);
 
+    // SunCalcの方位角を正しいコンパス方位角に変換
+    // SunCalc: 南=0度, 西=π/2, 北=π, 東=3π/2 (ラジアン, 南から西向きに測定)
+    // コンパス: 北=0度, 東=90度, 南=180度, 西=270度 (北から時計回りに測定)
+    // 変換式: コンパス方位 = (SunCalc方位 + π) * 180 / π = SunCalc度数 + 180
     const azimuthDegrees = (moonPosition.azimuth * 180 / Math.PI + 180) % 360;
     const altitudeDegrees = moonPosition.altitude * 180 / Math.PI;
 

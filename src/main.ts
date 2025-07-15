@@ -17,8 +17,10 @@ const moonCanvas = document.getElementById('moon-canvas') as HTMLCanvasElement;
 
 // 月探知機関連の要素
 const detectorStatusElement = document.getElementById('detector-status');
-const azimuthDifferenceElement = document.getElementById('azimuth-difference');
-const altitudeDifferenceElement = document.getElementById('altitude-difference');
+const compassNeedle = document.getElementById('compass-needle');
+const moonTarget = document.getElementById('moon-target');
+const deviceAltitudeMarker = document.getElementById('device-altitude-marker');
+const moonAltitudeMarker = document.getElementById('moon-altitude-marker');
 const permissionButton = document.getElementById('permission-button') as HTMLButtonElement;
 const locationPermissionButton = document.getElementById('location-permission-button') as HTMLButtonElement;
 const locationStatusElement = document.getElementById('location-status');
@@ -100,8 +102,8 @@ function updateDisplay() {
         let blinkIntensity = 1; // デフォルトは点滅なし
         
         if (deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
-            // デバイスの高度を計算（betaから変換）
-            const deviceElevation = Math.max(0, Math.min(90, 90 - deviceOrientation.beta));
+            // デバイスの高度を計算（betaから変換、-90〜90度の範囲）
+            const deviceElevation = Math.max(-90, Math.min(90, 90 - deviceOrientation.beta));
             
             // 角度差を計算
             const angleDiff = calculateAngleDifference(
@@ -129,7 +131,7 @@ setInterval(() => {
         
         // 月の点滅効果を更新（安定したタイミングで）
         if (moonCanvas) {
-            const deviceElevation = Math.max(0, Math.min(90, 90 - deviceOrientation.beta));
+            const deviceElevation = Math.max(-90, Math.min(90, 90 - deviceOrientation.beta));
             const angleDiff = calculateAngleDifference(
                 deviceOrientation.alpha,
                 deviceElevation,
@@ -350,10 +352,10 @@ if (locationPermissionButton) {
 setupGeolocation();
 
 /**
- * 月探知機の状態を更新
+ * 月探知機の状態を更新（直感的なインジケーター）
  */
 function updateMoonDetector(moonData: MoonData) {
-    if (!detectorStatusElement || !azimuthDifferenceElement || !altitudeDifferenceElement) {
+    if (!detectorStatusElement) {
         return;
     }
 
@@ -388,61 +390,65 @@ function updateMoonDetector(moonData: MoonData) {
         altitude: moonAltitude // 月の高度
     });
 
-    // === 現在の実装: alpha ↔ azimuth, beta ↔ altitude ===
+    // === 直感的なコンパス更新 ===
+    
+    // コンパス針の回転（デバイスの向き）
+    if (compassNeedle) {
+        // コンパス針は常に北を指すように、デバイスの回転とは逆方向に回転
+        // デバイスが東を向く（90度）時、針は西に回転（-90度）して北を指し続ける
+        compassNeedle.style.transform = `translate(-50%, -100%) rotate(${-deviceAlpha}deg)`;
+    }
+    
+    // 月のターゲット位置（コンパス円周上）
+    if (moonTarget) {
+        // 月の方位角をコンパス円周上の位置に変換
+        // CSS座標系: 上=0度, 右=90度 なので、-90度で調整
+        const moonRadians = (moonAzimuth - 90) * Math.PI / 180;
+        const radius = 65; // コンパス半径から少し内側
+        const x = Math.cos(moonRadians) * radius;
+        const y = Math.sin(moonRadians) * radius;
+        moonTarget.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+    }
+
+    // === 高度インジケーター更新 ===
+    
+    const deviceElevation = Math.max(-90, Math.min(90, 90 - deviceBeta)); // betaから高度に変換（-90〜90度）
+    const clampedMoonAltitude = Math.max(-90, Math.min(90, moonAltitude)); // 月の高度も-90〜90度に制限
+    
+    // デバイス高度マーカー（青）
+    if (deviceAltitudeMarker) {
+        const devicePos = ((deviceElevation + 90) / 180) * 184; // -90〜90度を0〜184pxに変換
+        deviceAltitudeMarker.style.left = `${devicePos}px`;
+    }
+    
+    // 月高度マーカー（緑）
+    if (moonAltitudeMarker) {
+        const moonPos = ((clampedMoonAltitude + 90) / 180) * 184; // -90〜90度を0〜184pxに変換
+        moonAltitudeMarker.style.left = `${moonPos}px`;
+    }
+
+    // === 角度差の計算 ===
+    
     let azimuthDiff = Math.abs(deviceAlpha - moonAzimuth);
     if (azimuthDiff > 180) {
         azimuthDiff = 360 - azimuthDiff; // 最短角度差を計算
     }
-
-    // 方向の判定（最短方向）
-    let azimuthDirection = '';
-    if (azimuthDiff > 5) { // 5度以上の差がある場合のみ表示
-        let angleDiff = moonAzimuth - deviceAlpha;
-        if (angleDiff > 180) angleDiff -= 360;
-        if (angleDiff < -180) angleDiff += 360;
-        azimuthDirection = angleDiff > 0 ? '→右に' : '←左に';
-    }
-
-    // デバイスの傾き（beta）を月の高度と比較
-    // betaは前後の傾き（0度=水平、90度=上向き、-90度=下向き）
-    // 月の高度は水平線からの角度（0度=水平線、90度=天頂）
-    const deviceElevation = Math.max(0, Math.min(90, 90 - deviceBeta)); // betaから高度に変換
-    const altitudeDiff = Math.abs(deviceElevation - moonAltitude);
-
-    // 全体の角度差を計算（点滅情報として表示）
-    const totalAngleDiff = calculateAngleDifference(deviceAlpha, deviceElevation, moonAzimuth, moonAltitude);
-    const blinkIntensity = calculateBlinkIntensity(totalAngleDiff, Date.now());
     
-    // 点滅間隔を計算（より正確な表示）
-    let blinkInterval = '';
-    if (totalAngleDiff <= 3) {
-        blinkInterval = '点滅停止';
-    } else if (totalAngleDiff >= 120) {
-        blinkInterval = '点滅なし';
-    } else {
-        const normalizedAngle = Math.max(0, Math.min(1, (120 - totalAngleDiff) / (120 - 3)));
-        const blinkPeriod = 2000 - (normalizedAngle * 1700); // ms
-        const intervalSeconds = (blinkPeriod / 1000).toFixed(1);
-        blinkInterval = `${intervalSeconds}秒間隔（規則的）`;
-    }
-    
-    // 方向差と高度差を表示（点滅情報を追加）
-    const altitudeDirection = altitudeDiff > 5 ? (deviceElevation > moonAltitude ? '↓下に' : '↑上に') : '';
-    
-    azimuthDifferenceElement.innerHTML = `方向差: ${azimuthDiff.toFixed(1)}° ${azimuthDirection}<br>` +
-        `デバイス: ${deviceAlpha.toFixed(1)}° / 月: ${moonAzimuth.toFixed(1)}°`;
-    
-    altitudeDifferenceElement.innerHTML = `高度差: ${altitudeDiff.toFixed(1)}° ${altitudeDirection}<br>` +
-        `デバイス: ${deviceElevation.toFixed(1)}° / 月: ${moonAltitude.toFixed(1)}°<br>` +
-        `<small>総角度差: ${totalAngleDiff.toFixed(1)}° (${blinkInterval})</small>`;
+    const altitudeDiff = Math.abs(deviceElevation - clampedMoonAltitude);
+    const totalAngleDiff = calculateAngleDifference(deviceAlpha, deviceElevation, moonAzimuth, clampedMoonAltitude);
 
-    // 探知状態の判定
+    // === 探知状態の判定 ===
+    
     const azimuthThreshold = 10; // 方向の許容差（度）
     const altitudeThreshold = 15; // 高度の許容差（度）
 
     if (azimuthDiff <= azimuthThreshold && altitudeDiff <= altitudeThreshold) {
         // 月を発見！
-        detectorStatusElement.textContent = '🌙 月を発見しました！';
+        if (moonAltitude < 0) {
+            detectorStatusElement.textContent = '🌙 地平線下の月を発見しました！';
+        } else {
+            detectorStatusElement.textContent = '🌙 月を発見しました！';
+        }
         detectorStatusElement.className = 'detector-found';
         
         // バイブレーション（対応デバイスのみ）
@@ -452,20 +458,28 @@ function updateMoonDetector(moonData: MoonData) {
     } else if (azimuthDiff <= azimuthThreshold * 2 && altitudeDiff <= altitudeThreshold * 2) {
         // 月に近づいている
         const blinkFreq = totalAngleDiff <= 20 ? '高速' : totalAngleDiff <= 40 ? '中速' : '低速';
-        detectorStatusElement.textContent = `🔍 月に近づいています...（${blinkFreq}点滅）`;
+        const locationText = moonAltitude < 0 ? '（地平線下）' : '';
+        detectorStatusElement.textContent = `🔍 月に近づいています...${locationText}（${blinkFreq}点滅）`;
         detectorStatusElement.className = 'detector-close';
     } else {
         // 月を探している
         const blinkFreq = totalAngleDiff >= 80 ? '点滅なし' : totalAngleDiff >= 60 ? 'ゆっくり' : '低速';
-        detectorStatusElement.textContent = `🔭 月を探しています...（${blinkFreq}点滅）`;
+        const locationText = moonAltitude < 0 ? '（地平線下）' : '';
+        detectorStatusElement.textContent = `🔭 月を探しています...${locationText}（${blinkFreq}点滅）`;
         detectorStatusElement.className = 'detector-inactive';
     }
 
-    // 月が地平線下にある場合の処理
-    if (moonAltitude < 0) {
-        detectorStatusElement.textContent = '🌙 月は地平線下にあります';
-        detectorStatusElement.className = 'detector-inactive';
-        altitudeDifferenceElement.innerHTML += '<br><small>月は現在見えません</small>';
+    // 月高度マーカーの表示調整（地平線下でも表示）
+    if (moonAltitudeMarker) {
+        if (moonAltitude < 0) {
+            // 地平線下では少し薄く表示
+            moonAltitudeMarker.style.opacity = '0.7';
+            moonAltitudeMarker.style.background = '#e67e22'; // オレンジ色に変更
+        } else {
+            // 地平線上では通常表示
+            moonAltitudeMarker.style.opacity = '1';
+            moonAltitudeMarker.style.background = '#2ecc71'; // 緑色
+        }
     }
 }
 

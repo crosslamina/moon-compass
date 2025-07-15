@@ -152,14 +152,161 @@ h1 {
     margin: 15px 0;
 }
 
-#azimuth-difference,
-#altitude-difference {
-    flex: 1;
-    margin: 0 5px;
-    padding: 10px;
-    background: rgba(44, 62, 80, 0.5);
-    border-radius: 5px;
-    font-size: 0.9em;
+/* 直感的な方向コンパス */
+#direction-compass {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+#compass-circle {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    border: 3px solid #3498db;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(52, 152, 219, 0.1), rgba(52, 152, 219, 0.05));
+    margin: 0 auto;
+}
+
+#compass-needle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 60px;
+    background: linear-gradient(to top, #e74c3c, #c0392b);
+    transform-origin: bottom center;
+    transform: translate(-50%, -100%) rotate(0deg);
+    border-radius: 2px;
+    transition: transform 0.3s ease;
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+}
+
+#moon-target {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    background: #f39c12;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    transition: transform 0.3s ease;
+    box-shadow: 0 0 15px rgba(243, 156, 18, 0.7);
+}
+
+#moon-target::before {
+    content: '🌙';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+}
+
+.compass-marker {
+    position: absolute;
+    color: #bdc3c7;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.compass-marker.north { top: -5px; left: 50%; transform: translateX(-50%); }
+.compass-marker.east { right: -10px; top: 50%; transform: translateY(-50%); }
+.compass-marker.south { bottom: -5px; left: 50%; transform: translateX(-50%); }
+.compass-marker.west { left: -10px; top: 50%; transform: translateY(-50%); }
+
+/* 高度インジケーター */
+#altitude-indicator {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.altitude-label {
+    color: #3498db;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+#altitude-gauge {
+    position: relative;
+    width: 200px;
+    height: 30px;
+    background: linear-gradient(to right, #34495e, #2c3e50);
+    border-radius: 15px;
+    margin: 0 auto;
+    border: 2px solid #3498db;
+}
+
+#device-altitude-marker {
+    position: absolute;
+    top: -5px;
+    width: 8px;
+    height: 40px;
+    background: #3498db;
+    border-radius: 4px;
+    transition: left 0.3s ease;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
+}
+
+#device-altitude-marker::before {
+    content: '📱';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+}
+
+#moon-altitude-marker {
+    position: absolute;
+    top: -5px;
+    width: 8px;
+    height: 40px;
+    background: #2ecc71;
+    border-radius: 4px;
+    transition: left 0.3s ease;
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.7);
+}
+
+#moon-altitude-marker::before {
+    content: '🌙';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+}
+
+.altitude-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #bdc3c7;
+    position: relative;
+}
+
+.altitude-scale::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -35px;
+    width: 2px;
+    height: 40px;
+    background: #95a5a6;
+    transform: translateX(-50%);
+}
+
+.altitude-scale::after {
+    content: '地平線';
+    position: absolute;
+    left: 50%;
+    top: -20px;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #95a5a6;
 }
 
 #detector-instructions {

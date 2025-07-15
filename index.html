@@ -18,13 +18,38 @@
             <button id="permission-button" style="display: none;">センサー権限を許可</button>
             <div id="location-status"></div>
             <div id="detector-status" class="detector-inactive">月を探しています...</div>
-            <div id="direction-indicator">
-                <div id="azimuth-difference"></div>
-                <div id="altitude-difference"></div>
+            
+            <!-- 直感的な方向指示器 -->
+            <div id="direction-compass">
+                <div id="compass-circle">
+                    <div id="compass-needle"></div>
+                    <div id="moon-target"></div>
+                    <div class="compass-marker north">N</div>
+                    <div class="compass-marker east">E</div>
+                    <div class="compass-marker south">S</div>
+                    <div class="compass-marker west">W</div>
+                </div>
             </div>
+            
+            <!-- 高度インジケーター -->
+            <div id="altitude-indicator">
+                <div class="altitude-label">高度</div>
+                <div id="altitude-gauge">
+                    <div id="device-altitude-marker"></div>
+                    <div id="moon-altitude-marker"></div>
+                    <div class="altitude-scale">
+                        <span>-90°</span>
+                        <span>-45°</span>
+                        <span>0°</span>
+                        <span>45°</span>
+                        <span>90°</span>
+                    </div>
+                </div>
+            </div>
+            
             <div id="detector-instructions">
-                <p>デバイスを月の方向に向けてください</p>
-                <p>方向と高度が一致すると通知されます</p>
+                <p>🧭 コンパス: 赤い針が北を指します。オレンジの月マークの方向にデバイスを向けてください</p>
+                <p>📐 高度: 青いマーカー（デバイス）を緑のマーカー（月）に合わせてください</p>
             </div>
         </div>
         
