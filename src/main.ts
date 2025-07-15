@@ -39,7 +39,7 @@ let deviceOrientation = {
 
 // 月探知機の更新をスロットリングするための変数
 let lastDetectorUpdate = 0;
-const DETECTOR_UPDATE_INTERVAL = 50; // 50ms間隔で更新（スムーズな応答性）
+const DETECTOR_UPDATE_INTERVAL = 200; // 200ms間隔で更新（敏感さを抑制）
 
 
 let currentPosition: GeolocationPosition | null = null;
@@ -143,7 +143,7 @@ setInterval(() => {
             drawMoonPhase(moonCanvas, currentMoonData, blinkIntensity);
         }
     }
-}, 50); // 50ms間隔でより滑らかな点滅制御
+}, 100); // 100ms間隔で滑らかだが敏感すぎない制御
 
 function getPhaseName(phase: number): string {
     if (phase < 0.03 || phase > 0.97) return '新月';
@@ -163,9 +163,14 @@ function handleOrientation(event: DeviceOrientationEvent) {
     const rawGamma = event.gamma;
 
     // センサー値にフィルタを適用
-    const filteredAlpha = applySensorFilter(rawAlpha, sensorFilter.alpha);
-    const filteredBeta = applySensorFilter(rawBeta, sensorFilter.beta);
-    const filteredGamma = applySensorFilter(rawGamma, sensorFilter.gamma);
+    const filteredAlpha = applySensorFilter(rawAlpha, sensorFilter.alpha, lastFilteredValues.alpha);
+    const filteredBeta = applySensorFilter(rawBeta, sensorFilter.beta, lastFilteredValues.beta);
+    const filteredGamma = applySensorFilter(rawGamma, sensorFilter.gamma, lastFilteredValues.gamma);
+
+    // フィルター済み値を保存
+    lastFilteredValues.alpha = filteredAlpha;
+    lastFilteredValues.beta = filteredBeta;
+    lastFilteredValues.gamma = filteredGamma;
 
     // ブラウザ固有の補正を適用
     const correctedAlpha = correctOrientationForBrowser(filteredAlpha, navigator.userAgent);
@@ -176,14 +181,17 @@ function handleOrientation(event: DeviceOrientationEvent) {
     deviceOrientation.gamma = filteredGamma;
 
     if (deviceOrientationElement) {
+        const deviceElevationForDisplay = deviceOrientation.beta ? calculateDeviceElevation(deviceOrientation.beta) : null;
         deviceOrientationElement.innerHTML = 
             `デバイス方位（alpha/コンパス）: ${correctedAlpha?.toFixed(1) ?? 'N/A'}°<br>` +
             `前後傾き（beta）: ${filteredBeta?.toFixed(1) ?? 'N/A'}°<br>` +
+            `計算された高度角: ${deviceElevationForDisplay?.toFixed(1) ?? 'N/A'}°<br>` +
             `左右傾き（gamma）: ${filteredGamma?.toFixed(1) ?? 'N/A'}°<br>` +
             `<small>alpha: 0°=北 90°=東 180°=南 270°=西<br>` +
             `beta: -90°=後傾 0°=水平 90°=前傾 ±180°=逆さま<br>` +
+            `高度角: -90°=真下 0°=水平 90°=真上<br>` +
             `gamma: 0°=水平 90°=右傾 -90°=左傾<br>` +
-            `フィルター: ${FILTER_SIZE}サンプル移動平均適用</small>`;
+            `フィルター: ${FILTER_SIZE}サンプル移動平均（閾値: ${CHANGE_THRESHOLD}°）適用</small>`;
     }
 
     // センサーの値が変わったら月探知機を即座に更新（スロットリング付き）
@@ -438,18 +446,6 @@ function updateMoonDetector(moonData: MoonData) {
     const moonAzimuth = moonData.azimuth;
     const moonAltitude = moonData.altitude;
 
-    // デバイスセンサーの値をログ出力（デバッグ用）
-    console.log('Device orientation:', {
-        alpha: deviceAlpha,  // コンパス方位
-        beta: deviceBeta,    // 前後傾き（生値）
-        elevation: calculateDeviceElevation(deviceBeta), // 計算された高度角
-        gamma: deviceOrientation.gamma // 左右傾き
-    });
-    console.log('Moon position:', {
-        azimuth: moonAzimuth, // 月の方位角
-        altitude: moonAltitude // 月の高度
-    });
-
     // === 直感的なコンパス更新 ===
     
     // コンパス針の回転（デバイスの向き）
@@ -474,6 +470,24 @@ function updateMoonDetector(moonData: MoonData) {
     
     const deviceElevation = calculateDeviceElevation(deviceBeta);
     const clampedMoonAltitude = Math.max(-90, Math.min(90, moonAltitude)); // 月の高度も-90〜90度に制限
+    
+    // デバイスセンサーの値をログ出力（デバッグ用）
+    console.log('Device orientation debug:', {
+        rawBeta: deviceBeta,
+        deviceElevation: deviceElevation,
+        alpha: deviceAlpha,  // コンパス方位
+        gamma: deviceOrientation.gamma // 左右傾き
+    });
+    console.log('Moon position debug:', {
+        azimuth: moonAzimuth, // 月の方位角
+        altitude: moonAltitude, // 月の高度
+        clampedAltitude: clampedMoonAltitude // 制限された月の高度
+    });
+    console.log('Angle differences:', {
+        azimuthDiff: Math.abs(deviceAlpha - moonAzimuth),
+        altitudeDiff: Math.abs(deviceElevation - clampedMoonAltitude),
+        totalAngleDiff: calculateAngleDifference(deviceAlpha, deviceElevation, moonAzimuth, clampedMoonAltitude)
+    });
     
     // デバイス高度マーカー（青）
     if (deviceAltitudeMarker) {
@@ -595,7 +609,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 /**
- * デバイスのベータ値から高度角を計算する
+ * デバイスのベータ値から高度角を計算する（改良版）
  * @param beta デバイスの前後傾き（-180度〜180度）
  * @returns 高度角（-90度〜90度）
  */
@@ -605,21 +619,25 @@ function calculateDeviceElevation(beta: number): number {
     while (normalizedBeta > 180) normalizedBeta -= 360;
     while (normalizedBeta < -180) normalizedBeta += 360;
     
-    // betaから高度角への変換
-    // beta: -90° = 後傾（下向き） → 高度: -90°
-    // beta: 0° = 水平 → 高度: 0°
-    // beta: 90° = 前傾（上向き） → 高度: 90°
-    // beta: ±180° = 逆さま → 高度: 0°（水平とみなす）
+    // 改良されたbetaから高度角への変換
+    // より直感的な操作感を実現するための調整
     
     if (normalizedBeta >= -90 && normalizedBeta <= 90) {
         // 通常の範囲：betaをそのまま高度として使用
+        // beta: -90° = 後傾（下向き） → 高度: -90°
+        // beta: 0° = 水平 → 高度: 0°
+        // beta: 90° = 前傾（上向き） → 高度: 90°
         return normalizedBeta;
     } else if (normalizedBeta > 90 && normalizedBeta <= 180) {
-        // 前に倒れすぎている場合：180度から引いた値を負の高度とする
-        return -(180 - normalizedBeta);
+        // 前に倒れすぎている場合：より自然な変換
+        // 90°を超えた分を徐々に下向きに変換
+        // beta: 91° → 高度: 89°、beta: 180° → 高度: 0°
+        return 180 - normalizedBeta;
     } else {
-        // 後ろに倒れすぎている場合：-180度から引いた値を負の高度とする
-        return -(-180 - normalizedBeta);
+        // 後ろに倒れすぎている場合：より自然な変換
+        // -90°を超えた分を徐々に下向きに変換
+        // beta: -91° → 高度: -89°、beta: -180° → 高度: 0°
+        return -180 - normalizedBeta;
     }
 }
 
@@ -630,15 +648,24 @@ let sensorFilter = {
     gamma: [] as number[]
 };
 
-const FILTER_SIZE = 5; // 移動平均のサンプル数
+// 前回の値を保存（変化量チェック用）
+let lastFilteredValues = {
+    alpha: null as number | null,
+    beta: null as number | null,
+    gamma: null as number | null
+};
+
+const FILTER_SIZE = 10; // 移動平均のサンプル数（敏感さを抑制するため増加）
+const CHANGE_THRESHOLD = 2; // 変化の最小閾値（度）- これ以下の変化は無視
 
 /**
  * センサー値にローパスフィルターを適用
  * @param value 新しいセンサー値
  * @param filterArray フィルター用の配列
+ * @param lastValue 前回のフィルター済み値
  * @returns フィルター済みの値
  */
-function applySensorFilter(value: number | null, filterArray: number[]): number | null {
+function applySensorFilter(value: number | null, filterArray: number[], lastValue: number | null): number | null {
     if (value === null) return null;
     
     // 配列に新しい値を追加
@@ -651,7 +678,25 @@ function applySensorFilter(value: number | null, filterArray: number[]): number 
     
     // 移動平均を計算
     const sum = filterArray.reduce((acc, val) => acc + val, 0);
-    return sum / filterArray.length;
+    const filteredValue = sum / filterArray.length;
+    
+    // 前回値がある場合、変化量をチェック
+    if (lastValue !== null) {
+        const change = Math.abs(filteredValue - lastValue);
+        
+        // 変化が閾値以下の場合、前回値を返す（ノイズ除去）
+        if (change < CHANGE_THRESHOLD) {
+            return lastValue;
+        }
+        
+        // 大きな変化の場合は指数移動平均でさらに滑らかにする
+        if (change > 30) { // 30度以上の大きな変化
+            const alpha = 0.3; // 指数移動平均の係数（小さいほど滑らか）
+            return lastValue + alpha * (filteredValue - lastValue);
+        }
+    }
+    
+    return filteredValue;
 }
 
 /**
