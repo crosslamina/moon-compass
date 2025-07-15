@@ -69,7 +69,9 @@ function updateDisplay() {
     currentMoonData = moonData;
 
     if (moonDirectionElement) {
-        moonDirectionElement.textContent = `方角: ${moonData.azimuth.toFixed(2)}° ${directionName}`;
+        const azimuthDiff = Math.abs(deviceOrientation.alpha ?? 0 - moonData.azimuth);
+        const shortestDiff = azimuthDiff > 180 ? 360 - azimuthDiff : azimuthDiff;
+        moonDirectionElement.textContent = `方角: ${moonData.azimuth.toFixed(1)}° ${directionName} (差: ${shortestDiff.toFixed(1)}°)`;
     }
     if (distanceElement) {
         distanceElement.textContent = `距離: ${moonData.distance.toFixed(0)} km`;
@@ -450,15 +452,18 @@ function updateMoonDetector(moonData: MoonData) {
     
     // コンパス針の回転（デバイスの向き）
     if (compassNeedle) {
-        // コンパス針は常に北を指すように、デバイスの回転とは逆方向に回転
-        // デバイスが東を向く（90度）時、針は西に回転（-90度）して北を指し続ける
-        compassNeedle.style.transform = `translate(-50%, -100%) rotate(${-deviceAlpha}deg)`;
+        // コンパス針をデバイスの向きに合わせて回転
+        // deviceAlpha: 0°=北, 90°=東, 180°=南, 270°=西
+        // CSS: 上=0°, 右=90°, 下=180°, 左=270° (時計回り)
+        // 両方の座標系が一致しているので、そのまま使用
+        compassNeedle.style.transform = `translate(-50%, -100%) rotate(${deviceAlpha}deg)`;
     }
     
     // 月のターゲット位置（コンパス円周上）
     if (moonTarget) {
         // 月の方位角をコンパス円周上の位置に変換
-        // CSS座標系: 上=0度, 右=90度 なので、-90度で調整
+        // moonAzimuth: 0°=北, 90°=東, 180°=南, 270°=西
+        // CSS座標系: 上=0°, 右=90度 なので、-90度で調整
         const moonRadians = (moonAzimuth - 90) * Math.PI / 180;
         const radius = 65; // コンパス半径から少し内側
         const x = Math.cos(moonRadians) * radius;
@@ -483,24 +488,6 @@ function updateMoonDetector(moonData: MoonData) {
         altitude: moonAltitude, // 月の高度
         clampedAltitude: clampedMoonAltitude // 制限された月の高度
     });
-    console.log('Angle differences:', {
-        azimuthDiff: Math.abs(deviceAlpha - moonAzimuth),
-        altitudeDiff: Math.abs(deviceElevation - clampedMoonAltitude),
-        totalAngleDiff: calculateAngleDifference(deviceAlpha, deviceElevation, moonAzimuth, clampedMoonAltitude)
-    });
-    
-    // デバイス高度マーカー（青）
-    if (deviceAltitudeMarker) {
-        const devicePos = ((deviceElevation + 90) / 180) * 184; // -90〜90度を0〜184pxに変換
-        deviceAltitudeMarker.style.left = `${devicePos}px`;
-    }
-    
-    // 月高度マーカー（緑）
-    if (moonAltitudeMarker) {
-        const moonPos = ((clampedMoonAltitude + 90) / 180) * 184; // -90〜90度を0〜184pxに変換
-        moonAltitudeMarker.style.left = `${moonPos}px`;
-    }
-
     // === 角度差の計算 ===
     
     let azimuthDiff = Math.abs(deviceAlpha - moonAzimuth);
@@ -510,6 +497,17 @@ function updateMoonDetector(moonData: MoonData) {
     
     const altitudeDiff = Math.abs(deviceElevation - clampedMoonAltitude);
     const totalAngleDiff = calculateAngleDifference(deviceAlpha, deviceElevation, moonAzimuth, clampedMoonAltitude);
+    
+    // 詳細なデバッグ情報を追加
+    console.log('Angle differences:', {
+        deviceAlpha: deviceAlpha,
+        moonAzimuth: moonAzimuth,
+        rawAzimuthDiff: deviceAlpha - moonAzimuth,
+        absAzimuthDiff: Math.abs(deviceAlpha - moonAzimuth),
+        shortestAzimuthDiff: azimuthDiff,
+        altitudeDiff: altitudeDiff,
+        totalAngleDiff: totalAngleDiff
+    });
 
     // === 探知状態の判定 ===
     
