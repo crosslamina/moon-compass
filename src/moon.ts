@@ -70,10 +70,6 @@ export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData, bli
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 点滅効果のためのアルファ値を計算
-    const alpha = 0.3 + (0.7 * blinkIntensity); // 最小30%、最大100%の透明度
-    ctx.globalAlpha = alpha;
-
     const phase = moonData.phase;
     const illumination = moonData.illumination;
 
@@ -107,6 +103,11 @@ export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData, bli
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     ctx.stroke();
 
+    // 点滅リングの描画（月の周辺）- 角度差が大きい時のみ表示
+    if (blinkIntensity < 0.99) {
+        drawBlinkRing(ctx, centerX, centerY, radius, blinkIntensity);
+    }
+
     // アルファ値をリセット
     ctx.globalAlpha = 1;
 
@@ -120,6 +121,70 @@ export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData, bli
     // 月相名を表示
     const phaseName = getPhaseName(phase, illumination);
     ctx.fillText(`${phaseName}`, centerX, canvas.height - 10);
+}
+
+/**
+ * 月の周辺に点滅リングを描画（規則的なパターン）
+ * @param ctx - 描画コンテキスト
+ * @param centerX - 中心X座標
+ * @param centerY - 中心Y座標
+ * @param radius - 月の半径
+ * @param blinkIntensity - 点滅強度（0-1）
+ */
+function drawBlinkRing(
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    centerY: number,
+    radius: number,
+    blinkIntensity: number
+): void {
+    // 点滅強度に基づいてリングの透明度を設定
+    const alpha = blinkIntensity;
+    
+    // 固定サイズのリング（安定した表示）
+    const outerRadius = radius + 12;
+    const innerRadius = radius + 6;
+    
+    // グラデーションで光る効果を作成
+    const gradient = ctx.createRadialGradient(
+        centerX, centerY, innerRadius,
+        centerX, centerY, outerRadius
+    );
+    
+    // 点滅強度に応じて色を変化（規則的な色変化）
+    if (blinkIntensity > 0.7) {
+        // 非常に近い：明るい金色
+        gradient.addColorStop(0, `rgba(255, 215, 0, ${alpha * 0.9})`);
+        gradient.addColorStop(0.5, `rgba(255, 165, 0, ${alpha * 0.7})`);
+        gradient.addColorStop(1, `rgba(255, 140, 0, 0)`);
+    } else if (blinkIntensity > 0.4) {
+        // 中程度：オレンジ色
+        gradient.addColorStop(0, `rgba(255, 165, 0, ${alpha * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(255, 140, 0, ${alpha * 0.6})`);
+        gradient.addColorStop(1, `rgba(255, 69, 0, 0)`);
+    } else {
+        // 遠い：青白い色
+        gradient.addColorStop(0, `rgba(135, 206, 250, ${alpha * 0.7})`);
+        gradient.addColorStop(0.5, `rgba(100, 149, 237, ${alpha * 0.5})`);
+        gradient.addColorStop(1, `rgba(70, 130, 180, 0)`);
+    }
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI);
+    ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI, true); // 内側を切り抜く
+    ctx.fill();
+    
+    // 内側のシャープなリング（規則的な太さ）
+    const ringColor = blinkIntensity > 0.6 ? 
+        `rgba(255, 215, 0, ${alpha})` : 
+        `rgba(135, 206, 250, ${alpha})`;
+    
+    ctx.strokeStyle = ringColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius + 5, 0, 2 * Math.PI);
+    ctx.stroke();
 }
 
 /**
@@ -306,34 +371,55 @@ export function calculateAngleDifference(
     return totalDiff;
 }
 
+// 点滅の基準時刻を保存（アプリ開始時に設定）
+let blinkStartTime = Date.now();
+
 /**
- * 角度差に基づいて点滅パターンを計算
+ * 点滅の基準時刻をリセット
+ */
+export function resetBlinkTimer(): void {
+    blinkStartTime = Date.now();
+}
+
+/**
+ * 角度差に基づいて点滅パターンを計算（完全に規則的な等間隔点滅）
  * @param angleDifference - 角度差（度）
  * @param timestamp - 現在時刻（ミリ秒）
  * @returns 点滅強度（0-1）
  */
 export function calculateBlinkIntensity(angleDifference: number, timestamp: number): number {
     // 角度差が小さいほど高速点滅
-    const maxAngle = 90; // 最大角度差
-    const minAngle = 5;  // 最小角度差（これ以下で最高速点滅）
-    
-    // 角度差を0-1の範囲に正規化（小さいほど1に近づく）
-    const normalizedAngle = Math.max(0, Math.min(1, (maxAngle - angleDifference) / (maxAngle - minAngle)));
+    const maxAngle = 120; // 最大角度差
+    const minAngle = 3;   // 最小角度差（これ以下で点滅停止）
     
     if (angleDifference <= minAngle) {
-        // 非常に近い場合：常時点灯
+        // 非常に近い場合：点滅停止（リングも非表示）
         return 1;
     } else if (angleDifference >= maxAngle) {
         // 遠い場合：点滅なし
         return 1;
     } else {
-        // 距離に応じた点滅速度
-        const blinkSpeed = 0.5 + (normalizedAngle * 4); // 0.5Hz〜4.5Hzの範囲
-        const blinkCycle = Math.sin(timestamp * blinkSpeed * Math.PI / 1000);
+        // 角度差を0-1の範囲に正規化（小さいほど1に近づく）
+        const normalizedAngle = Math.max(0, Math.min(1, (maxAngle - angleDifference) / (maxAngle - minAngle)));
         
-        // 点滅の振幅も距離に応じて調整
-        const amplitude = 0.3 + (normalizedAngle * 0.7); // 30%〜100%の振幅
+        // 規則的な点滅速度の計算（基準時刻からの経過時間を使用）
+        const elapsedTime = timestamp - blinkStartTime;
         
-        return 0.5 + (blinkCycle * amplitude * 0.5);
+        // 遠い時: 2秒間隔、近い時: 0.3秒間隔
+        const blinkPeriod = 2000 - (normalizedAngle * 1700); // 2000ms → 300ms
+        
+        // 完全に規則的な点滅サイクルを計算
+        const cyclePosition = (elapsedTime % blinkPeriod) / blinkPeriod; // 0-1の範囲
+        
+        // 点滅のON/OFF状態を明確にする（前半50%がON、後半50%がOFF）
+        const isOn = cyclePosition < 0.5;
+        
+        if (isOn) {
+            // 点灯時：距離に応じた明るさ（近いほど明るい）
+            return 0.3 + (normalizedAngle * 0.7); // 30%〜100%の明るさ
+        } else {
+            // 消灯時：完全に暗く
+            return 0.1; // ほぼ見えない状態
+        }
     }
 }

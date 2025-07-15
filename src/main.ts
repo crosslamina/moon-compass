@@ -1,6 +1,6 @@
 const deviceOrientationElement = document.getElementById('device-orientation');
 const geoInfoElement = document.getElementById('geo-info');
-import { getMoonData, getMoonTimes, MoonData, MoonTimes, drawMoonPhase, calculateAngleDifference, calculateBlinkIntensity } from './moon';
+import { getMoonData, getMoonTimes, MoonData, MoonTimes, drawMoonPhase, calculateAngleDifference, calculateBlinkIntensity, resetBlinkTimer } from './moon';
 // ...existing code...
 const illuminationElement = document.getElementById('illumination');
 import { getDirectionName } from './direction';
@@ -60,8 +60,6 @@ function updateDisplay() {
 
     // 現在の月データを保存
     currentMoonData = moonData;
-
-    console.log(moonData)
 
     if (moonDirectionElement) {
         moonDirectionElement.textContent = `方角: ${moonData.azimuth.toFixed(2)}° ${directionName}`;
@@ -124,7 +122,7 @@ setInterval(() => {
     if (currentMoonData && (deviceOrientation.alpha !== null && deviceOrientation.beta !== null)) {
         updateMoonDetector(currentMoonData);
         
-        // 月の点滅効果を更新
+        // 月の点滅効果を更新（安定したタイミングで）
         if (moonCanvas) {
             const deviceElevation = Math.max(0, Math.min(90, 90 - deviceOrientation.beta));
             const angleDiff = calculateAngleDifference(
@@ -137,7 +135,7 @@ setInterval(() => {
             drawMoonPhase(moonCanvas, currentMoonData, blinkIntensity);
         }
     }
-}, 100); // 100ms間隔でスムーズな応答性を保持
+}, 50); // 50ms間隔でより滑らかな点滅制御
 
 function getPhaseName(phase: number): string {
     if (phase < 0.03 || phase > 0.97) return '新月';
@@ -222,6 +220,9 @@ async function setupDeviceOrientation() {
 
 // ページ読み込み時にセットアップ
 setupDeviceOrientation();
+
+// 点滅タイマーを初期化
+resetBlinkTimer();
 
 function positionUpdate(position: GeolocationPosition) {
     currentPosition = position;
@@ -407,6 +408,19 @@ function updateMoonDetector(moonData: MoonData) {
     const totalAngleDiff = calculateAngleDifference(deviceAlpha, deviceElevation, moonAzimuth, moonAltitude);
     const blinkIntensity = calculateBlinkIntensity(totalAngleDiff, Date.now());
     
+    // 点滅間隔を計算（より正確な表示）
+    let blinkInterval = '';
+    if (totalAngleDiff <= 3) {
+        blinkInterval = '点滅停止';
+    } else if (totalAngleDiff >= 120) {
+        blinkInterval = '点滅なし';
+    } else {
+        const normalizedAngle = Math.max(0, Math.min(1, (120 - totalAngleDiff) / (120 - 3)));
+        const blinkPeriod = 2000 - (normalizedAngle * 1700); // ms
+        const intervalSeconds = (blinkPeriod / 1000).toFixed(1);
+        blinkInterval = `${intervalSeconds}秒間隔（規則的）`;
+    }
+    
     // 方向差と高度差を表示（点滅情報を追加）
     const altitudeDirection = altitudeDiff > 5 ? (deviceElevation > moonAltitude ? '↓下に' : '↑上に') : '';
     
@@ -415,7 +429,7 @@ function updateMoonDetector(moonData: MoonData) {
     
     altitudeDifferenceElement.innerHTML = `高度差: ${altitudeDiff.toFixed(1)}° ${altitudeDirection}<br>` +
         `デバイス: ${deviceElevation.toFixed(1)}° / 月: ${moonAltitude.toFixed(1)}°<br>` +
-        `<small>総角度差: ${totalAngleDiff.toFixed(1)}° (点滅強度: ${(blinkIntensity * 100).toFixed(0)}%)</small>`;
+        `<small>総角度差: ${totalAngleDiff.toFixed(1)}° (${blinkInterval})</small>`;
 
     // 探知状態の判定
     const azimuthThreshold = 10; // 方向の許容差（度）
@@ -423,7 +437,7 @@ function updateMoonDetector(moonData: MoonData) {
 
     if (azimuthDiff <= azimuthThreshold && altitudeDiff <= altitudeThreshold) {
         // 月を発見！
-        detectorStatusElement.textContent = '🌙 月を発見しました！（点滅停止）';
+        detectorStatusElement.textContent = '🌙 月を発見しました！';
         detectorStatusElement.className = 'detector-found';
         
         // バイブレーション（対応デバイスのみ）
@@ -432,13 +446,13 @@ function updateMoonDetector(moonData: MoonData) {
         }
     } else if (azimuthDiff <= azimuthThreshold * 2 && altitudeDiff <= altitudeThreshold * 2) {
         // 月に近づいている
-        const blinkStatus = totalAngleDiff <= 30 ? '高速点滅' : '点滅中';
-        detectorStatusElement.textContent = `🔍 月に近づいています...（${blinkStatus}）`;
+        const blinkFreq = totalAngleDiff <= 20 ? '高速' : totalAngleDiff <= 40 ? '中速' : '低速';
+        detectorStatusElement.textContent = `🔍 月に近づいています...（${blinkFreq}点滅）`;
         detectorStatusElement.className = 'detector-close';
     } else {
         // 月を探している
-        const blinkStatus = totalAngleDiff >= 60 ? '点滅なし' : '低速点滅';
-        detectorStatusElement.textContent = `🔭 月を探しています...（${blinkStatus}）`;
+        const blinkFreq = totalAngleDiff >= 80 ? '点滅なし' : totalAngleDiff >= 60 ? 'ゆっくり' : '低速';
+        detectorStatusElement.textContent = `🔭 月を探しています...（${blinkFreq}点滅）`;
         detectorStatusElement.className = 'detector-inactive';
     }
 
