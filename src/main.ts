@@ -25,27 +25,27 @@ const permissionButton = document.getElementById('permission-button') as HTMLBut
 const locationPermissionButton = document.getElementById('location-permission-button') as HTMLButtonElement;
 const locationStatusElement = document.getElementById('location-status');
 
-// 音波探知機関連の要素
-const sonarCanvas = document.getElementById('sonar-canvas') as HTMLCanvasElement;
-const volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
-const muteButton = document.getElementById('mute-button') as HTMLButtonElement;
+// 音波探知機関連の要素（無効化）
+// const sonarCanvas = document.getElementById('sonar-canvas') as HTMLCanvasElement;
+// const volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
+// const muteButton = document.getElementById('mute-button') as HTMLButtonElement;
 
-// レーダー探知機関連の要素
-const radarCanvas = document.getElementById('radar-canvas') as HTMLCanvasElement;
-const radarVolumeSlider = document.getElementById('radar-volume-slider') as HTMLInputElement;
-const radarMuteButton = document.getElementById('radar-mute-button') as HTMLButtonElement;
-const sweepSpeedSlider = document.getElementById('sweep-speed-slider') as HTMLInputElement;
-const radarDistanceElement = document.getElementById('radar-distance');
-const radarBearingElement = document.getElementById('radar-bearing');
-const radarElevationElement = document.getElementById('radar-elevation');
+// レーダー探知機関連の要素（無効化）
+// const radarCanvas = document.getElementById('radar-canvas') as HTMLCanvasElement;
+// const radarVolumeSlider = document.getElementById('radar-volume-slider') as HTMLInputElement;
+// const radarMuteButton = document.getElementById('radar-mute-button') as HTMLButtonElement;
+// const sweepSpeedSlider = document.getElementById('sweep-speed-slider') as HTMLInputElement;
+// const radarDistanceElement = document.getElementById('radar-distance');
+// const radarBearingElement = document.getElementById('radar-bearing');
+// const radarElevationElement = document.getElementById('radar-elevation');
 
-// 探知機タブ関連の要素
-const sonarTab = document.getElementById('sonar-tab') as HTMLButtonElement;
-const radarTab = document.getElementById('radar-tab') as HTMLButtonElement;
-const compassTab = document.getElementById('compass-tab') as HTMLButtonElement;
-const sonarDetector = document.getElementById('sonar-detector');
-const radarDetector = document.getElementById('radar-detector');
-const compassDetector = document.getElementById('compass-detector');
+// 探知機タブ関連の要素（無効化）
+// const sonarTab = document.getElementById('sonar-tab') as HTMLButtonElement;
+// const radarTab = document.getElementById('radar-tab') as HTMLButtonElement;
+// const compassTab = document.getElementById('compass-tab') as HTMLButtonElement;
+// const sonarDetector = document.getElementById('sonar-detector');
+// const radarDetector = document.getElementById('radar-detector');
+// const compassDetector = document.getElementById('compass-detector');
 
 // 磁気コンパス関連の要素
 const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasElement;
@@ -159,7 +159,7 @@ let radarState: RadarState = {
 };
 
 let compassState: CompassState = {
-    isActive: false,
+    isActive: true,
     magneticField: 0,
     compassBearing: 0,
     deviationAngle: 0,
@@ -174,7 +174,7 @@ let compassState: CompassState = {
 };
 
 // 現在アクティブな探知機
-let activeDetector: 'sonar' | 'radar' | 'compass' = 'sonar';
+let activeDetector: 'sonar' | 'radar' | 'compass' = 'compass';
 
 // オーディオシステム
 class SonarAudio {
@@ -928,86 +928,86 @@ function startSonarAnimation() {
 // 音波探知機の初期化
 async function initializeSonar() {
     // オーディオシステムの初期化
-    await sonarAudio.initialize();
-    await radarAudio.initialize();
+    // await sonarAudio.initialize();
+    // await radarAudio.initialize();
     await compassAudio.initialize();
     
-    // ソナーキャンバスのサイズ設定
-    if (sonarCanvas) {
-        sonarCanvas.width = 300;
-        sonarCanvas.height = 300;
-    }
+    // ソナーキャンバスのサイズ設定（無効化）
+    // if (sonarCanvas) {
+    //     sonarCanvas.width = 300;
+    //     sonarCanvas.height = 300;
+    // }
     
-    // レーダーキャンバスのサイズ設定
-    if (radarCanvas) {
-        radarCanvas.width = 320;
-        radarCanvas.height = 320;
-    }
+    // レーダーキャンバスのサイズ設定（無効化）
+    // if (radarCanvas) {
+    //     radarCanvas.width = 320;
+    //     radarCanvas.height = 320;
+    // }
     
-    // タブイベントリスナー
-    if (sonarTab && radarTab && compassTab) {
-        sonarTab.addEventListener('click', () => switchDetector('sonar'));
-        radarTab.addEventListener('click', () => switchDetector('radar'));
-        compassTab.addEventListener('click', () => switchDetector('compass'));
-    }
+    // タブイベントリスナー（無効化）
+    // if (sonarTab && radarTab && compassTab) {
+    //     sonarTab.addEventListener('click', () => switchDetector('sonar'));
+    //     radarTab.addEventListener('click', () => switchDetector('radar'));
+    //     compassTab.addEventListener('click', () => switchDetector('compass'));
+    // }
     
-    // 音量スライダーのイベントリスナー（ソナー）
-    if (volumeSlider) {
-        volumeSlider.value = '30'; // 初期音量30%
-        volumeSlider.addEventListener('input', (e) => {
-            const volume = parseInt((e.target as HTMLInputElement).value) / 100;
-            sonarAudio.setVolume(volume);
-        });
-    }
+    // 音量スライダーのイベントリスナー（ソナー）（無効化）
+    // if (volumeSlider) {
+    //     volumeSlider.value = '30'; // 初期音量30%
+    //     volumeSlider.addEventListener('input', (e) => {
+    //         const volume = parseInt((e.target as HTMLInputElement).value) / 100;
+    //         sonarAudio.setVolume(volume);
+    //     });
+    // }
     
-    // ミュートボタンのイベントリスナー（ソナー）
-    if (muteButton) {
-        muteButton.addEventListener('click', () => {
-            const isMuted = muteButton.classList.contains('muted');
-            sonarAudio.setMuted(!isMuted);
-            
-            if (isMuted) {
-                muteButton.classList.remove('muted');
-                muteButton.textContent = '🔊';
-            } else {
-                muteButton.classList.add('muted');
-                muteButton.textContent = '🔇';
-            }
-        });
-    }
+    // ミュートボタンのイベントリスナー（ソナー）（無効化）
+    // if (muteButton) {
+    //     muteButton.addEventListener('click', () => {
+    //         const isMuted = muteButton.classList.contains('muted');
+    //         sonarAudio.setMuted(!isMuted);
+    //         
+    //         if (isMuted) {
+    //             muteButton.classList.remove('muted');
+    //             muteButton.textContent = '🔊';
+    //         } else {
+    //             muteButton.classList.add('muted');
+    //             muteButton.textContent = '🔇';
+    //         }
+    //     });
+    // }
     
-    // レーダー音量スライダーのイベントリスナー
-    if (radarVolumeSlider) {
-        radarVolumeSlider.value = '40'; // 初期音量40%
-        radarVolumeSlider.addEventListener('input', (e) => {
-            const volume = parseInt((e.target as HTMLInputElement).value) / 100;
-            radarAudio.setVolume(volume);
-        });
-    }
+    // レーダー音量スライダーのイベントリスナー（無効化）
+    // if (radarVolumeSlider) {
+    //     radarVolumeSlider.value = '40'; // 初期音量40%
+    //     radarVolumeSlider.addEventListener('input', (e) => {
+    //         const volume = parseInt((e.target as HTMLInputElement).value) / 100;
+    //         radarAudio.setVolume(volume);
+    //     });
+    // }
     
-    // レーダーミュートボタンのイベントリスナー
-    if (radarMuteButton) {
-        radarMuteButton.addEventListener('click', () => {
-            const isMuted = radarMuteButton.classList.contains('muted');
-            radarAudio.setMuted(!isMuted);
-            
-            if (isMuted) {
-                radarMuteButton.classList.remove('muted');
-                radarMuteButton.textContent = '🔊';
-            } else {
-                radarMuteButton.classList.add('muted');
-                radarMuteButton.textContent = '🔇';
-            }
-        });
-    }
+    // レーダーミュートボタンのイベントリスナー（無効化）
+    // if (radarMuteButton) {
+    //     radarMuteButton.addEventListener('click', () => {
+    //         const isMuted = radarMuteButton.classList.contains('muted');
+    //         radarAudio.setMuted(!isMuted);
+    //         
+    //         if (isMuted) {
+    //             radarMuteButton.classList.remove('muted');
+    //             radarMuteButton.textContent = '🔊';
+    //         } else {
+    //             radarMuteButton.classList.add('muted');
+    //             radarMuteButton.textContent = '🔇';
+    //         }
+    //     });
+    // }
     
-    // スイープ速度スライダーのイベントリスナー
-    if (sweepSpeedSlider) {
-        sweepSpeedSlider.value = '3'; // 初期速度
-        sweepSpeedSlider.addEventListener('input', (e) => {
-            radarState.sweepSpeed = parseInt((e.target as HTMLInputElement).value);
-        });
-    }
+    // スイープ速度スライダーのイベントリスナー（無効化）
+    // if (sweepSpeedSlider) {
+    //     sweepSpeedSlider.value = '3'; // 初期速度
+    //     sweepSpeedSlider.addEventListener('input', (e) => {
+    //         radarState.sweepSpeed = parseInt((e.target as HTMLInputElement).value);
+    //     });
+    // }
     
     // 磁気コンパス音量スライダーのイベントリスナー
     if (compassVolumeSlider) {
@@ -1045,7 +1045,7 @@ async function initializeSonar() {
     // アニメーション開始
     startSonarAnimation();
     
-    console.log('✅ 探知機システムを初期化しました');
+    console.log('✅ 磁気コンパスシステムを初期化しました');
 }
 
 // ページ読み込み時に音波探知機を初期化
