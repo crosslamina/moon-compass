@@ -613,11 +613,40 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
         altitudeMatchElement.textContent = `方向一致度: ${directionMatchPercentage.toFixed(1)}%`;
     }
     if (altitudeDetailElement) {
-        const deviceText = deviceOrientation.alpha !== null ? 
-            `${deviceDirection.toFixed(1)}°` : '--';
-        const moonText = currentMoonData ? `${moonDirection.toFixed(1)}°` : '--';
-        altitudeDetailElement.textContent = `デバイス角度: ${deviceText} | 月の角度: ${moonText}`;
+        let deviceElevationText = '--';
+        let moonAltitudeText = '--';
+        let needleLengthInfo = '';
+        
+        if (deviceOrientation.beta !== null) {
+            const deviceElev = calculateDeviceElevation(deviceOrientation.beta);
+            deviceElevationText = `${deviceElev.toFixed(1)}°`;
+        }
+        
+        if (currentMoonData) {
+            moonAltitudeText = `${currentMoonData.altitude.toFixed(1)}°`;
+        }
+        
+        // 針の長さ情報も追加
+        if (deviceOrientation.beta !== null && currentMoonData) {
+            const deviceElev = calculateDeviceElevation(deviceOrientation.beta);
+            const compassRad = Math.min(320, 320) * 0.4; // コンパス半径を推定
+            const lengthDiff = Math.abs(calculateNeedleLength(deviceElev, compassRad) - calculateNeedleLength(currentMoonData.altitude, compassRad));
+            needleLengthInfo = ` | 針長差: ${lengthDiff.toFixed(1)}px`;
+        }
+        
+        altitudeDetailElement.textContent = `デバイス高度: ${deviceElevationText} | 月高度: ${moonAltitudeText}${needleLengthInfo}`;
     }
+}
+
+/**
+ * 針の長さを高度から計算する共通関数
+ */
+function calculateNeedleLength(altitude: number, compassRadius: number): number {
+    const baseRadius = compassRadius - 30; // 共通のベース半径
+    const minLength = 0.4; // 最小長さ（40%）
+    const maxLength = 1.0; // 最大長さ（100%）
+    const altitudeFactor = minLength + (maxLength - minLength) * (Math.abs(altitude) / 90);
+    return baseRadius * Math.min(altitudeFactor, maxLength);
 }
 
 /**
@@ -690,17 +719,17 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
         }
     }
     
+    // 共通の針の長さ計算を使用
     // デバイス方向針（赤）の長さ計算 - beta値に応じて変化
-    let deviceNeedleLength = compassRadius - 40; // ベース長さ
+    let deviceNeedleLength = compassRadius - 30; // デフォルト長さ
+    let deviceElevation = 0;
     if (deviceOrientation.beta !== null) {
-        const deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
-        // 高度角0-90度を0.3-1.0の範囲にマッピング
-        const elevationFactor = Math.max(0.3, Math.min(1.0, Math.abs(deviceElevation) / 90));
-        deviceNeedleLength = (compassRadius - 40) * elevationFactor;
+        deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
+        deviceNeedleLength = calculateNeedleLength(deviceElevation, compassRadius);
     }
     
-    // 月の位置針（金）のベース長さ - デバイス針より長く設定
-    let moonNeedleLength = compassRadius - 20; // ベース長さを長く設定
+    // 月の位置針の長さ計算 - 月の高度に応じて変化
+    let moonNeedleLength = compassRadius - 30; // デフォルト長さ
     
     // デバイス方向針を描画（赤）- alpha値で回転、beta値で長さ変化
     const deviceNeedleAngle = deviceOrientation.alpha !== null ? 
@@ -739,11 +768,8 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
     if (currentMoonData) {
         const moonAltitude = currentMoonData.altitude;
         
-        // 月の針の長さ：高度の絶対値が大きいほど長い（0度でも一定の長さを保つ）
-        const minLength = 0.5; // 最小長さ（50%）
-        const maxLength = 1.0; // 最大長さ（100%）
-        const altitudeFactor = minLength + (maxLength - minLength) * (Math.abs(moonAltitude) / 90);
-        moonNeedleLength = (compassRadius - 15) * Math.min(altitudeFactor, maxLength);
+        // 月の針の長さ：共通の計算関数を使用（デバイス針と同じ高度なら同じ長さ）
+        moonNeedleLength = calculateNeedleLength(moonAltitude, compassRadius);
         
         // 月の針の色：高度が正（可視）か負（不可視）かで色を変える
         if (moonAltitude >= 0) {
