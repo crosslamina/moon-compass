@@ -590,3 +590,146 @@ h1 {
     min-height: 20px;
     margin-top: 5px;
 }
+
+/* 音波探知機のスタイル */
+#sonar-detector {
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(0, 20, 20, 0.8);
+    border-radius: 10px;
+    border: 2px solid #00AA00;
+    box-shadow: 0 0 20px rgba(0, 170, 0, 0.3);
+}
+
+#sonar-detector h3 {
+    color: #00FF00;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    margin-bottom: 15px;
+}
+
+#sonar-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+#sonar-canvas {
+    border: 2px solid #00AA00;
+    border-radius: 50%;
+    box-shadow: 
+        0 0 20px rgba(0, 170, 0, 0.5),
+        inset 0 0 20px rgba(0, 50, 0, 0.3);
+    background: #001100;
+}
+
+#sonar-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.sonar-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 30, 0, 0.6);
+    padding: 10px 15px;
+    border-radius: 5px;
+    border: 1px solid #004400;
+}
+
+.sonar-control label {
+    color: #00AA00;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+#volume-slider {
+    width: 100px;
+    height: 6px;
+    background: #004400;
+    outline: none;
+    border-radius: 3px;
+    -webkit-appearance: none;
+}
+
+#volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #00FF00;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+#volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #00FF00;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+.mute-btn {
+    background: none;
+    border: 2px solid #00AA00;
+    color: #00FF00;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.mute-btn:hover {
+    background: rgba(0, 170, 0, 0.2);
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.mute-btn.muted {
+    background: rgba(170, 0, 0, 0.3);
+    border-color: #AA0000;
+    color: #FF0000;
+}
+
+/* 検知状態に応じたスタイル */
+.detector-locked {
+    background: rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+    animation: pulse-white 0.5s ease-in-out infinite alternate;
+}
+
+.detector-found {
+    background: rgba(46, 204, 113, 0.3) !important;
+    color: #2ecc71 !important;
+    border-color: #2ecc71 !important;
+    animation: pulse-green 0.8s ease-in-out infinite alternate;
+}
+
+.detector-close {
+    background: rgba(241, 196, 15, 0.3) !important;
+    color: #f1c40f !important;
+    border-color: #f1c40f !important;
+    animation: pulse-yellow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-white {
+    from { box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+    to { box-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
+}
+
+@keyframes pulse-green {
+    from { box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); }
+    to { box-shadow: 0 0 20px rgba(46, 204, 113, 0.8); }
+}
+
+@keyframes pulse-yellow {
+    from { box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+    to { box-shadow: 0 0 20px rgba(241, 196, 15, 0.8); }
+}

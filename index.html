@@ -19,6 +19,21 @@
             <div id="location-status"></div>
             <div id="detector-status" class="detector-inactive">月を探しています...</div>
             
+            <!-- 音波探知機 -->
+            <div id="sonar-detector">
+                <h3>🔊 音波探知機</h3>
+                <div id="sonar-container">
+                    <canvas id="sonar-canvas" width="300" height="300"></canvas>
+                </div>
+                <div id="sonar-controls">
+                    <div class="sonar-control">
+                        <label for="volume-slider">音量:</label>
+                        <input type="range" id="volume-slider" min="0" max="100" value="30">
+                        <button id="mute-button" class="mute-btn">🔊</button>
+                    </div>
+                </div>
+            </div>
+            
             <!-- 方位角補正コントロール -->
             <div id="orientation-controls">
                 <div class="controls-label">方位角補正</div>
