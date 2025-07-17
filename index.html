@@ -19,8 +19,14 @@
             <div id="location-status"></div>
             <div id="detector-status" class="detector-inactive">月を探しています...</div>
             
+            <!-- 探知機タブ -->
+            <div id="detector-tabs">
+                <button id="sonar-tab" class="detector-tab active">🔊 ソナー</button>
+                <button id="radar-tab" class="detector-tab">📡 レーダー</button>
+            </div>
+
             <!-- 音波探知機 -->
-            <div id="sonar-detector">
+            <div id="sonar-detector" class="detector-panel active">
                 <h3>🔊 音波探知機</h3>
                 <div id="sonar-container">
                     <canvas id="sonar-canvas" width="300" height="300"></canvas>
@@ -30,6 +36,30 @@
                         <label for="volume-slider">音量:</label>
                         <input type="range" id="volume-slider" min="0" max="100" value="30">
                         <button id="mute-button" class="mute-btn">🔊</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- レーダー探知機 -->
+            <div id="radar-detector" class="detector-panel">
+                <h3>📡 レーダー探知機</h3>
+                <div id="radar-container">
+                    <canvas id="radar-canvas" width="320" height="320"></canvas>
+                    <div id="radar-info">
+                        <div id="radar-distance">距離: --</div>
+                        <div id="radar-bearing">方位: --</div>
+                        <div id="radar-elevation">仰角: --</div>
+                    </div>
+                </div>
+                <div id="radar-controls">
+                    <div class="radar-control">
+                        <label for="radar-volume-slider">音量:</label>
+                        <input type="range" id="radar-volume-slider" min="0" max="100" value="40">
+                        <button id="radar-mute-button" class="mute-btn">🔊</button>
+                    </div>
+                    <div class="radar-control">
+                        <label for="sweep-speed-slider">スイープ速度:</label>
+                        <input type="range" id="sweep-speed-slider" min="1" max="5" value="3">
                     </div>
                 </div>
             </div>
