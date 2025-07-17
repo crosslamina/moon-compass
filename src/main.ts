@@ -16,36 +16,13 @@ const mapLinkElement = document.getElementById('map-link') as HTMLAnchorElement;
 const moonCanvas = document.getElementById('moon-canvas') as HTMLCanvasElement;
 
 // 月探知機関連の要素
-const detectorStatusElement = document.getElementById('detector-status');
-const compassNeedle = document.getElementById('compass-needle');
-const moonTarget = document.getElementById('moon-target');
-const deviceAltitudeMarker = document.getElementById('device-altitude-marker');
-const moonAltitudeMarker = document.getElementById('moon-altitude-marker');
+// const detectorStatusElement = document.getElementById('detector-status');
+// const compassNeedle = document.getElementById('compass-needle');
+// const moonTarget = document.getElementById('moon-target');
+
 const permissionButton = document.getElementById('permission-button') as HTMLButtonElement;
 const locationPermissionButton = document.getElementById('location-permission-button') as HTMLButtonElement;
 const locationStatusElement = document.getElementById('location-status');
-
-// 音波探知機関連の要素（無効化）
-// const sonarCanvas = document.getElementById('sonar-canvas') as HTMLCanvasElement;
-// const volumeSlider = document.getElementById('volume-slider') as HTMLInputElement;
-// const muteButton = document.getElementById('mute-button') as HTMLButtonElement;
-
-// レーダー探知機関連の要素（無効化）
-// const radarCanvas = document.getElementById('radar-canvas') as HTMLCanvasElement;
-// const radarVolumeSlider = document.getElementById('radar-volume-slider') as HTMLInputElement;
-// const radarMuteButton = document.getElementById('radar-mute-button') as HTMLButtonElement;
-// const sweepSpeedSlider = document.getElementById('sweep-speed-slider') as HTMLInputElement;
-// const radarDistanceElement = document.getElementById('radar-distance');
-// const radarBearingElement = document.getElementById('radar-bearing');
-// const radarElevationElement = document.getElementById('radar-elevation');
-
-// 探知機タブ関連の要素（無効化）
-// const sonarTab = document.getElementById('sonar-tab') as HTMLButtonElement;
-// const radarTab = document.getElementById('radar-tab') as HTMLButtonElement;
-// const compassTab = document.getElementById('compass-tab') as HTMLButtonElement;
-// const sonarDetector = document.getElementById('sonar-detector');
-// const radarDetector = document.getElementById('radar-detector');
-// const compassDetector = document.getElementById('compass-detector');
 
 // 磁気コンパス関連の要素
 const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasElement;
@@ -503,9 +480,6 @@ function updateDisplay() {
         
         drawMoonPhase(moonCanvas, moonData, blinkIntensity);
     }
-
-    // 月探知機の更新
-    updateMoonDetector(moonData);
 }
 
 /**
@@ -893,7 +867,6 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
  */
 setInterval(() => {
     if (currentMoonData && (deviceOrientation.alpha !== null && deviceOrientation.beta !== null)) {
-        updateMoonDetector(currentMoonData);
         
         // 月の点滅効果を更新（安定したタイミングで）
         if (moonCanvas) {
@@ -913,13 +886,7 @@ setInterval(() => {
 // 音波探知機の描画ループ
 function startSonarAnimation() {
     function animate() {
-        if (activeDetector === 'sonar' && sonarState.isActive) {
-            drawSonarDisplay();
-        } else if (activeDetector === 'radar' && radarState.isActive) {
-            drawRadarDisplay();
-        } else if (activeDetector === 'compass' && compassState.isActive) {
-            drawCompassDisplay(compassCanvas);
-        }
+        drawCompassDisplay(compassCanvas);
         requestAnimationFrame(animate);
     }
     animate();
@@ -1175,15 +1142,6 @@ function handleOrientation(event: DeviceOrientationEvent) {
             `<strong>デバッグ:</strong> コンソールで getCurrentSensorStatus() を実行して詳細確認<br>` +
             `<strong>テスト:</strong> コンソールで testSensorValues(90, 0, 0) を実行<br>` +
             `<strong>キャリブレーション:</strong> コンソールで toggleOrientationReverse() または setOrientationOffset(角度) を実行</small>`;
-    }
-
-    // センサーの値が変わったら月探知機を即座に更新（スロットリング付き）
-    if (currentMoonData) {
-        const now = Date.now();
-        if (now - lastDetectorUpdate > DETECTOR_UPDATE_INTERVAL) {
-            updateMoonDetector(currentMoonData);
-            lastDetectorUpdate = now;
-        }
     }
 }
 
@@ -1515,338 +1473,6 @@ if (locationPermissionButton) {
 setupGeolocation();
 
 /**
- * 月探知機の状態を更新（直感的なインジケーター）
- */
-function updateMoonDetector(moonData: MoonData) {
-    if (!detectorStatusElement) {
-        return;
-    }
-
-    // 位置情報が取得できていない場合
-    if (!currentPosition) {
-        detectorStatusElement.textContent = '📍 位置情報が必要です';
-        detectorStatusElement.className = 'detector-inactive';
-        sonarState.detectionLevel = 'scanning';
-        sonarState.moonDistance = Infinity;
-        return;
-    }
-
-    const deviceAlpha = deviceOrientation.alpha;
-    const deviceBeta = deviceOrientation.beta;
-
-    if (deviceAlpha === null || deviceBeta === null) {
-        detectorStatusElement.textContent = '📱 デバイスの向きセンサーが利用できません';
-        detectorStatusElement.className = 'detector-inactive';
-        sonarState.detectionLevel = 'scanning';
-        sonarState.moonDistance = Infinity;
-        return;
-    }
-
-    // 月の方位角と高度
-    const moonAzimuth = moonData.azimuth;
-    const moonAltitude = moonData.altitude;
-
-    // === 直感的なコンパス更新 ===
-    
-    // コンパス針の回転（デバイスの向き）
-    if (compassNeedle) {
-        compassNeedle.style.transform = `translate(-50%, -100%) rotate(${deviceAlpha}deg)`;
-    }
-    
-    // 月のターゲット位置（コンパス円周上）
-    if (moonTarget) {
-        moonTarget.style.transform = `translate(-50%, -50%) rotate(${moonAzimuth}deg) translateY(-65px)`;
-    }
-
-    // === 高度インジケーター更新 ===
-    
-    const deviceElevation = calculateDeviceElevation(deviceBeta);
-    const clampedMoonAltitude = Math.max(-90, Math.min(90, moonAltitude));
-    
-    // 高度インジケーターのマーカー位置を更新
-    updateAltitudeMarkers(deviceElevation, clampedMoonAltitude);
-    
-    // === 角度差の計算 ===
-    
-    let azimuthDiff = Math.abs(deviceAlpha - moonAzimuth);
-    if (azimuthDiff > 180) {
-        azimuthDiff = 360 - azimuthDiff;
-    }
-    
-    const altitudeDiff = Math.abs(deviceElevation - clampedMoonAltitude);
-    const totalAngleDiff = calculateAngleDifference(deviceAlpha, deviceElevation, moonAzimuth, clampedMoonAltitude);
-    
-    // === 音波探知機の状態更新 ===
-    
-    // 月の方向と距離を更新
-    sonarState.moonAngle = moonAzimuth;
-    sonarState.moonDistance = totalAngleDiff;
-    
-    // 検知レベルの判定と更新
-    const previousLevel = sonarState.detectionLevel;
-    
-    if (totalAngleDiff <= 3) {
-        sonarState.detectionLevel = 'locked';
-        sonarState.pulseInterval = 200; // 0.2秒間隔
-        detectorStatusElement.textContent = '🎯 完全一致！月を捕捉';
-        detectorStatusElement.className = 'detector-locked';
-        
-        // バイブレーション（対応デバイスのみ）
-        if ('vibrate' in navigator) {
-            navigator.vibrate([100, 50, 100, 50, 100]);
-        }
-    } else if (totalAngleDiff <= 15) {
-        sonarState.detectionLevel = 'found';
-        sonarState.pulseInterval = 500; // 0.5秒間隔
-        const locationText = moonAltitude < 0 ? '（地平線下）' : '';
-        detectorStatusElement.textContent = `🌙 月を発見しました${locationText}`;
-        detectorStatusElement.className = 'detector-found';
-        
-        // バイブレーション（対応デバイスのみ）
-        if ('vibrate' in navigator) {
-            navigator.vibrate([200, 100, 200]);
-        }
-    } else if (totalAngleDiff <= 30) {
-        sonarState.detectionLevel = 'close';
-        sonarState.pulseInterval = 1000; // 1秒間隔
-        const locationText = moonAltitude < 0 ? '（地平線下）' : '';
-        detectorStatusElement.textContent = `🔍 音波が強くなっています${locationText}`;
-        detectorStatusElement.className = 'detector-close';
-    } else {
-        sonarState.detectionLevel = 'scanning';
-        sonarState.pulseInterval = 2000; // 2秒間隔
-        const locationText = moonAltitude < 0 ? '（地平線下）' : '';
-        detectorStatusElement.textContent = `� 音波探知中${locationText}`;
-        detectorStatusElement.className = 'detector-inactive';
-    }
-    
-    // 検知レベルが変わった場合は即座にパルスを発生
-    if (previousLevel !== sonarState.detectionLevel) {
-        sonarState.lastPulse = 0; // 次回の描画で即座にパルス
-        console.log(`音波探知レベル変更: ${previousLevel} → ${sonarState.detectionLevel}`);
-    }
-    
-    // レーダー用の月データも更新
-    if (radarState.isActive) {
-        radarState.moonAngle = moonAzimuth;
-        radarState.moonDistance = totalAngleDiff;
-        radarState.moonElevation = clampedMoonAltitude;
-        radarState.detectionLevel = sonarState.detectionLevel; // 同じ検知レベルを使用
-    }
-    
-    // 磁気コンパス用の月データも更新
-    updateCompassDetector(moonAzimuth, totalAngleDiff, clampedMoonAltitude);
-}
-
-/**
- * レーダー探知機の画面を描画
- */
-function drawRadarDisplay() {
-    if (!radarCanvas) return;
-    
-    const ctx = radarCanvas.getContext('2d');
-    if (!ctx) return;
-    
-    const centerX = radarCanvas.width / 2;
-    const centerY = radarCanvas.height / 2;
-    const maxRadius = Math.min(centerX, centerY) - 30;
-    
-    // 背景をクリア
-    ctx.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
-    
-    // 背景を暗青色に
-    ctx.fillStyle = '#001122';
-    ctx.fillRect(0, 0, radarCanvas.width, radarCanvas.height);
-    
-    // グリッド線を描画（同心円）
-    ctx.strokeStyle = '#003366';
-    ctx.lineWidth = 1;
-    for (let i = 1; i <= 4; i++) {
-        const radius = (maxRadius / 4) * i;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // 距離ラベル
-        ctx.fillStyle = '#0066AA';
-        ctx.font = '10px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${i * 25}°`, centerX, centerY - radius + 10);
-    }
-    
-    // 十字線とレンジ線を描画
-    ctx.strokeStyle = '#003366';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    // 縦線
-    ctx.moveTo(centerX, centerY - maxRadius);
-    ctx.lineTo(centerX, centerY + maxRadius);
-    // 横線
-    ctx.moveTo(centerX - maxRadius, centerY);
-    ctx.lineTo(centerX + maxRadius, centerY);
-    // 対角線
-    const diagonal = maxRadius * 0.707;
-    ctx.moveTo(centerX - diagonal, centerY - diagonal);
-    ctx.lineTo(centerX + diagonal, centerY + diagonal);
-    ctx.moveTo(centerX - diagonal, centerY + diagonal);
-    ctx.lineTo(centerX + diagonal, centerY - diagonal);
-    ctx.stroke();
-    
-    // 方位ラベルを描画
-    ctx.fillStyle = '#0099FF';
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('N', centerX, centerY - maxRadius - 8);
-    ctx.fillText('S', centerX, centerY + maxRadius + 20);
-    ctx.textAlign = 'left';
-    ctx.fillText('E', centerX + maxRadius + 8, centerY + 4);
-    ctx.textAlign = 'right';
-    ctx.fillText('W', centerX - maxRadius - 8, centerY + 4);
-    
-    // スイープトレイルを描画（残像効果）
-    radarState.sweepTrail.forEach((trail, index) => {
-        if (trail.opacity > 0) {
-            const trailRadius = maxRadius;
-            const trailX = centerX + Math.sin(trail.angle * Math.PI / 180) * trailRadius;
-            const trailY = centerY - Math.cos(trail.angle * Math.PI / 180) * trailRadius;
-            
-            ctx.strokeStyle = `rgba(0, 153, 255, ${trail.opacity * 0.1})`;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(trailX, trailY);
-            ctx.stroke();
-            
-            // 透明度を減少
-            trail.opacity -= 0.05;
-            if (trail.opacity <= 0) {
-                radarState.sweepTrail.splice(index, 1);
-            }
-        }
-    });
-    
-    // 検知されたターゲットの残像を描画
-    const currentTime = Date.now();
-    radarState.targets.forEach((target, index) => {
-        const fadeAge = currentTime - target.fadeTime;
-        const fadeOpacity = Math.max(0, 1 - (fadeAge / 3000)); // 3秒で消失
-        
-        if (fadeOpacity > 0) {
-            const targetRadius = (target.distance / 100) * maxRadius;
-            const targetX = centerX + Math.sin(target.angle * Math.PI / 180) * targetRadius;
-            const targetY = centerY - Math.cos(target.angle * Math.PI / 180) * targetRadius;
-            
-            // ターゲットの強度に応じて色と大きさを変更
-            let color = '#00FF00';
-            let size = 3;
-            if (target.strength > 0.8) {
-                color = '#FFFFFF';
-                size = 6;
-            } else if (target.strength > 0.5) {
-                color = '#FFFF00';
-                size = 4;
-            }
-            
-            ctx.fillStyle = color.replace(')', `, ${fadeOpacity})`).replace('rgb', 'rgba');
-            ctx.beginPath();
-            ctx.arc(targetX, targetY, size, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // ターゲット周りの環
-            ctx.strokeStyle = color.replace(')', `, ${fadeOpacity * 0.5})`).replace('rgb', 'rgba');
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(targetX, targetY, size + 3, 0, Math.PI * 2);
-            ctx.stroke();
-        } else {
-            radarState.targets.splice(index, 1);
-        }
-    });
-    
-    // メインスイープラインを描画
-    radarState.sweepAngle += radarState.sweepSpeed;
-    if (radarState.sweepAngle >= 360) {
-        radarState.sweepAngle = 0;
-        
-        // スイープが一周したときにピング音を再生
-        const frequency = getRadarPingFrequency(radarState.detectionLevel);
-        const duration = getRadarPingDuration(radarState.detectionLevel);
-        radarAudio.playRadarPing(frequency, duration, true);
-    }
-    
-    // スイープトレイルを追加
-    radarState.sweepTrail.push({
-        angle: radarState.sweepAngle,
-        opacity: 1
-    });
-    
-    // 月がスイープライン上にある場合、ターゲットとして記録
-    const sweepTolerance = 5; // 度
-    const angleDiff = Math.abs(radarState.sweepAngle - radarState.moonAngle);
-    const normalizedAngleDiff = Math.min(angleDiff, 360 - angleDiff);
-    
-    if (normalizedAngleDiff <= sweepTolerance && radarState.moonDistance < Infinity) {
-        // ターゲット強度を計算
-        const strength = Math.max(0, 1 - (radarState.moonDistance / 100));
-        
-        radarState.targets.push({
-            angle: radarState.moonAngle,
-            distance: radarState.moonDistance,
-            strength: strength,
-            fadeTime: currentTime
-        });
-        
-        // 検知時の効果音
-        if (strength > 0.5) {
-            const detectionFreq = 600 + (strength * 400);
-            radarAudio.playRadarPing(detectionFreq, 0.2, false);
-        }
-    }
-    
-    // メインスイープライン
-    const sweepRadius = maxRadius;
-    const sweepX = centerX + Math.sin(radarState.sweepAngle * Math.PI / 180) * sweepRadius;
-    const sweepY = centerY - Math.cos(radarState.sweepAngle * Math.PI / 180) * sweepRadius;
-    
-    // スイープラインのグラデーション
-    const sweepGradient = ctx.createLinearGradient(centerX, centerY, sweepX, sweepY);
-    sweepGradient.addColorStop(0, 'rgba(0, 255, 255, 0.8)');
-    sweepGradient.addColorStop(0.7, 'rgba(0, 153, 255, 0.4)');
-    sweepGradient.addColorStop(1, 'rgba(0, 153, 255, 0)');
-    
-    ctx.strokeStyle = sweepGradient;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.lineTo(sweepX, sweepY);
-    ctx.stroke();
-    
-    // 中央のレーダー中心点を描画
-    ctx.fillStyle = '#00FFFF';
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // スイープ角度の表示
-    ctx.fillStyle = '#0099FF';
-    ctx.font = '11px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`SWEEP: ${radarState.sweepAngle.toFixed(0)}°`, 10, 20);
-    ctx.fillText(`SPEED: ${radarState.sweepSpeed}`, 10, 35);
-    
-    // レーダー情報の更新
-    if (radarDistanceElement) {
-        radarDistanceElement.textContent = `距離: ${radarState.moonDistance < Infinity ? radarState.moonDistance.toFixed(1) + '°' : '--'}`;
-    }
-    if (radarBearingElement) {
-        radarBearingElement.textContent = `方位: ${radarState.moonDistance < Infinity ? radarState.moonAngle.toFixed(1) + '°' : '--'}`;
-    }
-    if (radarElevationElement) {
-        radarElevationElement.textContent = `仰角: ${radarState.moonDistance < Infinity ? radarState.moonElevation.toFixed(1) + '°' : '--'}`;
-    }
-}
-
-/**
  * 検知レベルに応じたレーダーピング周波数を取得
  */
 function getRadarPingFrequency(level: RadarState['detectionLevel']): number {
@@ -1860,47 +1486,6 @@ function getRadarPingFrequency(level: RadarState['detectionLevel']): number {
 }
 
 /**
- * タブ切り替え機能
- */
-function switchDetector(type: 'sonar' | 'radar' | 'compass') {
-    activeDetector = type;
-    
-    // タブの見た目を更新
-    if (sonarTab && radarTab && compassTab) {
-        sonarTab.classList.toggle('active', type === 'sonar');
-        radarTab.classList.toggle('active', type === 'radar');
-        compassTab.classList.toggle('active', type === 'compass');
-    }
-    
-    // パネルの表示を切り替え
-    if (sonarDetector && radarDetector && compassDetector) {
-        sonarDetector.classList.toggle('active', type === 'sonar');
-        radarDetector.classList.toggle('active', type === 'radar');
-        compassDetector.classList.toggle('active', type === 'compass');
-    }
-    
-    // 探知機の状態を更新
-    sonarState.isActive = (type === 'sonar');
-    radarState.isActive = (type === 'radar');
-    compassState.isActive = (type === 'compass');
-    
-    console.log(`探知機を${type === 'sonar' ? 'ソナー' : type === 'radar' ? 'レーダー' : '磁気コンパス'}に切り替えました`);
-}
-
-/**
- * 検知レベルに応じたレーダーピング継続時間を取得
- */
-function getRadarPingDuration(level: RadarState['detectionLevel']): number {
-    switch (level) {
-        case 'scanning': return 0.3;
-        case 'close': return 0.4;
-        case 'found': return 0.5;
-        case 'locked': return 0.6;
-        default: return 0.3;
-    }
-}
-
-/**
  * ダイアログを開く
  */
 function openDialog() {
@@ -1910,201 +1495,6 @@ function openDialog() {
         setTimeout(() => {
             infoDialog.style.opacity = '1';
         }, 10);
-    }
-}
-
-/**
- * 音波探知機のソナー画面を描画
- */
-function drawSonarDisplay() {
-    if (!sonarCanvas) return;
-    
-    const ctx = sonarCanvas.getContext('2d');
-    if (!ctx) return;
-    
-    const centerX = sonarCanvas.width / 2;
-    const centerY = sonarCanvas.height / 2;
-    const maxRadius = Math.min(centerX, centerY) - 20;
-    
-    // 背景をクリア
-    ctx.clearRect(0, 0, sonarCanvas.width, sonarCanvas.height);
-    
-    // 背景を暗緑色に
-    ctx.fillStyle = '#001100';
-    ctx.fillRect(0, 0, sonarCanvas.width, sonarCanvas.height);
-    
-    // グリッド線を描画（同心円）
-    ctx.strokeStyle = '#004400';
-    ctx.lineWidth = 1;
-    for (let i = 1; i <= 4; i++) {
-        const radius = (maxRadius / 4) * i;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.stroke();
-    }
-    
-    // 十字線を描画
-    ctx.strokeStyle = '#004400';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    // 縦線
-    ctx.moveTo(centerX, centerY - maxRadius);
-    ctx.lineTo(centerX, centerY + maxRadius);
-    // 横線
-    ctx.moveTo(centerX - maxRadius, centerY);
-    ctx.lineTo(centerX + maxRadius, centerY);
-    ctx.stroke();
-    
-    // 方位ラベルを描画
-    ctx.fillStyle = '#00AA00';
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('N', centerX, centerY - maxRadius - 5);
-    ctx.fillText('S', centerX, centerY + maxRadius + 18);
-    ctx.textAlign = 'left';
-    ctx.fillText('E', centerX + maxRadius + 5, centerY + 5);
-    ctx.textAlign = 'right';
-    ctx.fillText('W', centerX - maxRadius - 5, centerY + 5);
-    
-    // 音波の波紋を描画
-    const currentTime = Date.now();
-    if (currentTime - sonarState.lastPulse > sonarState.pulseInterval) {
-        sonarState.waveRadius = 0;
-        sonarState.waveOpacity = 1;
-        sonarState.lastPulse = currentTime;
-        
-        // ビープ音を再生
-        const frequency = getBeepFrequency(sonarState.detectionLevel);
-        const duration = getBeepDuration(sonarState.detectionLevel);
-        sonarAudio.playBeep(frequency, duration);
-    }
-    
-    // 波紋のアニメーション
-    sonarState.waveRadius += maxRadius / 60; // 1秒で画面端まで到達
-    sonarState.waveOpacity = Math.max(0, 1 - (sonarState.waveRadius / maxRadius));
-    
-    if (sonarState.waveRadius < maxRadius) {
-        const alpha = sonarState.waveOpacity * getWaveIntensity(sonarState.detectionLevel);
-        ctx.strokeStyle = `rgba(0, 255, 0, ${alpha})`;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, sonarState.waveRadius, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // 近接時は追加の波紋
-        if (sonarState.detectionLevel !== 'scanning') {
-            const secondWave = sonarState.waveRadius * 0.7;
-            if (secondWave > 0) {
-                ctx.strokeStyle = `rgba(0, 255, 0, ${alpha * 0.5})`;
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, secondWave, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-        }
-    }
-    
-    // 月のインジケーターを描画
-    if (sonarState.moonDistance < Infinity) {
-        const moonX = centerX + Math.sin(sonarState.moonAngle * Math.PI / 180) * (maxRadius * 0.8);
-        const moonY = centerY - Math.cos(sonarState.moonAngle * Math.PI / 180) * (maxRadius * 0.8);
-        
-        // 月の点滅効果
-        const blinkPhase = (currentTime / 500) % 1; // 0.5秒周期
-        let moonAlpha = 0.5 + Math.sin(blinkPhase * Math.PI * 2) * 0.5;
-        
-        // 検知レベルに応じて色と点滅速度を変更
-        let moonColor = '#FFAA00'; // オレンジ
-        switch (sonarState.detectionLevel) {
-            case 'close':
-                moonColor = '#FFFF00'; // 黄色
-                moonAlpha = 0.7 + Math.sin(blinkPhase * Math.PI * 4) * 0.3; // 高速点滅
-                break;
-            case 'found':
-                moonColor = '#00FF00'; // 緑色
-                moonAlpha = 0.8 + Math.sin(blinkPhase * Math.PI * 6) * 0.2; // 超高速点滅
-                break;
-            case 'locked':
-                moonColor = '#FFFFFF'; // 白色
-                moonAlpha = 1; // 常時点灯
-                break;
-        }
-        
-        ctx.fillStyle = `rgba(255, 255, 0, ${moonAlpha})`;
-        ctx.beginPath();
-        ctx.arc(moonX, moonY, 8, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 検知レベルが高い場合は外輪を描画
-        if (sonarState.detectionLevel !== 'scanning') {
-            ctx.strokeStyle = moonColor.replace(')', ', 0.5)').replace('rgb', 'rgba');
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(moonX, moonY, 12, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-    }
-    
-    // 中央のスキャナードットを描画
-    ctx.fillStyle = '#00FF00';
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 3, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // スキャンライン（回転するライン）
-    sonarState.animationPhase = (sonarState.animationPhase + 2) % 360;
-    const scanAngle = sonarState.animationPhase * Math.PI / 180;
-    const scanX = centerX + Math.cos(scanAngle) * maxRadius;
-    const scanY = centerY + Math.sin(scanAngle) * maxRadius;
-    
-    const gradient = ctx.createLinearGradient(centerX, centerY, scanX, scanY);
-    gradient.addColorStop(0, 'rgba(0, 255, 0, 0.8)');
-    gradient.addColorStop(1, 'rgba(0, 255, 0, 0)');
-    
-    ctx.strokeStyle = gradient;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.lineTo(scanX, scanY);
-    ctx.stroke();
-}
-
-/**
- * 検知レベルに応じたビープ周波数を取得
- */
-function getBeepFrequency(level: SonarState['detectionLevel']): number {
-    switch (level) {
-        case 'scanning': return 200;
-        case 'close': return 400;
-        case 'found': return 800;
-        case 'locked': return 1200;
-        default: return 200;
-    }
-}
-
-/**
- * 検知レベルに応じたビープ継続時間を取得
- */
-function getBeepDuration(level: SonarState['detectionLevel']): number {
-    switch (level) {
-        case 'scanning': return 0.1;
-        case 'close': return 0.15;
-        case 'found': return 0.2;
-        case 'locked': return 0.3;
-        default: return 0.1;
-    }
-}
-
-/**
- * 検知レベルに応じた波の強度を取得
- */
-function getWaveIntensity(level: SonarState['detectionLevel']): number {
-    switch (level) {
-        case 'scanning': return 0.3;
-        case 'close': return 0.6;
-        case 'found': return 0.9;
-        case 'locked': return 1.0;
-        default: return 0.3;
     }
 }
 
@@ -2176,67 +1566,6 @@ function calculateDeviceElevation(beta: number): number {
         // -90°を超えた分を徐々に下向きに変換
         // beta: -91° → 高度: -89°、beta: -180° → 高度: 0°
         return -180 - normalizedBeta;
-    }
-}
-
-/**
- * 高度インジケーターのマーカー位置を更新
- * @param deviceElevation デバイスの高度角（-90°〜90°）
- * @param moonAltitude 月の高度角（-90°〜90°）
- */
-function updateAltitudeMarkers(deviceElevation: number, moonAltitude: number) {
-    // 高度インジケーターのゲージ幅（CSSから取得）
-    const gaugeWidth = 200; // px（CSSの#altitude-gaugeのwidthと一致）
-    
-    /**
-     * 高度角（-90°〜90°）を高度ゲージの位置（0〜100%）に変換
-     * @param altitude 高度角（-90°〜90°）
-     * @returns ゲージ上の位置（0〜100%）
-     */
-    const altitudeToPosition = (altitude: number): number => {
-        // -90°〜90°の範囲を0〜100%にマッピング
-        // -90° → 0%（左端）
-        // 0°（地平線） → 50%（中央）
-        // 90° → 100%（右端）
-        return ((altitude + 90) / 180) * 100;
-    };
-    
-    // デバイス高度マーカーの位置を更新
-    if (deviceAltitudeMarker) {
-        const devicePosition = altitudeToPosition(deviceElevation);
-        const deviceLeftPx = (devicePosition / 100) * gaugeWidth - 4; // マーカー幅の半分（8px/2）をオフセット
-        deviceAltitudeMarker.style.left = `${deviceLeftPx}px`;
-        
-        console.log('Device altitude marker debug:', {
-            deviceElevation: deviceElevation,
-            devicePosition: devicePosition,
-            deviceLeftPx: deviceLeftPx
-        });
-    }
-    
-    // 月高度マーカーの位置を更新
-    if (moonAltitudeMarker) {
-        const moonPosition = altitudeToPosition(moonAltitude);
-        const moonLeftPx = (moonPosition / 100) * gaugeWidth - 4; // マーカー幅の半分（8px/2）をオフセット
-        moonAltitudeMarker.style.left = `${moonLeftPx}px`;
-        
-        // 月の高度に応じて色を変更（地平線下/上）
-        if (moonAltitude < 0) {
-            // 地平線下では少し薄く表示
-            moonAltitudeMarker.style.opacity = '0.7';
-            moonAltitudeMarker.style.background = '#e67e22'; // オレンジ色に変更
-        } else {
-            // 地平線上では通常表示
-            moonAltitudeMarker.style.opacity = '1';
-            moonAltitudeMarker.style.background = '#2ecc71'; // 緑色
-        }
-        
-        console.log('Moon altitude marker debug:', {
-            moonAltitude: moonAltitude,
-            moonPosition: moonPosition,
-            moonLeftPx: moonLeftPx,
-            isUnderHorizon: moonAltitude < 0
-        });
     }
 }
 
@@ -2384,11 +1713,6 @@ function toggleOrientationReverse() {
     const status = orientationCorrection.isReversed ? '有効' : '無効';
     console.log(`方位角東西反転補正: ${status}`);
     
-    // UI更新のために即座に月探知機を更新
-    if (currentMoonData) {
-        updateMoonDetector(currentMoonData);
-    }
-    
     return orientationCorrection.isReversed;
 }
 
@@ -2487,10 +1811,6 @@ function setOrientationOffset(offset: number) {
     
     console.log(`方位角オフセット設定: ${offset}°`);
     
-    // UI更新のために即座に月探知機を更新
-    if (currentMoonData) {
-        updateMoonDetector(currentMoonData);
-    }
 }
 
 /**
@@ -2504,11 +1824,6 @@ function resetOrientationCorrection() {
     orientationCorrection.lastKnownTrueDirection = null;
     
     console.log('方位角補正をリセットしました');
-    
-    // UI更新のために即座に月探知機を更新
-    if (currentMoonData) {
-        updateMoonDetector(currentMoonData);
-    }
 }
 
 // グローバル関数として公開（デバッグ用）
