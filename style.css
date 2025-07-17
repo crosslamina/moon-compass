@@ -98,15 +98,6 @@ h1 {
     font-size: 0.9em;
 }
 
-#detector-status {
-    font-size: 1.3em;
-    font-weight: bold;
-    padding: 10px;
-    border-radius: 5px;
-    margin: 10px 0;
-    transition: all 0.3s ease;
-}
-
 .detector-inactive {
     background: rgba(231, 76, 60, 0.3);
     color: #e74c3c;

@@ -57,9 +57,7 @@ interface CompassState {
     lastTick: number;
     tickInterval: number;
     detectionLevel: 'calibrating' | 'searching' | 'weak' | 'strong' | 'locked';
-    magneticHistory: Array<{reading: number, time: number}>;
     audioContext?: AudioContext;
-    isCalibrated: boolean;
 }
 
 let compassState: CompassState = {
@@ -72,9 +70,7 @@ let compassState: CompassState = {
     magneticNoise: 0,
     lastTick: 0,
     tickInterval: 1000,
-    detectionLevel: 'calibrating',
-    magneticHistory: [],
-    isCalibrated: false
+    detectionLevel: 'calibrating'
 };
 
 // 磁気コンパス用オーディオクラス
@@ -323,28 +319,14 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
     const targetAngle = moonAzimuth + (magneticStrength * 10 * Math.sin(currentTime / 100));
     compassState.needleAngle = compassState.needleAngle * 0.9 + targetAngle * 0.1; // スムージング
     
-    // 検知履歴に追加
-    compassState.magneticHistory.push({
-        reading: magneticStrength,
-        time: currentTime
-    });
-    
-    // 古い履歴を削除（10秒間のみ保持）
-    compassState.magneticHistory = compassState.magneticHistory.filter(
-        entry => currentTime - entry.time < 10000
-    );
-    
     // 検知レベルの判定
-    if (!compassState.isCalibrated && compassState.magneticHistory.length >= 20) {
-        compassState.isCalibrated = true;
-        compassState.detectionLevel = 'searching';
-    } else if (magneticStrength > 0.8) {
+    if (magneticStrength > 0.8) {
         compassState.detectionLevel = 'locked';
     } else if (magneticStrength > 0.6) {
         compassState.detectionLevel = 'strong';
     } else if (magneticStrength > 0.3) {
         compassState.detectionLevel = 'weak';
-    } else if (compassState.isCalibrated) {
+    } else {
         compassState.detectionLevel = 'searching';
     }
     
@@ -690,37 +672,6 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
     ctx.font = 'bold 14px monospace';
     ctx.textAlign = 'center';
     ctx.fillText(levelNames[compassState.detectionLevel], centerX, centerY + compassRadius + 25);
-    
-    // 磁場強度の履歴グラフ
-    if (compassState.magneticHistory.length > 1) {
-        const graphWidth = 150;
-        const graphHeight = 40;
-        const graphX = width - graphWidth - 10;
-        const graphY = 10;
-        
-        // グラフ背景
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(graphX, graphY, graphWidth, graphHeight);
-        
-        // グラフ線
-        ctx.strokeStyle = '#ffd700';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        
-        for (let i = 0; i < compassState.magneticHistory.length; i++) {
-            const entry = compassState.magneticHistory[i];
-            const x = graphX + (i / (compassState.magneticHistory.length - 1)) * graphWidth;
-            const y = graphY + graphHeight - (entry.reading * graphHeight);
-            
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-        
-        ctx.stroke();
-    }
 }
 
 /**
