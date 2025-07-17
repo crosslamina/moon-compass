@@ -844,18 +844,25 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
     if (moonNeedleLength > 10) {
         const tipX = centerX + Math.cos(moonNeedleAngle) * moonNeedleLength;
         const tipY = centerY + Math.sin(moonNeedleAngle) * moonNeedleLength;
-        const tipRadius = 5;
+        const tipRadius = 12; // 8から12に拡大
         
         ctx.fillStyle = moonTipColor;
         ctx.beginPath();
         ctx.arc(tipX, tipY, tipRadius, 0, Math.PI * 2);
         ctx.fill();
         
-        // 月のシンボル（小さな三日月）
+        // 月のシンボル（三日月） - さらに大きく
         ctx.strokeStyle = moonSymbolColor;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3; // 線の太さも増加
         ctx.beginPath();
-        ctx.arc(tipX - 2, tipY, 3, Math.PI * 0.2, Math.PI * 1.8);
+        ctx.arc(tipX - 4, tipY, 7, Math.PI * 0.2, Math.PI * 1.8); // 半径を5から7に拡大
+        ctx.stroke();
+        
+        // 月の輪郭をより明確にするため、外側の輪郭も追加
+        ctx.strokeStyle = moonTipColor;
+        ctx.lineWidth = 2; // 輪郭線も太く
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, tipRadius, 0, Math.PI * 2);
         ctx.stroke();
     }
     
