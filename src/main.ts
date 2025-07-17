@@ -867,16 +867,19 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
  */
 setInterval(() => {
     if (currentMoonData && (deviceOrientation.alpha !== null && deviceOrientation.beta !== null)) {
+        const deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
+        const angleDiff = calculateAngleDifference(
+            deviceOrientation.alpha,
+            deviceElevation,
+            currentMoonData.azimuth,
+            currentMoonData.altitude
+        );
+        
+        // 磁気コンパス探知機の更新
+        updateCompassDetector(currentMoonData.azimuth, angleDiff, currentMoonData.altitude);
         
         // 月の点滅効果を更新（安定したタイミングで）
         if (moonCanvas) {
-            const deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
-            const angleDiff = calculateAngleDifference(
-                deviceOrientation.alpha,
-                deviceElevation,
-                currentMoonData.azimuth,
-                currentMoonData.altitude
-            );
             const blinkIntensity = calculateBlinkIntensity(angleDiff, Date.now());
             drawMoonPhase(moonCanvas, currentMoonData, blinkIntensity);
         }
