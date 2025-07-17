@@ -640,13 +640,24 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
 
 /**
  * 針の長さを高度から計算する共通関数
+ * 高度-90度:20%, 高度0度:60% (地平線), 高度+90度:100%
  */
 function calculateNeedleLength(altitude: number, compassRadius: number): number {
     const baseRadius = compassRadius - 30; // 共通のベース半径
-    const minLength = 0.4; // 最小長さ（40%）
-    const maxLength = 1.0; // 最大長さ（100%）
-    const altitudeFactor = minLength + (maxLength - minLength) * (Math.abs(altitude) / 90);
-    return baseRadius * Math.min(altitudeFactor, maxLength);
+    
+    // 高度-90度から+90度を20%から100%にマッピング
+    // 高度0度(地平線)が60%になるように線形補間
+    let lengthPercentage: number;
+    
+    if (altitude >= 0) {
+        // 正の高度: 0度(60%) → +90度(100%)
+        lengthPercentage = 0.6 + 0.4 * (altitude / 90);
+    } else {
+        // 負の高度: -90度(20%) → 0度(60%)
+        lengthPercentage = 0.2 + 0.4 * ((altitude + 90) / 90);
+    }
+    
+    return baseRadius * lengthPercentage;
 }
 
 /**
@@ -718,6 +729,23 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
             ctx.fillText(directions[directionIndex], labelX, labelY);
         }
     }
+    
+    // 地平線を表す円を描画（高度0度 = 60%の長さ位置）
+    const horizonRadius = (compassRadius - 30) * 0.6; // 地平線の半径
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]); // 破線
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, horizonRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]); // 破線をリセット
+    
+    // 地平線のラベル
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('地平線', centerX + horizonRadius + 20, centerY);
     
     // 共通の針の長さ計算を使用
     // デバイス方向針（赤）の長さ計算 - beta値に応じて変化
