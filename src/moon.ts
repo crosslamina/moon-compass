@@ -1,7 +1,4 @@
-// ...existing code...
-
 import * as SunCalc from 'suncalc';
-
 
 export type MoonData = {
     azimuth: number;

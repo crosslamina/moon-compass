@@ -1,7 +1,6 @@
 const deviceOrientationElement = document.getElementById('device-orientation');
 const geoInfoElement = document.getElementById('geo-info');
-import { getMoonData, getMoonTimes, MoonData, MoonTimes, drawMoonPhase, drawMoonPhaseSmall, calculateAngleDifference, calculateBlinkIntensity, resetBlinkTimer, testSunCalcCoordinates } from './moon';
-// ...existing code...
+import { getMoonData, getMoonTimes, MoonData, drawMoonPhaseSmall, calculateAngleDifference, resetBlinkTimer, testSunCalcCoordinates } from './moon';
 const illuminationElement = document.getElementById('illumination');
 import { getDirectionName } from './direction';
 
@@ -13,12 +12,6 @@ const altitudeElement = document.getElementById('altitude');
 const moonRiseElement = document.getElementById('moon-rise');
 const moonSetElement = document.getElementById('moon-set');
 const mapLinkElement = document.getElementById('map-link') as HTMLAnchorElement;
-const moonCanvas = document.getElementById('moon-canvas') as HTMLCanvasElement;
-
-// 月探知機関連の要素
-// const detectorStatusElement = document.getElementById('detector-status');
-// const compassNeedle = document.getElementById('compass-needle');
-// const moonTarget = document.getElementById('moon-target');
 
 const permissionButton = document.getElementById('permission-button') as HTMLButtonElement;
 const locationPermissionButton = document.getElementById('location-permission-button') as HTMLButtonElement;
@@ -52,46 +45,6 @@ let deviceOrientation = {
     gamma: null as number | null   // 左右の傾き
 };
 
-// 月探知機の更新をスロットリングするための変数
-let lastDetectorUpdate = 0;
-const DETECTOR_UPDATE_INTERVAL = 200; // 200ms間隔で更新（敏感さを抑制）
-
-// 音波探知機の状態管理
-interface SonarState {
-    isActive: boolean;
-    waveRadius: number;
-    waveOpacity: number;
-    animationPhase: number;
-    lastPulse: number;
-    pulseInterval: number;
-    moonDistance: number;
-    moonAngle: number;
-    detectionLevel: 'scanning' | 'close' | 'found' | 'locked';
-}
-
-// レーダー探知機の状態管理
-interface RadarState {
-    isActive: boolean;
-    sweepAngle: number;
-    sweepSpeed: number;
-    lastPing: number;
-    pingInterval: number;
-    moonDistance: number;
-    moonAngle: number;
-    moonElevation: number;
-    detectionLevel: 'scanning' | 'close' | 'found' | 'locked';
-    targets: Array<{
-        angle: number;
-        distance: number;
-        strength: number;
-        fadeTime: number;
-    }>;
-    sweepTrail: Array<{
-        angle: number;
-        opacity: number;
-    }>;
-}
-
 // 磁気コンパス探知機の状態管理
 interface CompassState {
     isActive: boolean;
@@ -109,32 +62,6 @@ interface CompassState {
     isCalibrated: boolean;
 }
 
-let sonarState: SonarState = {
-    isActive: true,
-    waveRadius: 0,
-    waveOpacity: 1,
-    animationPhase: 0,
-    lastPulse: 0,
-    pulseInterval: 2000, // 初期パルス間隔（2秒）
-    moonDistance: Infinity,
-    moonAngle: 0,
-    detectionLevel: 'scanning'
-};
-
-let radarState: RadarState = {
-    isActive: false,
-    sweepAngle: 0,
-    sweepSpeed: 3,
-    lastPing: 0,
-    pingInterval: 1500,
-    moonDistance: Infinity,
-    moonAngle: 0,
-    moonElevation: 0,
-    detectionLevel: 'scanning',
-    targets: [],
-    sweepTrail: []
-};
-
 let compassState: CompassState = {
     isActive: true,
     magneticField: 0,
@@ -149,114 +76,6 @@ let compassState: CompassState = {
     magneticHistory: [],
     isCalibrated: false
 };
-
-// 現在アクティブな探知機
-let activeDetector: 'sonar' | 'radar' | 'compass' = 'compass';
-
-// オーディオシステム
-class SonarAudio {
-    private audioContext: AudioContext | null = null;
-    private gainNode: GainNode | null = null;
-    private oscillator: OscillatorNode | null = null;
-    private isInitialized = false;
-    private isMuted = false;
-    private volume = 0.3;
-
-    async initialize() {
-        if (this.isInitialized) return;
-        
-        try {
-            this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-            this.gainNode = this.audioContext.createGain();
-            this.gainNode.connect(this.audioContext.destination);
-            this.gainNode.gain.value = this.volume;
-            this.isInitialized = true;
-            console.log('✅ オーディオシステムを初期化しました');
-        } catch (error) {
-            console.error('❌ オーディオシステムの初期化に失敗:', error);
-        }
-    }
-
-    setVolume(volume: number) {
-        this.volume = Math.max(0, Math.min(1, volume));
-        if (this.gainNode) {
-            this.gainNode.gain.value = this.isMuted ? 0 : this.volume;
-        }
-    }
-
-    setMuted(muted: boolean) {
-        this.isMuted = muted;
-        if (this.gainNode) {
-            this.gainNode.gain.value = this.isMuted ? 0 : this.volume;
-        }
-    }
-
-    playBeep(frequency: number, duration: number) {
-        if (!this.isInitialized || !this.audioContext || !this.gainNode || this.isMuted) return;
-
-        try {
-            const oscillator = this.audioContext.createOscillator();
-            const gainNode = this.audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(this.gainNode);
-            
-            oscillator.frequency.value = frequency;
-            oscillator.type = 'sine';
-            
-            // エンベロープ（音量の変化）を設定
-            const now = this.audioContext.currentTime;
-            gainNode.gain.setValueAtTime(0, now);
-            gainNode.gain.linearRampToValueAtTime(0.3, now + 0.01); // アタック
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration); // ディケイ
-            
-            oscillator.start(now);
-            oscillator.stop(now + duration);
-        } catch (error) {
-            console.error('ビープ音の再生に失敗:', error);
-        }
-    }
-
-    // レーダー用のピング音
-    playRadarPing(frequency: number, duration: number, sweepEffect: boolean = false) {
-        if (!this.isInitialized || !this.audioContext || !this.gainNode || this.isMuted) return;
-
-        try {
-            const oscillator = this.audioContext.createOscillator();
-            const gainNode = this.audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(this.gainNode);
-            
-            oscillator.type = 'triangle'; // レーダーらしい音色
-            
-            const now = this.audioContext.currentTime;
-            
-            if (sweepEffect) {
-                // スイープ効果: 周波数が変化
-                oscillator.frequency.setValueAtTime(frequency * 0.8, now);
-                oscillator.frequency.linearRampToValueAtTime(frequency * 1.2, now + duration * 0.5);
-                oscillator.frequency.linearRampToValueAtTime(frequency, now + duration);
-            } else {
-                oscillator.frequency.value = frequency;
-            }
-            
-            // レーダー特有のエンベロープ
-            gainNode.gain.setValueAtTime(0, now);
-            gainNode.gain.linearRampToValueAtTime(0.5, now + 0.005); // 短いアタック
-            gainNode.gain.exponentialRampToValueAtTime(0.1, now + duration * 0.3); // 早いディケイ
-            gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration); // ロングテール
-            
-            oscillator.start(now);
-            oscillator.stop(now + duration);
-        } catch (error) {
-            console.error('レーダーピング音の再生に失敗:', error);
-        }
-    }
-}
-
-const sonarAudio = new SonarAudio();
-const radarAudio = new SonarAudio(); // レーダー用に別インスタンス
 
 // 磁気コンパス用オーディオクラス
 class CompassAudio {
@@ -454,31 +273,6 @@ function updateDisplay() {
     }
     if (mapLinkElement) {
         mapLinkElement.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
-    }
-
-    // 月の形を描画（点滅機能付き）
-    if (moonCanvas) {
-        // 角度差を計算して点滅強度を決定
-        let blinkIntensity = 1; // デフォルトは点滅なし
-        
-        if (deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
-            // デバイスの高度を計算（betaから変換）
-            // beta: -180°〜180°の範囲（-90°=後傾、0°=水平、90°=前傾、±180°=逆さま）
-            let deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
-            
-            // 角度差を計算
-            const angleDiff = calculateAngleDifference(
-                deviceOrientation.alpha,
-                deviceElevation,
-                moonData.azimuth,
-                moonData.altitude
-            );
-            
-            // 点滅強度を計算
-            blinkIntensity = calculateBlinkIntensity(angleDiff, Date.now());
-        }
-        
-        drawMoonPhase(moonCanvas, moonData, blinkIntensity);
     }
 }
 
@@ -958,12 +752,6 @@ setInterval(() => {
         
         // 磁気コンパス探知機の更新
         updateCompassDetector(currentMoonData.azimuth, angleDiff, currentMoonData.altitude);
-        
-        // 月の点滅効果を更新（安定したタイミングで）
-        if (moonCanvas) {
-            const blinkIntensity = calculateBlinkIntensity(angleDiff, Date.now());
-            drawMoonPhase(moonCanvas, currentMoonData, blinkIntensity);
-        }
     }
 }, 100); // 100ms間隔で滑らかだが敏感すぎない制御
 
@@ -979,86 +767,8 @@ function startSonarAnimation() {
 // 音波探知機の初期化
 async function initializeSonar() {
     // オーディオシステムの初期化
-    // await sonarAudio.initialize();
-    // await radarAudio.initialize();
     await compassAudio.initialize();
     
-    // ソナーキャンバスのサイズ設定（無効化）
-    // if (sonarCanvas) {
-    //     sonarCanvas.width = 300;
-    //     sonarCanvas.height = 300;
-    // }
-    
-    // レーダーキャンバスのサイズ設定（無効化）
-    // if (radarCanvas) {
-    //     radarCanvas.width = 320;
-    //     radarCanvas.height = 320;
-    // }
-    
-    // タブイベントリスナー（無効化）
-    // if (sonarTab && radarTab && compassTab) {
-    //     sonarTab.addEventListener('click', () => switchDetector('sonar'));
-    //     radarTab.addEventListener('click', () => switchDetector('radar'));
-    //     compassTab.addEventListener('click', () => switchDetector('compass'));
-    // }
-    
-    // 音量スライダーのイベントリスナー（ソナー）（無効化）
-    // if (volumeSlider) {
-    //     volumeSlider.value = '30'; // 初期音量30%
-    //     volumeSlider.addEventListener('input', (e) => {
-    //         const volume = parseInt((e.target as HTMLInputElement).value) / 100;
-    //         sonarAudio.setVolume(volume);
-    //     });
-    // }
-    
-    // ミュートボタンのイベントリスナー（ソナー）（無効化）
-    // if (muteButton) {
-    //     muteButton.addEventListener('click', () => {
-    //         const isMuted = muteButton.classList.contains('muted');
-    //         sonarAudio.setMuted(!isMuted);
-    //         
-    //         if (isMuted) {
-    //             muteButton.classList.remove('muted');
-    //             muteButton.textContent = '🔊';
-    //         } else {
-    //             muteButton.classList.add('muted');
-    //             muteButton.textContent = '🔇';
-    //         }
-    //     });
-    // }
-    
-    // レーダー音量スライダーのイベントリスナー（無効化）
-    // if (radarVolumeSlider) {
-    //     radarVolumeSlider.value = '40'; // 初期音量40%
-    //     radarVolumeSlider.addEventListener('input', (e) => {
-    //         const volume = parseInt((e.target as HTMLInputElement).value) / 100;
-    //         radarAudio.setVolume(volume);
-    //     });
-    // }
-    
-    // レーダーミュートボタンのイベントリスナー（無効化）
-    // if (radarMuteButton) {
-    //     radarMuteButton.addEventListener('click', () => {
-    //         const isMuted = radarMuteButton.classList.contains('muted');
-    //         radarAudio.setMuted(!isMuted);
-    //         
-    //         if (isMuted) {
-    //             radarMuteButton.classList.remove('muted');
-    //             radarMuteButton.textContent = '🔊';
-    //         } else {
-    //             radarMuteButton.classList.add('muted');
-    //             radarMuteButton.textContent = '🔇';
-    //         }
-    //     });
-    // }
-    
-    // スイープ速度スライダーのイベントリスナー（無効化）
-    // if (sweepSpeedSlider) {
-    //     sweepSpeedSlider.value = '3'; // 初期速度
-    //     sweepSpeedSlider.addEventListener('input', (e) => {
-    //         radarState.sweepSpeed = parseInt((e.target as HTMLInputElement).value);
-    //     });
-    // }
     
     // 磁気コンパス音量スライダーのイベントリスナー
     if (compassVolumeSlider) {
@@ -1555,20 +1265,6 @@ if (locationPermissionButton) {
 
 // ページ読み込み時に位置情報のセットアップ
 setupGeolocation();
-
-/**
- * 検知レベルに応じたレーダーピング周波数を取得
- */
-function getRadarPingFrequency(level: RadarState['detectionLevel']): number {
-    switch (level) {
-        case 'scanning': return 300;
-        case 'close': return 450;
-        case 'found': return 600;
-        case 'locked': return 800;
-        default: return 300;
-    }
-}
-
 /**
  * ダイアログを開く
  */
