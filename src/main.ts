@@ -298,30 +298,16 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
         deviationAngle = 360 - deviationAngle;
     }
     
-    // 磁場強度をシミュレート（月に近いほど強い磁気異常）
-    const maxDetectionAngle = 45; // 45度以内で磁気異常を検出
+    // 磁場強度を月までの近さで定義（方位角の差と高度の差）
+    const maxDetectionAngle = 45; // 45度以内で磁場を検出
     let magneticStrength = 0;
     
     if (totalAngleDiff <= maxDetectionAngle) {
-        // 距離に基づく磁場異常強度
+        // 単純に角度差の逆数で磁場強度を計算
+        // totalAngleDiffが小さいほど（月に近いほど）磁場強度が高くなる
         magneticStrength = Math.max(0, 1 - (totalAngleDiff / maxDetectionAngle));
         
-        // 高度による影響（低高度ほど強い）
-        const altitudeFactor = Math.max(0.2, 1 - Math.abs(clampedMoonAltitude) / 90);
-        magneticStrength *= altitudeFactor;
-        
-        // 感度設定の影響
-        magneticStrength *= (compassState.sensitivity / 5);
-        
-        // 月の満ち欠けによる磁場強度の変化
-        if (currentMoonData) {
-            const phaseFactor = 0.4 + 0.6 * currentMoonData.illumination;
-            magneticStrength *= phaseFactor;
-        }
-        
-        // ランダムノイズを追加してリアルな磁気計測をシミュレート
-        const noise = (Math.random() - 0.5) * 0.1;
-        magneticStrength += noise;
+        // 0〜1の範囲に制限
         magneticStrength = Math.max(0, Math.min(1, magneticStrength));
     }
     
