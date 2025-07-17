@@ -904,3 +904,71 @@ h1 {
     border-color: #AA0000;
     color: #FF0000;
 }
+
+/* 磁気コンパス探知機のスタイル */
+#compass-detector {
+    background: linear-gradient(135deg, #2c1810, #3d2817);
+    border: 2px solid #8b4513;
+}
+
+#compass-detector h3 {
+    color: #cd853f;
+}
+
+#compass-canvas {
+    border: 2px solid #8b4513;
+    border-radius: 50%;
+    box-shadow: 0 0 20px rgba(139, 69, 19, 0.5);
+    background: radial-gradient(circle, #1a0f0a, #2c1810);
+}
+
+#compass-info {
+    margin-top: 10px;
+    font-family: 'Courier New', monospace;
+    color: #cd853f;
+    font-size: 14px;
+}
+
+#compass-controls {
+    margin-top: 15px;
+}
+
+.compass-control {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #cd853f;
+}
+
+.compass-control label {
+    min-width: 120px;
+    margin-right: 10px;
+}
+
+.compass-control input[type="range"] {
+    flex: 1;
+    margin-right: 10px;
+    accent-color: #8b4513;
+}
+
+#compass-mute-button {
+    background: none;
+    border: 2px solid #8b4513;
+    color: #cd853f;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+#compass-mute-button:hover {
+    background: rgba(139, 69, 19, 0.2);
+    box-shadow: 0 0 10px rgba(139, 69, 19, 0.3);
+}
+
+#compass-mute-button.muted {
+    background: rgba(170, 0, 0, 0.3);
+    border-color: #AA0000;
+    color: #FF0000;
+}

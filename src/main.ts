@@ -42,8 +42,19 @@ const radarElevationElement = document.getElementById('radar-elevation');
 // 探知機タブ関連の要素
 const sonarTab = document.getElementById('sonar-tab') as HTMLButtonElement;
 const radarTab = document.getElementById('radar-tab') as HTMLButtonElement;
+const compassTab = document.getElementById('compass-tab') as HTMLButtonElement;
 const sonarDetector = document.getElementById('sonar-detector');
 const radarDetector = document.getElementById('radar-detector');
+const compassDetector = document.getElementById('compass-detector');
+
+// 磁気コンパス関連の要素
+const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasElement;
+const compassVolumeSlider = document.getElementById('compass-volume-slider') as HTMLInputElement;
+const compassMuteButton = document.getElementById('compass-mute-button') as HTMLButtonElement;
+const sensitivitySlider = document.getElementById('sensitivity-slider') as HTMLInputElement;
+const magneticFieldElement = document.getElementById('magnetic-field');
+const compassBearingElement = document.getElementById('compass-bearing');
+const deviationAngleElement = document.getElementById('deviation-angle');
 
 // 方位角補正コントロール関連の要素
 const toggleReverseBtn = document.getElementById('toggle-reverse-btn') as HTMLButtonElement;
@@ -102,6 +113,23 @@ interface RadarState {
     }>;
 }
 
+// 磁気コンパス探知機の状態管理
+interface CompassState {
+    isActive: boolean;
+    magneticField: number;
+    compassBearing: number;
+    deviationAngle: number;
+    sensitivity: number;
+    needleAngle: number;
+    magneticNoise: number;
+    lastTick: number;
+    tickInterval: number;
+    detectionLevel: 'calibrating' | 'searching' | 'weak' | 'strong' | 'locked';
+    magneticHistory: Array<{reading: number, time: number}>;
+    audioContext?: AudioContext;
+    isCalibrated: boolean;
+}
+
 let sonarState: SonarState = {
     isActive: true,
     waveRadius: 0,
@@ -128,8 +156,23 @@ let radarState: RadarState = {
     sweepTrail: []
 };
 
+let compassState: CompassState = {
+    isActive: false,
+    magneticField: 0,
+    compassBearing: 0,
+    deviationAngle: 0,
+    sensitivity: 5,
+    needleAngle: 0,
+    magneticNoise: 0,
+    lastTick: 0,
+    tickInterval: 1000,
+    detectionLevel: 'calibrating',
+    magneticHistory: [],
+    isCalibrated: false
+};
+
 // 現在アクティブな探知機
-let activeDetector: 'sonar' | 'radar' = 'sonar';
+let activeDetector: 'sonar' | 'radar' | 'compass' = 'sonar';
 
 // オーディオシステム
 class SonarAudio {
@@ -236,6 +279,128 @@ class SonarAudio {
 const sonarAudio = new SonarAudio();
 const radarAudio = new SonarAudio(); // レーダー用に別インスタンス
 
+// 磁気コンパス用オーディオクラス
+class CompassAudio {
+    private audioContext: AudioContext | null = null;
+    private gainNode: GainNode | null = null;
+    private isInitialized = false;
+    private isMuted = false;
+    private volume = 0.45;
+
+    async initialize() {
+        if (this.isInitialized) return;
+        
+        try {
+            this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            this.gainNode = this.audioContext.createGain();
+            this.gainNode.connect(this.audioContext.destination);
+            this.gainNode.gain.value = this.volume;
+            this.isInitialized = true;
+            console.log('✅ 磁気コンパス オーディオシステムを初期化しました');
+        } catch (error) {
+            console.error('❌ 磁気コンパス オーディオシステムの初期化に失敗:', error);
+        }
+    }
+
+    setVolume(volume: number) {
+        this.volume = volume;
+        if (this.gainNode) {
+            this.gainNode.gain.value = this.isMuted ? 0 : volume;
+        }
+    }
+
+    setMuted(muted: boolean) {
+        this.isMuted = muted;
+        if (this.gainNode) {
+            this.gainNode.gain.value = muted ? 0 : this.volume;
+        }
+    }
+
+    // 磁気コンパス特有のチック音（機械式コンパスの音）
+    playTick(magneticStrength: number, detectionLevel: CompassState['detectionLevel']) {
+        if (!this.audioContext || !this.gainNode || this.isMuted) return;
+
+        try {
+            const now = this.audioContext.currentTime;
+            
+            // チック音の基本周波数（検知レベルによって変化）
+            let baseFreq = 200;
+            let duration = 0.1;
+            
+            switch (detectionLevel) {
+                case 'calibrating': baseFreq = 150; duration = 0.05; break;
+                case 'searching': baseFreq = 200; duration = 0.08; break;
+                case 'weak': baseFreq = 300; duration = 0.12; break;
+                case 'strong': baseFreq = 450; duration = 0.15; break;
+                case 'locked': baseFreq = 600; duration = 0.2; break;
+            }
+            
+            // メカニカルなチック音を生成
+            const oscillator = this.audioContext.createOscillator();
+            const tickGain = this.audioContext.createGain();
+            const filter = this.audioContext.createBiquadFilter();
+            
+            oscillator.connect(filter);
+            filter.connect(tickGain);
+            tickGain.connect(this.gainNode);
+            
+            // 鋭いチック音のための設定
+            oscillator.type = 'square';
+            oscillator.frequency.value = baseFreq;
+            
+            // ローパスフィルターでメカニカルな音質に
+            filter.type = 'lowpass';
+            filter.frequency.value = baseFreq * 2;
+            filter.Q.value = 5;
+            
+            // 鋭いアタックとクイックディケイ
+            tickGain.gain.setValueAtTime(0, now);
+            tickGain.gain.linearRampToValueAtTime(magneticStrength * 0.8, now + 0.001);
+            tickGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+            
+            oscillator.start(now);
+            oscillator.stop(now + duration);
+        } catch (error) {
+            console.error('磁気コンパス チック音の再生に失敗:', error);
+        }
+    }
+
+    // 磁気異常検出時の警告音
+    playMagneticWarning() {
+        if (!this.audioContext || !this.gainNode || this.isMuted) return;
+
+        try {
+            const now = this.audioContext.currentTime;
+            
+            // 不協和音で磁気異常を表現
+            const frequencies = [220, 277, 330]; // 不協和音
+            
+            frequencies.forEach((freq, index) => {
+                const oscillator = this.audioContext!.createOscillator();
+                const warningGain = this.audioContext!.createGain();
+                
+                oscillator.connect(warningGain);
+                warningGain.connect(this.gainNode!);
+                
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.value = freq;
+                
+                const startTime = now + index * 0.1;
+                warningGain.gain.setValueAtTime(0, startTime);
+                warningGain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+                warningGain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+                
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.3);
+            });
+        } catch (error) {
+            console.error('磁気異常警告音の再生に失敗:', error);
+        }
+    }
+}
+
+const compassAudio = new CompassAudio();
+
 
 let currentPosition: GeolocationPosition | null = null;
 let currentMoonData: MoonData | null = null;
@@ -341,7 +506,325 @@ function updateDisplay() {
     updateMoonDetector(moonData);
 }
 
-// 月探知機の定期的な更新（センサーの変化を即座に反映）
+/**
+ * 磁気コンパスの更新
+ */
+function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clampedMoonAltitude: number) {
+    if (!compassState.isActive) return;
+
+    const currentTime = Date.now();
+    
+    // 地磁気シミュレーション（実際のdeviceOrientationから磁気偏差を計算）
+    let magneticBearing = moonAzimuth;
+    if (deviceOrientation.alpha !== null) {
+        // 磁気偏差をシミュレート（日本では約7度西偏）
+        const magneticDeclination = -7; // 度
+        magneticBearing = (deviceOrientation.alpha + magneticDeclination + 360) % 360;
+    }
+    
+    // 月の方向との偏差角を計算
+    let deviationAngle = Math.abs(magneticBearing - moonAzimuth);
+    if (deviationAngle > 180) {
+        deviationAngle = 360 - deviationAngle;
+    }
+    
+    // 磁場強度をシミュレート（月に近いほど強い磁気異常）
+    const maxDetectionAngle = 45; // 45度以内で磁気異常を検出
+    let magneticStrength = 0;
+    
+    if (totalAngleDiff <= maxDetectionAngle) {
+        // 距離に基づく磁場異常強度
+        magneticStrength = Math.max(0, 1 - (totalAngleDiff / maxDetectionAngle));
+        
+        // 高度による影響（低高度ほど強い）
+        const altitudeFactor = Math.max(0.2, 1 - Math.abs(clampedMoonAltitude) / 90);
+        magneticStrength *= altitudeFactor;
+        
+        // 感度設定の影響
+        magneticStrength *= (compassState.sensitivity / 5);
+        
+        // 月の満ち欠けによる磁場強度の変化
+        if (currentMoonData) {
+            const phaseFactor = 0.4 + 0.6 * currentMoonData.illumination;
+            magneticStrength *= phaseFactor;
+        }
+        
+        // ランダムノイズを追加してリアルな磁気計測をシミュレート
+        const noise = (Math.random() - 0.5) * 0.1;
+        magneticStrength += noise;
+        magneticStrength = Math.max(0, Math.min(1, magneticStrength));
+    }
+    
+    // 磁場ノイズの計算
+    compassState.magneticNoise = Math.random() * 0.05;
+    
+    // 状態の更新
+    compassState.compassBearing = magneticBearing;
+    compassState.deviationAngle = deviationAngle;
+    compassState.magneticField = magneticStrength;
+    
+    // 針の角度を更新（磁場強度に応じて振動）
+    const targetAngle = moonAzimuth + (magneticStrength * 10 * Math.sin(currentTime / 100));
+    compassState.needleAngle = compassState.needleAngle * 0.9 + targetAngle * 0.1; // スムージング
+    
+    // 検知履歴に追加
+    compassState.magneticHistory.push({
+        reading: magneticStrength,
+        time: currentTime
+    });
+    
+    // 古い履歴を削除（10秒間のみ保持）
+    compassState.magneticHistory = compassState.magneticHistory.filter(
+        entry => currentTime - entry.time < 10000
+    );
+    
+    // 検知レベルの判定
+    if (!compassState.isCalibrated && compassState.magneticHistory.length >= 20) {
+        compassState.isCalibrated = true;
+        compassState.detectionLevel = 'searching';
+    } else if (magneticStrength > 0.8) {
+        compassState.detectionLevel = 'locked';
+    } else if (magneticStrength > 0.6) {
+        compassState.detectionLevel = 'strong';
+    } else if (magneticStrength > 0.3) {
+        compassState.detectionLevel = 'weak';
+    } else if (compassState.isCalibrated) {
+        compassState.detectionLevel = 'searching';
+    }
+    
+    // チック音の間隔を調整
+    const baseInterval = 1200;
+    compassState.tickInterval = Math.max(100, baseInterval * (1 - magneticStrength));
+    
+    // チック音を再生
+    if (currentTime - compassState.lastTick > compassState.tickInterval) {
+        compassAudio.playTick(magneticStrength, compassState.detectionLevel);
+        compassState.lastTick = currentTime;
+        
+        // 強い磁気異常検出時は警告音も再生
+        if (magneticStrength > 0.9 && Math.random() < 0.3) {
+            setTimeout(() => compassAudio.playMagneticWarning(), 200);
+        }
+    }
+    
+    // 磁気コンパス情報の表示を更新
+    if (magneticFieldElement) {
+        magneticFieldElement.textContent = `磁場強度: ${(magneticStrength * 100).toFixed(1)}%`;
+    }
+    if (compassBearingElement) {
+        compassBearingElement.textContent = `磁気方位: ${magneticBearing.toFixed(1)}°`;
+    }
+    if (deviationAngleElement) {
+        deviationAngleElement.textContent = `偏差角: ${deviationAngle.toFixed(1)}°`;
+    }
+}
+
+/**
+ * 磁気コンパスの画面を描画
+ */
+function drawCompassDisplay(canvas: HTMLCanvasElement) {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const compassRadius = Math.min(width, height) * 0.4;
+    
+    // 背景をクリア
+    ctx.fillStyle = '#1a0f0a';
+    ctx.fillRect(0, 0, width, height);
+    
+    // コンパスの外枠を描画
+    ctx.strokeStyle = '#8b4513';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, compassRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // 内側のリング
+    ctx.strokeStyle = '#cd853f';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, compassRadius - 15, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // 方位目盛りを描画
+    for (let angle = 0; angle < 360; angle += 10) {
+        const radian = (angle - 90) * Math.PI / 180; // -90で北を上に
+        const isMainDirection = angle % 90 === 0;
+        const isMidDirection = angle % 30 === 0;
+        
+        const outerRadius = compassRadius - 5;
+        const innerRadius = isMainDirection ? compassRadius - 25 : 
+                           isMidDirection ? compassRadius - 20 : compassRadius - 15;
+        
+        const x1 = centerX + Math.cos(radian) * outerRadius;
+        const y1 = centerY + Math.sin(radian) * outerRadius;
+        const x2 = centerX + Math.cos(radian) * innerRadius;
+        const y2 = centerY + Math.sin(radian) * innerRadius;
+        
+        ctx.strokeStyle = isMainDirection ? '#daa520' : '#cd853f';
+        ctx.lineWidth = isMainDirection ? 3 : isMidDirection ? 2 : 1;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        
+        // 主要方位のラベル
+        if (isMainDirection) {
+            const labelRadius = compassRadius - 35;
+            const labelX = centerX + Math.cos(radian) * labelRadius;
+            const labelY = centerY + Math.sin(radian) * labelRadius;
+            
+            const directions = ['N', 'E', 'S', 'W'];
+            const directionIndex = angle / 90;
+            
+            ctx.fillStyle = '#daa520';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(directions[directionIndex], labelX, labelY);
+        }
+    }
+    
+    // 磁気針を描画（北を指す）
+    const magneticNeedleAngle = (compassState.compassBearing - 90) * Math.PI / 180;
+    const needleLength = compassRadius - 40;
+    
+    // 磁気針の影
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(centerX + 2, centerY + 2);
+    ctx.lineTo(
+        centerX + Math.cos(magneticNeedleAngle) * needleLength + 2,
+        centerY + Math.sin(magneticNeedleAngle) * needleLength + 2
+    );
+    ctx.stroke();
+    
+    // 磁気針本体（赤）
+    ctx.strokeStyle = '#dc143c';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(
+        centerX + Math.cos(magneticNeedleAngle) * needleLength,
+        centerY + Math.sin(magneticNeedleAngle) * needleLength
+    );
+    ctx.stroke();
+    
+    // 月の方向指示針（金色）
+    const moonNeedleAngle = (compassState.needleAngle - 90) * Math.PI / 180;
+    const moonNeedleLength = compassRadius - 50;
+    
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(
+        centerX + Math.cos(moonNeedleAngle) * moonNeedleLength,
+        centerY + Math.sin(moonNeedleAngle) * moonNeedleLength
+    );
+    ctx.stroke();
+    
+    // 針の中心点
+    ctx.fillStyle = '#8b4513';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#cd853f';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // 磁場強度の視覚化（周囲の光輪）
+    if (compassState.magneticField > 0) {
+        const intensity = compassState.magneticField;
+        const glowRadius = compassRadius + 20;
+        
+        const gradient = ctx.createRadialGradient(centerX, centerY, compassRadius, centerX, centerY, glowRadius);
+        gradient.addColorStop(0, `rgba(255, 215, 0, ${intensity * 0.3})`);
+        gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // 磁場ノイズの視覚化（小さな粒子）
+    for (let i = 0; i < compassState.magneticField * 20; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = compassRadius * 0.3 + Math.random() * compassRadius * 0.4;
+        const x = centerX + Math.cos(angle) * distance;
+        const y = centerY + Math.sin(angle) * distance;
+        
+        ctx.fillStyle = `rgba(255, 215, 0, ${Math.random() * 0.5})`;
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // 検知レベル表示
+    const levelColors = {
+        'calibrating': '#888888',
+        'searching': '#4169e1',
+        'weak': '#32cd32',
+        'strong': '#ffd700',
+        'locked': '#ff4500'
+    };
+    
+    const levelNames = {
+        'calibrating': '較正中',
+        'searching': '探索中',
+        'weak': '微弱検出',
+        'strong': '強磁場',
+        'locked': '月磁場！'
+    };
+    
+    ctx.fillStyle = levelColors[compassState.detectionLevel];
+    ctx.font = 'bold 14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(levelNames[compassState.detectionLevel], centerX, centerY + compassRadius + 25);
+    
+    // 磁場強度の履歴グラフ
+    if (compassState.magneticHistory.length > 1) {
+        const graphWidth = 150;
+        const graphHeight = 40;
+        const graphX = width - graphWidth - 10;
+        const graphY = 10;
+        
+        // グラフ背景
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(graphX, graphY, graphWidth, graphHeight);
+        
+        // グラフ線
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        for (let i = 0; i < compassState.magneticHistory.length; i++) {
+            const entry = compassState.magneticHistory[i];
+            const x = graphX + (i / (compassState.magneticHistory.length - 1)) * graphWidth;
+            const y = graphY + graphHeight - (entry.reading * graphHeight);
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+        
+        ctx.stroke();
+    }
+}
+
+/**
+ * 月探知機の定期的な更新（センサーの変化を即座に反映）
+ */
 setInterval(() => {
     if (currentMoonData && (deviceOrientation.alpha !== null && deviceOrientation.beta !== null)) {
         updateMoonDetector(currentMoonData);
@@ -368,6 +851,8 @@ function startSonarAnimation() {
             drawSonarDisplay();
         } else if (activeDetector === 'radar' && radarState.isActive) {
             drawRadarDisplay();
+        } else if (activeDetector === 'compass' && compassState.isActive) {
+            drawCompassDisplay(compassCanvas);
         }
         requestAnimationFrame(animate);
     }
@@ -379,6 +864,7 @@ async function initializeSonar() {
     // オーディオシステムの初期化
     await sonarAudio.initialize();
     await radarAudio.initialize();
+    await compassAudio.initialize();
     
     // ソナーキャンバスのサイズ設定
     if (sonarCanvas) {
@@ -393,9 +879,10 @@ async function initializeSonar() {
     }
     
     // タブイベントリスナー
-    if (sonarTab && radarTab) {
+    if (sonarTab && radarTab && compassTab) {
         sonarTab.addEventListener('click', () => switchDetector('sonar'));
         radarTab.addEventListener('click', () => switchDetector('radar'));
+        compassTab.addEventListener('click', () => switchDetector('compass'));
     }
     
     // 音量スライダーのイベントリスナー（ソナー）
@@ -453,6 +940,39 @@ async function initializeSonar() {
         sweepSpeedSlider.value = '3'; // 初期速度
         sweepSpeedSlider.addEventListener('input', (e) => {
             radarState.sweepSpeed = parseInt((e.target as HTMLInputElement).value);
+        });
+    }
+    
+    // 磁気コンパス音量スライダーのイベントリスナー
+    if (compassVolumeSlider) {
+        compassVolumeSlider.value = '45'; // 初期音量45%
+        compassVolumeSlider.addEventListener('input', (e) => {
+            const volume = parseInt((e.target as HTMLInputElement).value) / 100;
+            compassAudio.setVolume(volume);
+        });
+    }
+    
+    // 磁気コンパスミュートボタンのイベントリスナー
+    if (compassMuteButton) {
+        compassMuteButton.addEventListener('click', () => {
+            const isMuted = compassMuteButton.classList.contains('muted');
+            compassAudio.setMuted(!isMuted);
+            
+            if (isMuted) {
+                compassMuteButton.classList.remove('muted');
+                compassMuteButton.textContent = '🔊';
+            } else {
+                compassMuteButton.classList.add('muted');
+                compassMuteButton.textContent = '🔇';
+            }
+        });
+    }
+    
+    // 磁気感度スライダーのイベントリスナー
+    if (sensitivitySlider) {
+        sensitivitySlider.value = '5'; // 初期感度
+        sensitivitySlider.addEventListener('input', (e) => {
+            compassState.sensitivity = parseInt((e.target as HTMLInputElement).value);
         });
     }
     
@@ -1047,6 +1567,9 @@ function updateMoonDetector(moonData: MoonData) {
         radarState.moonElevation = clampedMoonAltitude;
         radarState.detectionLevel = sonarState.detectionLevel; // 同じ検知レベルを使用
     }
+    
+    // 磁気コンパス用の月データも更新
+    updateCompassDetector(moonAzimuth, totalAngleDiff, clampedMoonAltitude);
 }
 
 /**
@@ -1273,26 +1796,29 @@ function getRadarPingFrequency(level: RadarState['detectionLevel']): number {
 /**
  * タブ切り替え機能
  */
-function switchDetector(type: 'sonar' | 'radar') {
+function switchDetector(type: 'sonar' | 'radar' | 'compass') {
     activeDetector = type;
     
     // タブの見た目を更新
-    if (sonarTab && radarTab) {
+    if (sonarTab && radarTab && compassTab) {
         sonarTab.classList.toggle('active', type === 'sonar');
         radarTab.classList.toggle('active', type === 'radar');
+        compassTab.classList.toggle('active', type === 'compass');
     }
     
     // パネルの表示を切り替え
-    if (sonarDetector && radarDetector) {
+    if (sonarDetector && radarDetector && compassDetector) {
         sonarDetector.classList.toggle('active', type === 'sonar');
         radarDetector.classList.toggle('active', type === 'radar');
+        compassDetector.classList.toggle('active', type === 'compass');
     }
     
     // 探知機の状態を更新
     sonarState.isActive = (type === 'sonar');
     radarState.isActive = (type === 'radar');
+    compassState.isActive = (type === 'compass');
     
-    console.log(`探知機を${type === 'sonar' ? 'ソナー' : 'レーダー'}に切り替えました`);
+    console.log(`探知機を${type === 'sonar' ? 'ソナー' : type === 'radar' ? 'レーダー' : '磁気コンパス'}に切り替えました`);
 }
 
 /**
@@ -1748,7 +2274,7 @@ function analyzeOrientationPattern() {
     
     // ここで実際の検出ロジックを実装
     // 現在は手動でテストできるようにログ出力のみ
-    console.log('東西反転の自動検出は実装中です。手動で設定してください。');
+    console.log('東西反転の自動検出は実装中です。手動で設定できるようにログ出力しています。');
 }
 
 /**

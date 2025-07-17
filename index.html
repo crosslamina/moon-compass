@@ -23,6 +23,7 @@
             <div id="detector-tabs">
                 <button id="sonar-tab" class="detector-tab active">🔊 ソナー</button>
                 <button id="radar-tab" class="detector-tab">📡 レーダー</button>
+                <button id="compass-tab" class="detector-tab">🧭 磁気</button>
             </div>
 
             <!-- 音波探知機 -->
@@ -60,6 +61,30 @@
                     <div class="radar-control">
                         <label for="sweep-speed-slider">スイープ速度:</label>
                         <input type="range" id="sweep-speed-slider" min="1" max="5" value="3">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 磁気コンパス探知機 -->
+            <div id="compass-detector" class="detector-panel">
+                <h3>🧭 磁気コンパス探知機</h3>
+                <div id="compass-container">
+                    <canvas id="compass-canvas" width="320" height="320"></canvas>
+                    <div id="compass-info">
+                        <div id="magnetic-field">磁場強度: --</div>
+                        <div id="compass-bearing">磁気方位: --</div>
+                        <div id="deviation-angle">偏差角: --</div>
+                    </div>
+                </div>
+                <div id="compass-controls">
+                    <div class="compass-control">
+                        <label for="compass-volume-slider">音量:</label>
+                        <input type="range" id="compass-volume-slider" min="0" max="100" value="45">
+                        <button id="compass-mute-button" class="mute-btn">🔊</button>
+                    </div>
+                    <div class="compass-control">
+                        <label for="sensitivity-slider">感度:</label>
+                        <input type="range" id="sensitivity-slider" min="1" max="10" value="5">
                     </div>
                 </div>
             </div>
