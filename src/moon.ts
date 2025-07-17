@@ -399,6 +399,177 @@ function drawGibbousShape(
 }
 
 /**
+ * 小さい針の先端用に月の形をキャンバスに描画する
+ * @param ctx - 描画コンテキスト
+ * @param centerX - 中心X座標
+ * @param centerY - 中心Y座標
+ * @param radius - 月の半径
+ * @param moonData - 月のデータ
+ */
+export function drawMoonPhaseSmall(
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    centerY: number,
+    radius: number,
+    moonData: MoonData
+): void {
+    const phase = moonData.phase;
+    const illumination = moonData.illumination;
+
+    // 月の影の部分（暗い部分）
+    ctx.fillStyle = '#2c3e50';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // 月の明るい部分
+    ctx.fillStyle = '#f4d03f';
+    
+    // illuminationに基づいて月の形を描画、phaseで対称性を判定
+    if (illumination < 0.01) {
+        // 新月 - ほぼ暗い円のみ（わずかに輪郭を見せる）
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.stroke();
+    } else {
+        // 月の明るい部分を描画
+        const isWaxing = phase < 0.5; // 上弦期（0〜0.5）か下弦期（0.5〜1）か
+        drawMoonShapeSmall(ctx, centerX, centerY, radius, illumination, isWaxing);
+    }
+
+    // 月の輪郭
+    ctx.strokeStyle = '#bdc3c7';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.stroke();
+}
+
+/**
+ * 小さい月の形状を描画（針の先端用）
+ */
+function drawMoonShapeSmall(
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    centerY: number,
+    radius: number,
+    illumination: number,
+    isWaxing: boolean
+): void {
+    ctx.save();
+    
+    // クリッピングで円形にする
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.clip();
+
+    if (illumination >= 0.99) {
+        // 満月
+        ctx.fillStyle = '#f4d03f';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.fill();
+    } else {
+        // 月の位相に基づいた形状計算
+        const k = illumination;
+        
+        if (k <= 0.5) {
+            // 三日月〜半月：月の右端または左端から光が当たり始める
+            drawCrescentShapeSmall(ctx, centerX, centerY, radius, k, isWaxing);
+        } else {
+            // 半月〜満月：ギブス形状
+            drawGibbousShapeSmall(ctx, centerX, centerY, radius, k, isWaxing);
+        }
+    }
+    
+    ctx.restore();
+}
+
+/**
+ * 三日月形状を小さく描画（針の先端用）
+ */
+function drawCrescentShapeSmall(
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    centerY: number,
+    radius: number,
+    illumination: number,
+    isWaxing: boolean
+): void {
+    const cosTheta = 2 * illumination - 1;
+    const ellipseRadiusX = radius * Math.abs(cosTheta);
+    
+    ctx.fillStyle = '#f4d03f';
+    ctx.beginPath();
+    
+    if (isWaxing) {
+        // 上弦期：右側が明るい
+        ctx.arc(centerX, centerY, radius, -Math.PI/2, Math.PI/2, false);
+        if (ellipseRadiusX > 0) {
+            ctx.ellipse(centerX, centerY, ellipseRadiusX, radius, 0, Math.PI/2, -Math.PI/2, true);
+        } else {
+            ctx.lineTo(centerX, centerY - radius);
+        }
+    } else {
+        // 下弦期：左側が明るい
+        ctx.arc(centerX, centerY, radius, Math.PI/2, -Math.PI/2, false);
+        if (ellipseRadiusX > 0) {
+            ctx.ellipse(centerX, centerY, ellipseRadiusX, radius, 0, -Math.PI/2, Math.PI/2, true);
+        } else {
+            ctx.lineTo(centerX, centerY + radius);
+        }
+    }
+    
+    ctx.closePath();
+    ctx.fill();
+}
+
+/**
+ * ギブス形状（ふくらんだ月）を小さく描画（針の先端用）
+ */
+function drawGibbousShapeSmall(
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    centerY: number,
+    radius: number,
+    illumination: number,
+    isWaxing: boolean
+): void {
+    // まず満月を描画
+    ctx.fillStyle = '#f4d03f';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // illuminationから楕円の半径を計算
+    const cosTheta = 2 * illumination - 1;
+    const ellipseRadiusX = radius * Math.abs(cosTheta);
+    
+    // 暗い部分を描画
+    ctx.fillStyle = '#2c3e50';
+    ctx.beginPath();
+    
+    if (isWaxing) {
+        // 上弦期：左側に暗い部分
+        ctx.arc(centerX, centerY, radius, Math.PI/2, -Math.PI/2, false);
+        if (ellipseRadiusX < radius) {
+            ctx.ellipse(centerX, centerY, ellipseRadiusX, radius, 0, -Math.PI/2, Math.PI/2, true);
+        }
+    } else {
+        // 下弦期：右側に暗い部分
+        ctx.arc(centerX, centerY, radius, -Math.PI/2, Math.PI/2, false);
+        if (ellipseRadiusX < radius) {
+            ctx.ellipse(centerX, centerY, ellipseRadiusX, radius, 0, Math.PI/2, -Math.PI/2, true);
+        }
+    }
+    
+    ctx.closePath();
+    ctx.fill();
+}
+
+/**
  * デバイスの向きと月の位置の角度差を計算
  * @param deviceAzimuth - デバイスの方位角（度）
  * @param deviceAltitude - デバイスの高度角（度）

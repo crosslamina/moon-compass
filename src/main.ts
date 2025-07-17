@@ -1,6 +1,6 @@
 const deviceOrientationElement = document.getElementById('device-orientation');
 const geoInfoElement = document.getElementById('geo-info');
-import { getMoonData, getMoonTimes, MoonData, MoonTimes, drawMoonPhase, calculateAngleDifference, calculateBlinkIntensity, resetBlinkTimer, testSunCalcCoordinates } from './moon';
+import { getMoonData, getMoonTimes, MoonData, MoonTimes, drawMoonPhase, drawMoonPhaseSmall, calculateAngleDifference, calculateBlinkIntensity, resetBlinkTimer, testSunCalcCoordinates } from './moon';
 // ...existing code...
 const illuminationElement = document.getElementById('illumination');
 import { getDirectionName } from './direction';
@@ -840,30 +840,14 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
     );
     ctx.stroke();
     
-    // 月の針の先端マーカー
-    if (moonNeedleLength > 10) {
+    // 月の針の先端マーカー - 実際の月の照射率を反映した描画
+    if (moonNeedleLength > 10 && currentMoonData) {
         const tipX = centerX + Math.cos(moonNeedleAngle) * moonNeedleLength;
         const tipY = centerY + Math.sin(moonNeedleAngle) * moonNeedleLength;
-        const tipRadius = 12; // 8から12に拡大
+        const tipRadius = 12; // 針の先端の月の半径
         
-        ctx.fillStyle = moonTipColor;
-        ctx.beginPath();
-        ctx.arc(tipX, tipY, tipRadius, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 月のシンボル（三日月） - さらに大きく
-        ctx.strokeStyle = moonSymbolColor;
-        ctx.lineWidth = 3; // 線の太さも増加
-        ctx.beginPath();
-        ctx.arc(tipX - 4, tipY, 7, Math.PI * 0.2, Math.PI * 1.8); // 半径を5から7に拡大
-        ctx.stroke();
-        
-        // 月の輪郭をより明確にするため、外側の輪郭も追加
-        ctx.strokeStyle = moonTipColor;
-        ctx.lineWidth = 2; // 輪郭線も太く
-        ctx.beginPath();
-        ctx.arc(tipX, tipY, tipRadius, 0, Math.PI * 2);
-        ctx.stroke();
+        // 月の照射率を反映した月相描画
+        drawMoonPhaseSmall(ctx, tipX, tipY, tipRadius, currentMoonData);
     }
     
     // 針の中心点
