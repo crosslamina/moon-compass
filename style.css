@@ -929,6 +929,17 @@ h1 {
     font-size: 14px;
 }
 
+.needle-legend {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(139, 69, 19, 0.2);
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #daa520;
+    border: 1px solid #8b4513;
+}
+
 #compass-controls {
     margin-top: 15px;
 }

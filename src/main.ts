@@ -55,6 +55,8 @@ const sensitivitySlider = document.getElementById('sensitivity-slider') as HTMLI
 const magneticFieldElement = document.getElementById('magnetic-field');
 const compassBearingElement = document.getElementById('compass-bearing');
 const deviationAngleElement = document.getElementById('deviation-angle');
+const altitudeMatchElement = document.getElementById('altitude-match');
+const altitudeDetailElement = document.getElementById('altitude-detail');
 
 // 方位角補正コントロール関連の要素
 const toggleReverseBtn = document.getElementById('toggle-reverse-btn') as HTMLButtonElement;
@@ -607,6 +609,22 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
         }
     }
     
+    // 方向一致度の計算
+    let directionMatchPercentage = 0;
+    let deviceDirection = 0;
+    let moonDirection = 0;
+    
+    if (currentMoonData && deviceOrientation.alpha !== null) {
+        deviceDirection = deviceOrientation.alpha;
+        moonDirection = currentMoonData.azimuth;
+        let directionDiff = Math.abs(deviceDirection - moonDirection);
+        if (directionDiff > 180) {
+            directionDiff = 360 - directionDiff;
+        }
+        const maxDiff = 180; // 最大差180度
+        directionMatchPercentage = Math.max(0, (1 - directionDiff / maxDiff) * 100);
+    }
+    
     // 磁気コンパス情報の表示を更新
     if (magneticFieldElement) {
         magneticFieldElement.textContent = `磁場強度: ${(magneticStrength * 100).toFixed(1)}%`;
@@ -616,6 +634,15 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
     }
     if (deviationAngleElement) {
         deviationAngleElement.textContent = `偏差角: ${deviationAngle.toFixed(1)}°`;
+    }
+    if (altitudeMatchElement) {
+        altitudeMatchElement.textContent = `方向一致度: ${directionMatchPercentage.toFixed(1)}%`;
+    }
+    if (altitudeDetailElement) {
+        const deviceText = deviceOrientation.alpha !== null ? 
+            `${deviceDirection.toFixed(1)}°` : '--';
+        const moonText = currentMoonData ? `${moonDirection.toFixed(1)}°` : '--';
+        altitudeDetailElement.textContent = `デバイス角度: ${deviceText} | 月の角度: ${moonText}`;
     }
 }
 
@@ -689,35 +716,55 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
         }
     }
     
-    // 磁気針を描画（北を指す）
-    const magneticNeedleAngle = (compassState.compassBearing - 90) * Math.PI / 180;
-    const needleLength = compassRadius - 40;
+    // デバイス方向針（赤）の長さ計算 - beta値に応じて変化
+    let deviceNeedleLength = compassRadius - 40; // ベース長さ
+    if (deviceOrientation.beta !== null) {
+        const deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
+        // 高度角0-90度を0.3-1.0の範囲にマッピング
+        const elevationFactor = Math.max(0.3, Math.min(1.0, Math.abs(deviceElevation) / 90));
+        deviceNeedleLength = (compassRadius - 40) * elevationFactor;
+    }
     
-    // 磁気針の影
+    // 月の位置針（金）は固定位置・固定長さ
+    let moonNeedleLength = compassRadius - 50; // 固定長さ
+    
+    // デバイス方向針を描画（赤）- alpha値で回転、beta値で長さ変化
+    const deviceNeedleAngle = deviceOrientation.alpha !== null ? 
+        (deviceOrientation.alpha - 90) * Math.PI / 180 : 0;
+    
+    // デバイス針の影
     ctx.strokeStyle = 'rgba(0,0,0,0.5)';
     ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.moveTo(centerX + 2, centerY + 2);
     ctx.lineTo(
-        centerX + Math.cos(magneticNeedleAngle) * needleLength + 2,
-        centerY + Math.sin(magneticNeedleAngle) * needleLength + 2
+        centerX + Math.cos(deviceNeedleAngle) * deviceNeedleLength + 2,
+        centerY + Math.sin(deviceNeedleAngle) * deviceNeedleLength + 2
     );
     ctx.stroke();
     
-    // 磁気針本体（赤）
+    // デバイス針本体（赤）
     ctx.strokeStyle = '#dc143c';
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(
-        centerX + Math.cos(magneticNeedleAngle) * needleLength,
-        centerY + Math.sin(magneticNeedleAngle) * needleLength
+        centerX + Math.cos(deviceNeedleAngle) * deviceNeedleLength,
+        centerY + Math.sin(deviceNeedleAngle) * deviceNeedleLength
     );
     ctx.stroke();
     
-    // 月の方向指示針（金色）
-    const moonNeedleAngle = (compassState.needleAngle - 90) * Math.PI / 180;
-    const moonNeedleLength = compassRadius - 50;
+    // 月の位置針（金色）- 固定位置・固定長さ
+    const moonNeedleAngle = currentMoonData ? 
+        (currentMoonData.azimuth - 90) * Math.PI / 180 : 0;
+    
+    // 月の高度に応じて針の長さを調整（高度が高いほど長く）
+    if (currentMoonData) {
+        const moonAltitude = currentMoonData.altitude;
+        // 高度0-90度を0.4-1.0の範囲にマッピング
+        const altitudeFactor = Math.max(0.4, Math.min(1.0, Math.abs(moonAltitude) / 90));
+        moonNeedleLength = (compassRadius - 50) * altitudeFactor;
+    }
     
     ctx.strokeStyle = '#ffd700';
     ctx.lineWidth = 3;
@@ -728,6 +775,25 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
         centerY + Math.sin(moonNeedleAngle) * moonNeedleLength
     );
     ctx.stroke();
+    
+    // 月の針の先端マーカー
+    if (moonNeedleLength > 10) {
+        const tipX = centerX + Math.cos(moonNeedleAngle) * moonNeedleLength;
+        const tipY = centerY + Math.sin(moonNeedleAngle) * moonNeedleLength;
+        const tipRadius = 5;
+        
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, tipRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 月のシンボル（小さな三日月）
+        ctx.strokeStyle = '#ffa500';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(tipX - 2, tipY, 3, Math.PI * 0.2, Math.PI * 1.8);
+        ctx.stroke();
+    }
     
     // 針の中心点
     ctx.fillStyle = '#8b4513';
