@@ -761,64 +761,6 @@ function updateAltitudeMarkers(deviceElevation: number, moonAltitude: number) {
     }
 }
 
-// ブラウザ環境での方位センサー補正とフィルタリング
-let sensorFilter = {
-    alpha: [] as number[],
-    beta: [] as number[],
-    gamma: [] as number[]
-};
-
-// 前回の値を保存（変化量チェック用）
-let lastFilteredValues = {
-    alpha: null as number | null,
-    beta: null as number | null,
-    gamma: null as number | null
-};
-
-const FILTER_SIZE = 10; // 移動平均のサンプル数（敏感さを抑制するため増加）
-const CHANGE_THRESHOLD = 2; // 変化の最小閾値（度）- これ以下の変化は無視
-
-/**
- * センサー値にローパスフィルターを適用
- * @param value 新しいセンサー値
- * @param filterArray フィルター用の配列
- * @param lastValue 前回のフィルター済み値
- * @returns フィルター済みの値
- */
-function applySensorFilter(value: number | null, filterArray: number[], lastValue: number | null): number | null {
-    if (value === null) return null;
-    
-    // 配列に新しい値を追加
-    filterArray.push(value);
-    
-    // 配列サイズを制限
-    if (filterArray.length > FILTER_SIZE) {
-        filterArray.shift();
-    }
-    
-    // 移動平均を計算
-    const sum = filterArray.reduce((acc, val) => acc + val, 0);
-    const filteredValue = sum / filterArray.length;
-    
-    // 前回値がある場合、変化量をチェック
-    if (lastValue !== null) {
-        const change = Math.abs(filteredValue - lastValue);
-        
-        // 変化が閾値以下の場合、前回値を返す（ノイズ除去）
-        if (change < CHANGE_THRESHOLD) {
-            return lastValue;
-        }
-        
-        // 大きな変化の場合は指数移動平均でさらに滑らかにする
-        if (change > 30) { // 30度以上の大きな変化
-            const alpha = 0.3; // 指数移動平均の係数（小さいほど滑らか）
-            return lastValue + alpha * (filteredValue - lastValue);
-        }
-    }
-    
-    return filteredValue;
-}
-
 /**
  * ブラウザ固有の方位センサー補正（動的補正機能付き）
  * @param alpha 生の方位角
