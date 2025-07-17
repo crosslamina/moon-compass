@@ -184,9 +184,37 @@ function getPhaseName(phase: number): string {
 }
 
 function handleOrientation(event: DeviceOrientationEvent) {
+    // センサー値取得状況をデバッグ出力
+    console.log('=== handleOrientation イベント発火 ===');
+    console.log('Event object:', event);
+    console.log('Raw sensor values:', {
+        alpha: event.alpha,
+        beta: event.beta,
+        gamma: event.gamma,
+        absolute: event.absolute
+    });
+    console.log('Sensor value types:', {
+        alphaType: typeof event.alpha,
+        betaType: typeof event.beta,
+        gammaType: typeof event.gamma
+    });
+    
     const rawAlpha = event.alpha;
     const rawBeta = event.beta;
     const rawGamma = event.gamma;
+
+    // null値チェックとログ出力
+    if (rawAlpha === null) console.warn('⚠️ Alpha値がnullです');
+    if (rawBeta === null) console.warn('⚠️ Beta値がnullです');
+    if (rawGamma === null) console.warn('⚠️ Gamma値がnullです');
+    
+    if (rawAlpha === null && rawBeta === null && rawGamma === null) {
+        console.error('❌ 全てのセンサー値がnullです！');
+        console.log('対処法:');
+        console.log('1. HTTPSで接続していることを確認');
+        console.log('2. 実機での動作テスト（開発者ツールではセンサー値がnullになることがある）');
+        console.log('3. ブラウザの設定でセンサーアクセスが許可されているか確認');
+    }
 
     // フィルターを無効化：生のセンサー値をそのまま使用
     const filteredAlpha = rawAlpha;
@@ -195,6 +223,8 @@ function handleOrientation(event: DeviceOrientationEvent) {
 
     // ブラウザ固有の補正を適用
     const correctedAlpha = correctOrientationForBrowser(filteredAlpha, navigator.userAgent);
+
+    console.log('Corrected alpha:', correctedAlpha);
 
     // 動的補正のための分析（サンプル収集）
     if (filteredAlpha !== null) {
@@ -206,9 +236,40 @@ function handleOrientation(event: DeviceOrientationEvent) {
     deviceOrientation.beta = filteredBeta;
     deviceOrientation.gamma = filteredGamma;
 
+    console.log('Updated deviceOrientation:', deviceOrientation);
+    console.log('=========================================');
+
     if (deviceOrientationElement) {
         const deviceElevationForDisplay = deviceOrientation.beta ? calculateDeviceElevation(deviceOrientation.beta) : null;
-        const sensorType = '絶対方位センサー（磁北基準）';
+        
+        // センサー種別を動的に取得
+        const sensorType = (window as any).currentSensorType || '不明なセンサー';
+        const isAbsolute = (window as any).isAbsoluteSensor || false;
+        
+        // センサー値の状態をチェック
+        const sensorStatus = {
+            alphaAvailable: correctedAlpha !== null,
+            betaAvailable: filteredBeta !== null,
+            gammaAvailable: filteredGamma !== null
+        };
+        
+        const missingSensors: string[] = [];
+        if (!sensorStatus.alphaAvailable) missingSensors.push('Alpha(方位角)');
+        if (!sensorStatus.betaAvailable) missingSensors.push('Beta(前後傾き)');
+        if (!sensorStatus.gammaAvailable) missingSensors.push('Gamma(左右傾き)');
+        
+        // 警告メッセージ（相対センサーの場合）
+        const warningMessage = !isAbsolute ? 
+            '<br><span style="color: #f39c12;">⚠️ 相対方位センサーのため、方位角は端末起動時を基準とした値です。実際の磁北とは異なる可能性があります。</span>' : '';
+        
+        // センサー値欠損の警告
+        const missingSensorMessage = missingSensors.length > 0 ? 
+            `<br><span style="color: #e74c3c;">❌ センサー値が取得できません: ${missingSensors.join(', ')}</span>` : 
+            '<br><span style="color: #2ecc71;">✅ 全センサー値を正常に取得中</span>';
+        
+        // HTTPSチェックメッセージ
+        const httpsMessage = location.protocol !== 'https:' && location.hostname !== 'localhost' ? 
+            '<br><span style="color: #e67e22;">⚠️ HTTPSでないため、一部のセンサーが利用できない可能性があります</span>' : '';
         
         // 補正状態の表示
         const correctionStatus: string[] = [];
@@ -221,16 +282,18 @@ function handleOrientation(event: DeviceOrientationEvent) {
         const correctionInfo = correctionStatus.length > 0 ? '<br>' + correctionStatus.join(' | ') : '';
         
         deviceOrientationElement.innerHTML = 
-            `<strong>センサー種別: ${sensorType}</strong>${correctionInfo}<br>` +
-            `デバイス方位（alpha/コンパス）: ${correctedAlpha?.toFixed(1) ?? 'N/A'}°<br>` +
-            `前後傾き（beta）: ${filteredBeta?.toFixed(1) ?? 'N/A'}°<br>` +
-            `計算された高度角: ${deviceElevationForDisplay?.toFixed(1) ?? 'N/A'}°<br>` +
-            `左右傾き（gamma）: ${filteredGamma?.toFixed(1) ?? 'N/A'}°<br>` +
+            `<strong>センサー種別: ${sensorType}</strong>${warningMessage}${missingSensorMessage}${httpsMessage}${correctionInfo}<br>` +
+            `デバイス方位（alpha/コンパス）: ${correctedAlpha?.toFixed(1) ?? '<span style="color: #e74c3c;">N/A</span>'}°<br>` +
+            `前後傾き（beta）: ${filteredBeta?.toFixed(1) ?? '<span style="color: #e74c3c;">N/A</span>'}°<br>` +
+            `計算された高度角: ${deviceElevationForDisplay?.toFixed(1) ?? '<span style="color: #e74c3c;">N/A</span>'}°<br>` +
+            `左右傾き（gamma）: ${filteredGamma?.toFixed(1) ?? '<span style="color: #e74c3c;">N/A</span>'}°<br>` +
             `<small>alpha: 0°=北 90°=東 180°=南 270°=西<br>` +
             `beta: -90°=後傾 0°=水平 90°=前傾 ±180°=逆さま<br>` +
             `高度角: -90°=真下 0°=水平 90°=真上<br>` +
             `gamma: 0°=水平 90°=右傾 -90°=左傾<br>` +
-            `<strong>フィルター: 無効（生センサー値使用）</strong><br>` +
+            `<strong>プロトコル: ${location.protocol} (${location.hostname})</strong><br>` +
+            `<strong>デバッグ:</strong> コンソールで getCurrentSensorStatus() を実行して詳細確認<br>` +
+            `<strong>テスト:</strong> コンソールで testSensorValues(90, 0, 0) を実行<br>` +
             `<strong>キャリブレーション:</strong> コンソールで toggleOrientationReverse() または setOrientationOffset(角度) を実行</small>`;
     }
 
@@ -255,58 +318,157 @@ let orientationCorrection = {
 
 const CALIBRATION_SAMPLE_SIZE = 10; // キャリブレーション用サンプル数
 
+// フォールバック制御用の変数
+let currentEventType: 'deviceorientationabsolute' | 'deviceorientation' | null = null;
+let fallbackTimer: number | null = null;
+let nullValueCount = 0;
+const MAX_NULL_VALUES = 10; // 10回連続でnull値が来たらフォールバック
+
 // DeviceOrientationEventのサポート判定とイベント登録
 async function setupDeviceOrientation() {
+    console.log('=== センサー初期化開始 ===');
+    
     if (!window.DeviceOrientationEvent) {
+        console.error('DeviceOrientationEvent がサポートされていません');
         if (deviceOrientationElement) {
-            deviceOrientationElement.innerHTML = 'このブラウザはデバイスの向き取得（DeviceOrientationEvent）に対応していません。';
+            deviceOrientationElement.innerHTML = '❌ このブラウザはデバイスの向き取得（DeviceOrientationEvent）に対応していません。<br><small>デバッグ用: コンソールで testSensorValues(alpha, beta, gamma) を実行してテストできます。</small>';
         }
         return;
     }
 
     // deviceorientationabsoluteが利用可能かチェック
     const hasAbsoluteOrientation = 'ondeviceorientationabsolute' in window;
+    console.log('deviceorientationabsolute サポート:', hasAbsoluteOrientation);
     
-    if (!hasAbsoluteOrientation) {
-        if (deviceOrientationElement) {
-            deviceOrientationElement.innerHTML = '❌ このブラウザは絶対方位センサー（deviceorientationabsolute）に対応していません。<br>磁北基準の正確な方位角が取得できません。';
-        }
-        console.error('deviceorientationabsolute は利用できません。このアプリには絶対方位センサーが必要です。');
-        return;
+    // まず絶対センサーから試行
+    if (hasAbsoluteOrientation) {
+        console.log('✅ 絶対方位センサー（deviceorientationabsolute）を試行します');
+        setupSensorListener('deviceorientationabsolute');
+    } else {
+        console.warn('⚠️ deviceorientationabsolute が利用できません。通常のdeviceorientationを使用します。');
+        setupSensorListener('deviceorientation');
     }
+    console.log('=== センサー初期化完了 ===');
+}
+
+/**
+ * センサーリスナーをセットアップ（フォールバック機能付き）
+ * @param eventType 使用するイベントタイプ
+ */
+function setupSensorListener(eventType: 'deviceorientationabsolute' | 'deviceorientation') {
+    // 既存のリスナーを削除
+    if (currentEventType) {
+        window.removeEventListener(currentEventType, handleOrientationWithFallback);
+        console.log(`既存の${currentEventType}リスナーを削除しました`);
+    }
+    
+    // フォールバックタイマーをリセット
+    if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+    }
+    
+    currentEventType = eventType;
+    nullValueCount = 0;
+    
+    // センサーの種類を判定
+    let sensorType = '';
+    let isAbsoluteSensor = false;
+    
+    if (eventType === 'deviceorientationabsolute') {
+        sensorType = '絶対方位センサー（deviceorientationabsolute）- 磁北基準';
+        isAbsoluteSensor = true;
+        console.log('✅ 絶対方位センサーを使用します');
+    } else {
+        sensorType = '相対方位センサー（deviceorientation）- 端末起動時基準';
+        isAbsoluteSensor = false;
+        console.log('✅ 相対方位センサーを使用します（フォールバック）');
+    }
+    
+    // センサー種別をグローバル変数として保存
+    (window as any).currentSensorType = sensorType;
+    (window as any).isAbsoluteSensor = isAbsoluteSensor;
     
     // iOS 13+では権限要求が必要
     if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        console.log('iOS端末: 権限要求が必要です');
         // 権限ボタンを表示
         if (permissionButton) {
             permissionButton.style.display = 'block';
             permissionButton.onclick = async () => {
                 try {
+                    console.log('iOS権限要求中...');
                     const permission = await (DeviceOrientationEvent as any).requestPermission();
+                    console.log('iOS権限結果:', permission);
+                    
                     if (permission === 'granted') {
-                        // deviceorientationabsoluteのみを使用
-                        window.addEventListener('deviceorientationabsolute', handleOrientation);
-                        console.log('iOS: 絶対方位センサー（deviceorientationabsolute）を使用 - 磁北基準');
+                        window.addEventListener(eventType, handleOrientationWithFallback);
+                        console.log(`✅ iOS: ${sensorType}を使用`);
                         permissionButton.style.display = 'none';
                     } else {
+                        console.error('iOS権限が拒否されました');
                         if (deviceOrientationElement) {
-                            deviceOrientationElement.innerHTML = 'デバイスの向き取得の許可が拒否されました。';
+                            deviceOrientationElement.innerHTML = '❌ デバイスの向き取得の許可が拒否されました。<br><small>デバッグ用: コンソールで testSensorValues(alpha, beta, gamma) を実行してテストできます。</small>';
                         }
                     }
                 } catch (error) {
                     console.error('Device orientation permission error:', error);
                     if (deviceOrientationElement) {
-                        deviceOrientationElement.innerHTML = 'デバイスの向き取得でエラーが発生しました。';
+                        deviceOrientationElement.innerHTML = '❌ デバイスの向き取得でエラーが発生しました。<br><small>デバッグ用: コンソールで testSensorValues(alpha, beta, gamma) を実行してテストできます。</small>';
                     }
                 }
             };
         }
     } else {
         // Android等、権限要求が不要な場合
-        // deviceorientationabsoluteのみを使用
-        window.addEventListener('deviceorientationabsolute', handleOrientation);
-        console.log('絶対方位センサー（deviceorientationabsolute）を使用 - 磁北基準の真の方位角');
+        console.log('権限要求不要: イベントリスナーを直接登録');
+        
+        window.addEventListener(eventType, handleOrientationWithFallback);
+        console.log(`✅ イベントリスナーを登録しました: ${eventType}`);
+        
+        // フォールバック監視タイマーを設定（10秒後）
+        fallbackTimer = window.setTimeout(() => {
+            console.log('=== 10秒後のフォールバックチェック ===');
+            if (nullValueCount >= MAX_NULL_VALUES && eventType === 'deviceorientationabsolute') {
+                console.warn(`❌ ${MAX_NULL_VALUES}回連続でnull値を検出。deviceorientationにフォールバックします`);
+                setupSensorListener('deviceorientation');
+            } else if (deviceOrientation.alpha === null && deviceOrientation.beta === null && deviceOrientation.gamma === null) {
+                console.warn('⚠️ 10秒経過してもセンサー値が取得できていません');
+                if (eventType === 'deviceorientationabsolute') {
+                    console.log('🔄 deviceorientationにフォールバックを試行します');
+                    setupSensorListener('deviceorientation');
+                }
+            } else {
+                console.log('✅ センサー値は正常に取得できています');
+            }
+            console.log('==========================================');
+        }, 10000);
     }
+}
+
+/**
+ * フォールバック機能付きのイベントハンドラー
+ * @param event DeviceOrientationEvent
+ */
+function handleOrientationWithFallback(event: DeviceOrientationEvent) {
+    // null値カウント
+    if (event.alpha === null && event.beta === null && event.gamma === null) {
+        nullValueCount++;
+        console.log(`null値検出 ${nullValueCount}/${MAX_NULL_VALUES} (イベント: ${currentEventType})`);
+        
+        // 連続してnull値が来た場合のフォールバック
+        if (nullValueCount >= MAX_NULL_VALUES && currentEventType === 'deviceorientationabsolute') {
+            console.warn(`❌ ${MAX_NULL_VALUES}回連続でnull値を検出。deviceorientationにフォールバックします`);
+            setupSensorListener('deviceorientation');
+            return;
+        }
+    } else {
+        // 有効な値が取得できた場合はカウントをリセット
+        nullValueCount = 0;
+    }
+    
+    // 通常のhandleOrientationを呼び出し
+    handleOrientation(event);
 }
 
 // ページ読み込み時にセットアップ
@@ -317,6 +479,27 @@ console.log('=== 方位角キャリブレーション機能 ===');
 console.log('東西が逆の場合: toggleOrientationReverse()');
 console.log('オフセット設定: setOrientationOffset(角度)');
 console.log('リセット: resetOrientationCorrection()');
+console.log('=====================================');
+
+// 開発者ツール用の説明
+console.log('=== 開発者ツールでのテスト方法 ===');
+console.log('1. Chrome DevTools を開く（F12）');
+console.log('2. [...]メニュー → More tools → Sensors');
+console.log('3. Orientation を "Custom orientation" に設定');
+console.log('4. Alpha（方位角）、Beta（前後傾き）、Gamma（左右傾き）を調整');
+console.log('   - Alpha: 0°=北, 90°=東, 180°=南, 270°=西');
+console.log('   - Beta: -90°=下向き, 0°=水平, 90°=上向き');
+console.log('   - Gamma: -90°=左傾き, 0°=水平, 90°=右傾き');
+console.log('5. 相対センサーのため、実際の磁北とは異なる値になります');
+console.log('=====================================');
+
+// デバッグ用：手動センサー値設定機能
+console.log('=== デバッグ用手動センサー設定 ===');
+console.log('testSensorValues(alpha, beta, gamma) - 手動でセンサー値を設定');
+console.log('例: testSensorValues(90, 0, 0) - 東向き水平');
+console.log('例: testSensorValues(0, 45, 0) - 北向き上向き45度');
+console.log('getCurrentSensorStatus() - 詳細なセンサー診断');
+console.log('testEventFiring() - イベント発火テスト');
 console.log('=====================================');
 
 // 点滅タイマーを初期化
@@ -1036,6 +1219,123 @@ function resetOrientationCorrection() {
 (window as any).toggleOrientationReverse = toggleOrientationReverse;
 (window as any).setOrientationOffset = setOrientationOffset;
 (window as any).resetOrientationCorrection = resetOrientationCorrection;
+
+// フォールバック制御用のデバッグ関数
+(window as any).forceFallbackToRelative = () => {
+    console.log('🔄 強制的にdeviceorientationセンサーに切り替えます');
+    setupSensorListener('deviceorientation');
+};
+
+(window as any).resetToAbsoluteSensor = () => {
+    if ('ondeviceorientationabsolute' in window) {
+        console.log('🔄 deviceorientationabsoluteセンサーに戻します');
+        setupSensorListener('deviceorientationabsolute');
+    } else {
+        console.warn('⚠️ deviceorientationabsoluteはサポートされていません');
+    }
+};
+
+// デバッグ用：手動センサー値設定機能
+(window as any).testSensorValues = (alpha: number, beta: number, gamma: number) => {
+    console.log(`手動センサー値設定: Alpha=${alpha}°, Beta=${beta}°, Gamma=${gamma}°`);
+    
+    // 手動でイベントを作成してhandleOrientationを呼び出し
+    const mockEvent = {
+        alpha: alpha,
+        beta: beta,
+        gamma: gamma
+    } as DeviceOrientationEvent;
+    
+    handleOrientation(mockEvent);
+    
+    console.log('センサー値を手動で設定しました。UIの変化を確認してください。');
+};
+
+// デバッグ用：現在のセンサー状態を表示
+(window as any).getCurrentSensorStatus = () => {
+    console.log('=== 現在のセンサー状態 詳細診断 ===');
+    console.log('ブラウザ情報:');
+    console.log('  User Agent:', navigator.userAgent);
+    console.log('  プロトコル:', location.protocol);
+    console.log('  ホスト:', location.hostname);
+    
+    console.log('API サポート状況:');
+    console.log('  DeviceOrientationEvent:', !!window.DeviceOrientationEvent);
+    console.log('  deviceorientationabsolute:', 'ondeviceorientationabsolute' in window);
+    console.log('  requestPermission:', typeof (DeviceOrientationEvent as any).requestPermission === 'function');
+    
+    console.log('フォールバック状況:');
+    console.log('  現在使用中のイベント:', currentEventType || '未設定');
+    console.log('  null値カウント:', nullValueCount);
+    console.log('  フォールバックタイマー:', fallbackTimer ? '動作中' : '停止中');
+    
+    console.log('現在のセンサー値:');
+    console.log('  alpha (方位角):', deviceOrientation.alpha);
+    console.log('  beta (前後傾き):', deviceOrientation.beta);
+    console.log('  gamma (左右傾き):', deviceOrientation.gamma);
+    
+    console.log('設定状況:');
+    console.log('  センサータイプ:', (window as any).currentSensorType);
+    console.log('  絶対センサー:', (window as any).isAbsoluteSensor);
+    
+    console.log('環境診断:');
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        console.warn('  ⚠️ HTTPSでないため、センサーアクセスが制限される可能性があります');
+    } else {
+        console.log('  ✅ HTTPS または localhost で動作しています');
+    }
+    
+    if (!('ontouchstart' in window) && !navigator.maxTouchPoints) {
+        console.warn('  ⚠️ タッチデバイスではない可能性があります（PC等）');
+        console.log('  💡 PC上では開発者ツールのSensorsタブを使用してください');
+    } else {
+        console.log('  ✅ タッチデバイスまたはシミュレーター');
+    }
+    
+    console.log('推奨アクション:');
+    if (deviceOrientation.alpha === null && deviceOrientation.beta === null && deviceOrientation.gamma === null) {
+        console.log('  1. testSensorValues(90, 0, 0) でテスト値を設定');
+        console.log('  2. 開発者ツール → Sensors → Orientation を設定');
+        console.log('  3. 実機でのテスト実行');
+        if (currentEventType === 'deviceorientationabsolute') {
+            console.log('  4. forceFallbackToRelative() で強制的に相対センサーに切り替え');
+        }
+    } else {
+        console.log('  ✅ センサー値は正常に取得できています');
+    }
+    console.log('=====================================');
+};
+
+// デバッグ用：センサーイベントの強制発火テスト
+(window as any).testEventFiring = () => {
+    console.log('=== センサーイベント強制発火テスト ===');
+    
+    // 通常のdeviceorientationイベントもテスト
+    const testEvents = ['deviceorientation', 'deviceorientationabsolute'];
+    
+    testEvents.forEach(eventType => {
+        console.log(`${eventType} イベントをテスト中...`);
+        
+        // イベントリスナーの存在確認
+        const listeners = (window as any).getEventListeners ? (window as any).getEventListeners(window) : 'getEventListeners未対応';
+        console.log(`  登録済みリスナー:`, listeners);
+        
+        // 手動でイベントを発火
+        try {
+            const testEvent = new Event(eventType);
+            (testEvent as any).alpha = 45;
+            (testEvent as any).beta = 10;
+            (testEvent as any).gamma = 5;
+            
+            window.dispatchEvent(testEvent);
+            console.log(`  ✅ ${eventType} イベントを手動発火しました`);
+        } catch (error) {
+            console.error(`  ❌ ${eventType} イベントの発火に失敗:`, error);
+        }
+    });
+    
+    console.log('========================================');
+};
 
 // UI操作のイベントリスナー設定
 if (toggleReverseBtn) {
