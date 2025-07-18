@@ -147,6 +147,10 @@ export class CompassManager {
     private animationId: number | null = null;
     private updateIntervalId: number | null = null;
     private unsubscribers: (() => void)[] = [];
+    
+    // 角度差の平滑化用
+    private angleDiffHistory: number[] = [];
+    private readonly ANGLE_DIFF_HISTORY_SIZE = 5;
 
     private compassState: CompassState = {
         isActive: true,
@@ -350,9 +354,18 @@ export class CompassManager {
     public updateCompassDetector(totalAngleDiff: number, clampedMoonAltitude: number): void {
         const now = Date.now();
         
-        // 角度差に基づく磁場強度計算
+        // 角度差の平滑化（急激な変化を抑制）
+        this.angleDiffHistory.push(totalAngleDiff);
+        if (this.angleDiffHistory.length > this.ANGLE_DIFF_HISTORY_SIZE) {
+            this.angleDiffHistory.shift();
+        }
+        
+        // 平均を計算してスムーズな角度差を取得
+        const smoothedAngleDiff = this.angleDiffHistory.reduce((sum, val) => sum + val, 0) / this.angleDiffHistory.length;
+        
+        // 角度差に基づく磁場強度計算（平滑化された値を使用）
         const maxDetectionAngle = 120;
-        const normalizedDiff = Math.max(0, Math.min(1, 1 - (totalAngleDiff / maxDetectionAngle)));
+        const normalizedDiff = Math.max(0, Math.min(1, 1 - (smoothedAngleDiff / maxDetectionAngle)));
         
         // 月の高度による強度補正
         const altitudeBonus = Math.max(0, clampedMoonAltitude / 90) * 0.3;
@@ -361,22 +374,35 @@ export class CompassManager {
         // 感度による調整
         this.compassState.magneticField = Math.min(1, baseField * (this.compassState.sensitivity / 5));
         
-        // 検知レベルの決定
-        if (totalAngleDiff <= 3) {
-            this.compassState.detectionLevel = 'locked';
-        } else if (totalAngleDiff <= 15) {
-            this.compassState.detectionLevel = 'strong';
-        } else if (totalAngleDiff <= 45) {
-            this.compassState.detectionLevel = 'weak';
-        } else if (totalAngleDiff <= 90) {
-            this.compassState.detectionLevel = 'searching';
+        // 検知レベルの決定（ヒステリシス付き）- 平滑化された角度差を使用
+        const currentLevel = this.compassState.detectionLevel;
+        let newLevel: CompassState['detectionLevel'];
+        
+        // ヒステリシス幅（状態変更を安定化）
+        const hysteresis = 5; // 度
+        
+        if (smoothedAngleDiff <= 3) {
+            newLevel = 'locked';
+        } else if (smoothedAngleDiff <= 15 + (currentLevel === 'locked' ? hysteresis : 0)) {
+            newLevel = 'strong';
+        } else if (smoothedAngleDiff <= 45 + (currentLevel === 'strong' ? hysteresis : 0)) {
+            newLevel = 'weak';
+        } else if (smoothedAngleDiff <= 90 + (currentLevel === 'weak' ? hysteresis : 0)) {
+            newLevel = 'searching';
         } else {
-            this.compassState.detectionLevel = 'calibrating';
+            newLevel = 'calibrating';
         }
         
-        // 音響フィードバック
+        // レベル変更時のログ出力（デバッグ用）
+        if (newLevel !== currentLevel) {
+            console.log(`検知レベル変更: ${currentLevel} → ${newLevel} (平滑化角度差: ${smoothedAngleDiff.toFixed(1)}°, 生角度差: ${totalAngleDiff.toFixed(1)}°)`);
+        }
+        
+        this.compassState.detectionLevel = newLevel;
+        
+        // 音響フィードバック（平滑化された角度差を使用）
         if (now - this.compassState.lastTick > this.compassState.tickInterval) {
-            const tickInterval = this.calculateTickInterval(totalAngleDiff);
+            const tickInterval = this.calculateTickInterval(smoothedAngleDiff);
             if (now - this.compassState.lastTick > tickInterval) {
                 this.audio.playTick(this.compassState.magneticField, this.compassState.detectionLevel);
                 this.compassState.lastTick = now;
