@@ -22,8 +22,44 @@ const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasEle
 const compassVolumeSlider = document.getElementById('compass-volume-slider') as HTMLInputElement;
 const compassMuteButton = document.getElementById('compass-mute-button') as HTMLButtonElement;
 const sensitivitySlider = document.getElementById('sensitivity-slider') as HTMLInputElement;
+const sensitivityValue = document.querySelector('.sensitivity-value') as HTMLElement;
 const directionMatchDetailElement = document.getElementById('direction-match-detail');
 const altitudeMatchDetailElement = document.getElementById('altitude-match-detail');
+
+/**
+ * Canvasのサイズをレスポンシブに調整
+ */
+function resizeCanvas() {
+    if (!compassCanvas) return;
+    
+    // ビューポートサイズに基づいてサイズを直接計算
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const maxSize = 400;
+    
+    // CSS と同じ計算: min(80vw, 80vh, 400px)
+    const targetSize = Math.min(vw * 0.8, vh * 0.8, maxSize);
+    
+    // デバイスピクセル比を考慮した高解像度設定
+    const dpr = window.devicePixelRatio || 1;
+    const canvasSize = Math.floor(targetSize * dpr);
+    
+    // Canvasの実際の描画サイズを設定
+    compassCanvas.width = canvasSize;
+    compassCanvas.height = canvasSize;
+    
+    // CSSサイズを設定
+    compassCanvas.style.width = targetSize + 'px';
+    compassCanvas.style.height = targetSize + 'px';
+    
+    // デバッグ情報
+    console.log(`Canvas resized: ${targetSize}px (canvas: ${canvasSize}px, dpr: ${dpr})`);
+    
+    // コンパス表示を再描画
+    if (typeof drawCompassDisplay === 'function') {
+        drawCompassDisplay(compassCanvas);
+    }
+}
 
 // 方位角補正コントロール関連の要素
 const toggleReverseBtn = document.getElementById('toggle-reverse-btn') as HTMLButtonElement;
@@ -205,13 +241,7 @@ function updateDisplay() {
     // 位置情報の表示
     if (geoInfoElement && currentPosition) {
         const coords = currentPosition.coords;
-        let info = `緯度: ${coords.latitude}<br>経度: ${coords.longitude}`;
-        info += `<br>標高: ${coords.altitude ?? 'N/A'}`;
-        info += `<br>高度精度: ${coords.altitudeAccuracy ?? 'N/A'}`;
-        info += `<br>位置精度: ${coords.accuracy}`;
-        info += `<br>方角: ${coords.heading ?? 'N/A'}`;
-        info += `<br>速度: ${coords.speed ?? 'N/A'}`;
-        geoInfoElement.innerHTML = info;
+        geoInfoElement.textContent = `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`;
     }
     if (!currentPosition) return;
 
@@ -236,7 +266,7 @@ function updateDisplay() {
         const absDiff = Math.abs(azimuthDiff);
         const direction = azimuthDiff > 0 ? '左' : '右';
         
-        moonDirectionElement.textContent = `方角: ${moonData.azimuth.toFixed(1)}° ${directionName} (差: ${absDiff.toFixed(1)}° ${direction}へ)`;
+        moonDirectionElement.textContent = `${directionName} ${moonData.azimuth.toFixed(1)}°`;
         
         // デバッグ用ログ
         console.log('Direction difference debug:', {
@@ -251,9 +281,6 @@ function updateDisplay() {
     if (distanceElement) {
         distanceElement.textContent = `距離: ${moonData.distance.toFixed(0)} km`;
     }
-    if (currentTimeElement) {
-        currentTimeElement.textContent = `現在時刻: ${new Date().toLocaleTimeString()}`; // 1秒ごとに更新
-    }
     if (moonPhaseElement) {
         moonPhaseElement.textContent = `月齢: ${getPhaseName(moonData.phase)} (${(moonData.phase * 29.53).toFixed(1)})`;
     }
@@ -263,11 +290,38 @@ function updateDisplay() {
     if (altitudeElement) {
         altitudeElement.textContent = `高度: ${moonData.altitude.toFixed(2)}°`;
     }
+    
+    // 月の出・月の入り時刻の表示（未来の場合は残り時間も表示）
+    const now = new Date();
     if (moonRiseElement) {
-        moonRiseElement.textContent = `月の出: ${moonTimes.rise?.toLocaleTimeString() ?? 'N/A'}`;
+        if (moonTimes.rise) {
+            const riseTime = moonTimes.rise.toLocaleTimeString();
+            if (moonTimes.rise > now) {
+                const diffMs = moonTimes.rise.getTime() - now.getTime();
+                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                moonRiseElement.textContent = `月の出: ${riseTime} (あと${hours}:${minutes})`;
+            } else {
+                moonRiseElement.textContent = `月の出: ${riseTime}`;
+            }
+        } else {
+            moonRiseElement.textContent = `月の出: N/A`;
+        }
     }
     if (moonSetElement) {
-        moonSetElement.textContent = `月の入り: ${moonTimes.set?.toLocaleTimeString() ?? 'N/A'}`;
+        if (moonTimes.set) {
+            const setTime = moonTimes.set.toLocaleTimeString();
+            if (moonTimes.set > now) {
+                const diffMs = moonTimes.set.getTime() - now.getTime();
+                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                moonSetElement.textContent = `月の入り: ${setTime} (あと${hours}:${minutes})`;
+            } else {
+                moonSetElement.textContent = `月の入り: ${setTime}`;
+            }
+        } else {
+            moonSetElement.textContent = `月の入り: N/A`;
+        }
     }
     if (mapLinkElement) {
         mapLinkElement.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
@@ -415,10 +469,10 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
     
     // 詳細情報ダイアログの方位一致度と高度一致度を更新
     if (directionMatchDetailElement) {
-        directionMatchDetailElement.textContent = `方位一致度: ${directionMatchPercentage.toFixed(1)}% (デバイス: ${deviceDirection.toFixed(1)}°, 月: ${moonDirection.toFixed(1)}°)`;
+        directionMatchDetailElement.textContent = `方位精度: ${directionMatchPercentage.toFixed(1)}%`;
     }
     if (altitudeMatchDetailElement) {
-        altitudeMatchDetailElement.textContent = `高度一致度: ${altitudeMatchPercentage.toFixed(1)}% (デバイス: ${deviceElevation.toFixed(1)}°, 月: ${moonElevation.toFixed(1)}°)`;
+        altitudeMatchDetailElement.textContent = `高度精度: ${altitudeMatchPercentage.toFixed(1)}%`;
     }
 }
 
@@ -529,7 +583,7 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
     ctx.font = '10px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('地平線', centerX + horizonRadius + 20, centerY);
+    ctx.fillText('地平線', centerX, centerY + horizonRadius + 15);
     
     // 共通の針の長さ計算を使用
     // デバイス方向針（赤）の長さ計算 - beta値に応じて変化
@@ -733,7 +787,11 @@ async function initializeSonar() {
     if (sensitivitySlider) {
         sensitivitySlider.value = '5'; // 初期感度
         sensitivitySlider.addEventListener('input', (e) => {
-            compassState.sensitivity = parseInt((e.target as HTMLInputElement).value);
+            const value = parseInt((e.target as HTMLInputElement).value);
+            compassState.sensitivity = value;
+            if (sensitivityValue) {
+                sensitivityValue.textContent = value.toString();
+            }
         });
     }
     
@@ -856,20 +914,8 @@ function handleOrientation(event: DeviceOrientationEvent) {
         }
         const correctionInfo = correctionStatus.length > 0 ? '<br>' + correctionStatus.join(' | ') : '';
         
-        deviceOrientationElement.innerHTML = 
-            `<strong>センサー種別: ${sensorType}</strong>${warningMessage}${missingSensorMessage}${httpsMessage}${correctionInfo}<br>` +
-            `デバイス方位（alpha/コンパス）: ${correctedAlpha?.toFixed(1) ?? '<span style="color: #e74c3c;">N/A</span>'}°<br>` +
-            `前後傾き（beta）: ${filteredBeta?.toFixed(1) ?? '<span style="color: #e74c3c;">N/A</span>'}°<br>` +
-            `計算された高度角: ${deviceElevationForDisplay?.toFixed(1) ?? '<span style="color: #e74c3c;">N/A</span>'}°<br>` +
-            `左右傾き（gamma）: ${filteredGamma?.toFixed(1) ?? '<span style="color: #e74c3c;">N/A</span>'}°<br>` +
-            `<small>alpha: 0°=北 90°=東 180°=南 270°=西<br>` +
-            `beta: -90°=後傾 0°=水平 90°=前傾 ±180°=逆さま<br>` +
-            `高度角: -90°=真下 0°=水平 90°=真上<br>` +
-            `gamma: 0°=水平 90°=右傾 -90°=左傾<br>` +
-            `<strong>プロトコル: ${location.protocol} (${location.hostname})</strong><br>` +
-            `<strong>デバッグ:</strong> コンソールで getCurrentSensorStatus() を実行して詳細確認<br>` +
-            `<strong>テスト:</strong> コンソールで testSensorValues(90, 0, 0) を実行<br>` +
-            `<strong>キャリブレーション:</strong> コンソールで toggleOrientationReverse() または setOrientationOffset(角度) を実行</small>`;
+        deviceOrientationElement.textContent = 
+            `方位: ${correctedAlpha?.toFixed(1) ?? 'N/A'}° | 傾き: ${filteredBeta?.toFixed(1) ?? 'N/A'}°`;
     }
 }
 
@@ -897,7 +943,7 @@ async function setupDeviceOrientation() {
     if (!window.DeviceOrientationEvent) {
         console.error('DeviceOrientationEvent がサポートされていません');
         if (deviceOrientationElement) {
-            deviceOrientationElement.innerHTML = '❌ このブラウザはデバイスの向き取得（DeviceOrientationEvent）に対応していません。<br><small>デバッグ用: コンソールで testSensorValues(alpha, beta, gamma) を実行してテストできます。</small>';
+            deviceOrientationElement.textContent = 'センサー未対応';
         }
         return;
     }
@@ -974,13 +1020,13 @@ function setupSensorListener(eventType: 'deviceorientationabsolute' | 'deviceori
                     } else {
                         console.error('iOS権限が拒否されました');
                         if (deviceOrientationElement) {
-                            deviceOrientationElement.innerHTML = '❌ デバイスの向き取得の許可が拒否されました。<br><small>デバッグ用: コンソールで testSensorValues(alpha, beta, gamma) を実行してテストできます。</small>';
+                            deviceOrientationElement.textContent = 'センサー許可拒否';
                         }
                     }
                 } catch (error) {
                     console.error('Device orientation permission error:', error);
                     if (deviceOrientationElement) {
-                        deviceOrientationElement.innerHTML = '❌ デバイスの向き取得でエラーが発生しました。<br><small>デバッグ用: コンソールで testSensorValues(alpha, beta, gamma) を実行してテストできます。</small>';
+                        deviceOrientationElement.textContent = 'センサーエラー';
                     }
                 }
             };
@@ -1731,3 +1777,25 @@ if (resetCorrectionBtn) {
 
 // 初期状態の表示
 updateCorrectionStatus();
+
+// Canvasのレスポンシブ初期化
+resizeCanvas();
+
+// リサイズのデバウンス用タイマー
+let resizeTimeout: number | null = null;
+
+// ウィンドウリサイズ時にCanvasサイズを調整（デバウンス付き）
+window.addEventListener('resize', () => {
+    if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+    }
+    resizeTimeout = window.setTimeout(() => {
+        resizeCanvas();
+        resizeTimeout = null;
+    }, 100); // 100ms のデバウンス
+});
+
+// 画面の向き変更時にもCanvasサイズを調整
+window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 300); // 向き変更後の遅延を増加
+});

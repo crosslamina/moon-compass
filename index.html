@@ -13,7 +13,7 @@
     <div id="location-status"></div>
     
     <!-- メインコンパス -->
-    <canvas id="compass-canvas" width="320" height="320"></canvas>
+    <canvas id="compass-canvas"></canvas>
     
     <!-- 設定と情報ボタン -->
     <div class="button-group">
@@ -33,77 +33,96 @@
     <div id="settings-dialog" class="dialog-overlay" style="display: none;">
         <div class="dialog-content">
             <div class="dialog-header">
-                <h3>設定</h3>
+                <h3>⚙️ 設定</h3>
                 <button id="close-settings-dialog" class="close-btn">×</button>
             </div>
             <div class="dialog-body">
-                <!-- 音量設定 -->
-                <div class="info-section">
-                    <div class="compass-control">
-                        <label for="compass-volume-slider">🔊 音量:</label>
-                        <input type="range" id="compass-volume-slider" min="0" max="100" value="45">
+                <!-- 音量設定カード -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">🔊</span>
+                        <span class="setting-title">音量</span>
+                    </div>
+                    <div class="setting-control">
+                        <input type="range" id="compass-volume-slider" min="0" max="100" value="45" class="modern-slider">
                         <button id="compass-mute-button" class="mute-btn">🔊</button>
                     </div>
                 </div>
                 
-                <!-- 感度設定 -->
-                <div class="info-section">
-                    <div class="compass-control">
-                        <label for="sensitivity-slider">📡 感度:</label>
-                        <input type="range" id="sensitivity-slider" min="1" max="10" value="5">
+                <!-- 感度設定カード -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">📡</span>
+                        <span class="setting-title">感度</span>
+                    </div>
+                    <div class="setting-control">
+                        <input type="range" id="sensitivity-slider" min="1" max="10" value="5" class="modern-slider">
+                        <span class="sensitivity-value">5</span>
                     </div>
                 </div>
                 
-                <!-- 方位角補正設定 -->
-                <div class="info-section">
-                    <div class="compass-control">
-                        <label>🧭 方位角補正:</label>
+                <!-- 方位角補正設定カード -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">🧭</span>
+                        <span class="setting-title">方位角補正</span>
                     </div>
-                    <div class="control-buttons">
-                        <button id="toggle-reverse-btn" class="control-btn">東西反転補正</button>
-                        <button id="reset-correction-btn" class="control-btn">補正リセット</button>
+                    <div class="setting-control">
+                        <div class="button-group-vertical">
+                            <button id="toggle-reverse-btn" class="modern-btn">東西反転補正</button>
+                            <button id="reset-correction-btn" class="modern-btn secondary">補正リセット</button>
+                        </div>
+                        <div id="correction-status" class="status-text"></div>
                     </div>
-                    <div id="correction-status"></div>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- 詳細情報ダイアログ -->
-        <div id="info-dialog" class="dialog-overlay" style="display: none;">
-            <div class="dialog-content">
-                <div class="dialog-header">
-                    <h3>月の詳細情報</h3>
-                    <button id="close-dialog" class="close-btn">×</button>
+    <div id="info-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h3>🌙 詳細情報</h3>
+                <button id="close-dialog" class="close-btn">×</button>
+            </div>
+            <div class="dialog-body">
+                <!-- 月の情報カード -->
+                <div class="info-card">
+                    <div class="info-header">
+                        <span class="info-icon">🌙</span>
+                        <span class="info-title">月の状態・時刻</span>
+                    </div>
+                    <div class="info-content two-column">
+                        <div class="info-item" id="moon-direction"></div>
+                        <div class="info-item" id="distance"></div>
+                        <div class="info-item" id="altitude"></div>
+                        <div class="info-item" id="moon-phase"></div>
+                        <div class="info-item" id="illumination"></div>
+                        <div class="info-item" id="moon-rise"></div>
+                        <div class="info-item" id="moon-set"></div>
+                    </div>
                 </div>
-                <div class="dialog-body">
-                    <!-- 月の情報 -->
-                    <div class="info-section">
-                        <div id="moon-direction"></div>
-                        <div id="distance"></div>
-                        <p id="altitude"></p>
-                        <p id="moon-phase"></p>
-                        <p id="illumination"></p>
-                        <p id="moon-rise"></p>
-                        <p id="moon-set"></p>
+                
+                <!-- 位置・デバイス情報カード -->
+                <div class="info-card">
+                    <div class="info-header">
+                        <span class="info-icon">📍</span>
+                        <span class="info-title">位置・センサー</span>
                     </div>
-                    
-                    <!-- 現在時刻と現在位置 -->
-                    <div class="info-section">
-                        <div id="current-time"></div>
-                        <div id="geo-info"></div>
-                        <p><a id="map-link" href="#" target="_blank">Show my location on map</a></p>
-                    </div>
-                    
-                    <!-- デバイスの方位情報 -->
-                    <div class="info-section">
-                        <div id="device-orientation"></div>
-                        <div id="direction-match-detail"></div>
-                        <div id="altitude-match-detail"></div>
+                    <div class="info-content">
+                        <div class="info-item" id="device-orientation"></div>
+                        <div class="info-item" id="direction-match-detail"></div>
+                        <div class="info-item" id="altitude-match-detail"></div>
+                        <div class="info-item" id="geo-info"></div>
+                        <div class="info-item">
+                            <a id="map-link" href="#" target="_blank" class="map-link">🗺️ 地図で確認</a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    }
     </div>
     <script type="module" src="/src/main.ts"></script>
 </body>
