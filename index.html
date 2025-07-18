@@ -3,21 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>月が綺麗ですね</title>
+    <title>月見コンパス</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="container">
-        <h1>月が綺麗ですね</h1>
         <div id="moon-detector">
-            <h2>🌙 月探知機</h2>
             <button id="location-permission-button" style="display: none;">位置情報の許可</button>
             <button id="permission-button" style="display: none;">センサー権限を許可</button>
             <div id="location-status"></div>
             
             <!-- 磁気コンパス探知機 -->
             <div id="compass-detector" class="detector-panel active">
-                <h3>🧭 磁気コンパス探知機</h3>
                 <div id="compass-container">
                     <canvas id="compass-canvas" width="320" height="320"></canvas>
                     <div id="compass-info">
@@ -54,9 +51,8 @@
                     <div class="dialog-body">
                         <!-- 音量設定 -->
                         <div class="info-section">
-                            <h4>🔊 音量設定</h4>
                             <div class="compass-control">
-                                <label for="compass-volume-slider">音量:</label>
+                                <label for="compass-volume-slider">🔊 音量:</label>
                                 <input type="range" id="compass-volume-slider" min="0" max="100" value="45">
                                 <button id="compass-mute-button" class="mute-btn">🔊</button>
                             </div>
@@ -64,16 +60,17 @@
                         
                         <!-- 感度設定 -->
                         <div class="info-section">
-                            <h4>📡 感度設定</h4>
                             <div class="compass-control">
-                                <label for="sensitivity-slider">感度:</label>
+                                <label for="sensitivity-slider">📡 感度:</label>
                                 <input type="range" id="sensitivity-slider" min="1" max="10" value="5">
                             </div>
                         </div>
                         
                         <!-- 方位角補正設定 -->
                         <div class="info-section">
-                            <h4>🧭 方位角補正</h4>
+                            <div class="compass-control">
+                                <label>🧭 方位角補正:</label>
+                            </div>
                             <div class="control-buttons">
                                 <button id="toggle-reverse-btn" class="control-btn">東西反転補正</button>
                                 <button id="reset-correction-btn" class="control-btn">補正リセット</button>
@@ -96,7 +93,6 @@
                 <div class="dialog-body">
                     <!-- 月の情報 -->
                     <div class="info-section">
-                        <h4>🌙 月の情報</h4>
                         <div id="moon-direction"></div>
                         <div id="distance"></div>
                         <p id="altitude"></p>
@@ -108,7 +104,6 @@
                     
                     <!-- 現在時刻と現在位置 -->
                     <div class="info-section">
-                        <h4>📍 現在時刻・位置</h4>
                         <div id="current-time"></div>
                         <div id="geo-info"></div>
                         <p><a id="map-link" href="#" target="_blank">Show my location on map</a></p>
@@ -116,7 +111,6 @@
                     
                     <!-- デバイスの方位情報 -->
                     <div class="info-section">
-                        <h4>📱 デバイス方位情報</h4>
                         <div id="device-orientation"></div>
                     </div>
                 </div>
