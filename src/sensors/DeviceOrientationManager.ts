@@ -150,7 +150,7 @@ export class DeviceOrientationManager {
                     console.warn(`❌ ${this.MAX_NULL_VALUES}回連続でnull値を検出。deviceorientationにフォールバックします`);
                     this.setupSensorListener('deviceorientation');
                 } else if (this.deviceOrientation.alpha === null && this.deviceOrientation.beta === null && this.deviceOrientation.gamma === null) {
-                    console.warn('⚠️ 10秒経過してもセンサー値が取得できていません');
+                    console.warn('⚠️ 5秒経過してもセンサー値が取得できていません');
                     if (eventType === 'deviceorientationabsolute') {
                         console.log('🔄 deviceorientationにフォールバックを試行します');
                         this.setupSensorListener('deviceorientation');
@@ -159,7 +159,7 @@ export class DeviceOrientationManager {
                     console.log('✅ センサー値は正常に取得できています');
                 }
                 console.log('==========================================');
-            }, 10000);
+            }, 5000);
         }
     }
 
