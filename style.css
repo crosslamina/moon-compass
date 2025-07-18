@@ -3,13 +3,15 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    height: 100vh;
     margin: 0;
     padding: 20px;
     background: #000000;
     font-family: 'Arial', sans-serif;
     color: #ecf0f1;
     text-align: center;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 
@@ -163,7 +165,7 @@ body {
     border-radius: 25px;
     font-size: 1.1em;
     cursor: pointer;
-    margin: 20px 0;
+    margin: 10px 0;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(244, 208, 63, 0.2);
 }
@@ -433,7 +435,7 @@ body {
 }
 
 #compass-info {
-    margin-top: 20px;
+    margin-top: 10px;
     font-family: 'Arial', sans-serif;
     color: #ecf0f1;
     font-size: 13px;
@@ -500,7 +502,7 @@ body {
     display: flex;
     gap: 15px;
     justify-content: center;
-    margin: 20px 0;
+    margin: 10px 0;
     flex-wrap: wrap;
 }
 
