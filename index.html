@@ -7,83 +7,70 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="container">
-        <div id="moon-detector">
-            <button id="location-permission-button" style="display: none;">位置情報の許可</button>
-            <button id="permission-button" style="display: none;">センサー権限を許可</button>
-            <div id="location-status"></div>
-            
-            <!-- 磁気コンパス探知機 -->
-            <div id="compass-detector" class="detector-panel active">
-                <div id="compass-container">
-                    <canvas id="compass-canvas" width="320" height="320"></canvas>
-                    <div id="compass-info">
-                        <div id="magnetic-field">磁場強度: --</div>
-                        <div id="compass-bearing">磁気方位: --</div>
-                        <div id="deviation-angle">偏差角: --</div>
-                        <div id="altitude-match">方向一致度: --</div>
-                        <div id="altitude-detail">デバイス角度: -- | 月の角度: --</div>
-                        <div class="needle-legend">
-                            <span style="color: #dc143c;">●</span> 赤針: あなたの方向 (α回転, β長さ)
-                            <br><span style="color: #ffd700;">●</span> 金針: 月の位置 (常に金色)
-                            <br>※針の長さ: -90°→20%, 0°(地平線)→60%, +90°→100%
-                        </div>
-                    </div>
-                </div>
-                <div id="compass-controls">
-                    <!-- 設定は設定画面に移動 -->
-                </div>
-            </div>
-            
-            <!-- 設定と情報ボタン -->
-            <div class="button-group">
-                <button id="settings-button" class="info-btn">⚙️ 設定</button>
-                <button id="info-button" class="info-btn">ℹ️ 詳細情報</button>
-            </div>
-            
-            <!-- 設定ダイアログ -->
-            <div id="settings-dialog" class="dialog-overlay" style="display: none;">
-                <div class="dialog-content">
-                    <div class="dialog-header">
-                        <h3>設定</h3>
-                        <button id="close-settings-dialog" class="close-btn">×</button>
-                    </div>
-                    <div class="dialog-body">
-                        <!-- 音量設定 -->
-                        <div class="info-section">
-                            <div class="compass-control">
-                                <label for="compass-volume-slider">🔊 音量:</label>
-                                <input type="range" id="compass-volume-slider" min="0" max="100" value="45">
-                                <button id="compass-mute-button" class="mute-btn">🔊</button>
-                            </div>
-                        </div>
-                        
-                        <!-- 感度設定 -->
-                        <div class="info-section">
-                            <div class="compass-control">
-                                <label for="sensitivity-slider">📡 感度:</label>
-                                <input type="range" id="sensitivity-slider" min="1" max="10" value="5">
-                            </div>
-                        </div>
-                        
-                        <!-- 方位角補正設定 -->
-                        <div class="info-section">
-                            <div class="compass-control">
-                                <label>🧭 方位角補正:</label>
-                            </div>
-                            <div class="control-buttons">
-                                <button id="toggle-reverse-btn" class="control-btn">東西反転補正</button>
-                                <button id="reset-correction-btn" class="control-btn">補正リセット</button>
-                            </div>
-                            <div id="correction-status"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
+    <!-- 権限関連のボタン -->
+    <button id="location-permission-button" style="display: none;">位置情報の許可</button>
+    <button id="permission-button" style="display: none;">センサー権限を許可</button>
+    <div id="location-status"></div>
+    
+    <!-- メインコンパス -->
+    <canvas id="compass-canvas" width="320" height="320"></canvas>
+    
+    <!-- コンパス情報 -->
+    <div id="compass-info">
+        <div class="needle-legend">
+            <span style="color: #dc143c;">●</span> 赤針: あなたの方向 (α回転, β長さ)
+            <br><span style="color: #ffd700;">●</span> 金針: 月の位置 (常に金色)
+            <br>※針の長さ: -90°→20%, 0°(地平線)→60%, +90°→100%
         </div>
-        
-        <!-- 詳細情報ダイアログ -->
+    </div>
+    
+    <!-- 設定と情報ボタン -->
+    <div class="button-group">
+        <button id="settings-button" class="info-btn">⚙️ 設定</button>
+        <button id="info-button" class="info-btn">ℹ️ 詳細情報</button>
+    </div>
+    
+    <!-- 設定ダイアログ -->
+    <div id="settings-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h3>設定</h3>
+                <button id="close-settings-dialog" class="close-btn">×</button>
+            </div>
+            <div class="dialog-body">
+                <!-- 音量設定 -->
+                <div class="info-section">
+                    <div class="compass-control">
+                        <label for="compass-volume-slider">🔊 音量:</label>
+                        <input type="range" id="compass-volume-slider" min="0" max="100" value="45">
+                        <button id="compass-mute-button" class="mute-btn">🔊</button>
+                    </div>
+                </div>
+                
+                <!-- 感度設定 -->
+                <div class="info-section">
+                    <div class="compass-control">
+                        <label for="sensitivity-slider">📡 感度:</label>
+                        <input type="range" id="sensitivity-slider" min="1" max="10" value="5">
+                    </div>
+                </div>
+                
+                <!-- 方位角補正設定 -->
+                <div class="info-section">
+                    <div class="compass-control">
+                        <label>🧭 方位角補正:</label>
+                    </div>
+                    <div class="control-buttons">
+                        <button id="toggle-reverse-btn" class="control-btn">東西反転補正</button>
+                        <button id="reset-correction-btn" class="control-btn">補正リセット</button>
+                    </div>
+                    <div id="correction-status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 詳細情報ダイアログ -->
         <div id="info-dialog" class="dialog-overlay" style="display: none;">
             <div class="dialog-content">
                 <div class="dialog-header">
@@ -112,6 +99,8 @@
                     <!-- デバイスの方位情報 -->
                     <div class="info-section">
                         <div id="device-orientation"></div>
+                        <div id="direction-match-detail"></div>
+                        <div id="altitude-match-detail"></div>
                     </div>
                 </div>
             </div>

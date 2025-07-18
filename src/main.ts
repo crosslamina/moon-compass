@@ -22,11 +22,14 @@ const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasEle
 const compassVolumeSlider = document.getElementById('compass-volume-slider') as HTMLInputElement;
 const compassMuteButton = document.getElementById('compass-mute-button') as HTMLButtonElement;
 const sensitivitySlider = document.getElementById('sensitivity-slider') as HTMLInputElement;
-const magneticFieldElement = document.getElementById('magnetic-field');
-const compassBearingElement = document.getElementById('compass-bearing');
-const deviationAngleElement = document.getElementById('deviation-angle');
-const altitudeMatchElement = document.getElementById('altitude-match');
-const altitudeDetailElement = document.getElementById('altitude-detail');
+// 削除された要素（詳細情報ダイアログに移動）
+// const magneticFieldElement = document.getElementById('magnetic-field');
+// const compassBearingElement = document.getElementById('compass-bearing');
+// const deviationAngleElement = document.getElementById('deviation-angle');
+// const altitudeMatchElement = document.getElementById('altitude-match');
+// const altitudeDetailElement = document.getElementById('altitude-detail');
+const directionMatchDetailElement = document.getElementById('direction-match-detail');
+const altitudeMatchDetailElement = document.getElementById('altitude-match-detail');
 
 // 方位角補正コントロール関連の要素
 const toggleReverseBtn = document.getElementById('toggle-reverse-btn') as HTMLButtonElement;
@@ -352,8 +355,11 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
     
     // 方向一致度の計算
     let directionMatchPercentage = 0;
+    let altitudeMatchPercentage = 0;
     let deviceDirection = 0;
     let moonDirection = 0;
+    let deviceElevation = 0;
+    let moonElevation = 0;
     
     if (currentMoonData && deviceOrientation.alpha !== null) {
         deviceDirection = deviceOrientation.alpha;
@@ -366,42 +372,59 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
         directionMatchPercentage = Math.max(0, (1 - directionDiff / maxDiff) * 100);
     }
     
-    // 磁気コンパス情報の表示を更新
-    if (magneticFieldElement) {
-        magneticFieldElement.textContent = `磁場強度: ${(magneticStrength * 100).toFixed(1)}%`;
+    // 高度一致度の計算
+    if (currentMoonData && deviceOrientation.beta !== null) {
+        deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
+        moonElevation = currentMoonData.altitude;
+        const elevationDiff = Math.abs(deviceElevation - moonElevation);
+        const maxElevationDiff = 180; // 最大差180度
+        altitudeMatchPercentage = Math.max(0, (1 - elevationDiff / maxElevationDiff) * 100);
     }
-    if (compassBearingElement) {
-        compassBearingElement.textContent = `磁気方位: ${magneticBearing.toFixed(1)}°`;
+    
+    // 磁気コンパス情報の表示を更新（メイン画面からは削除済み）
+    // if (magneticFieldElement) {
+    //     magneticFieldElement.textContent = `磁場強度: ${(magneticStrength * 100).toFixed(1)}%`;
+    // }
+    // if (compassBearingElement) {
+    //     compassBearingElement.textContent = `磁気方位: ${magneticBearing.toFixed(1)}°`;
+    // }
+    // if (deviationAngleElement) {
+    //     deviationAngleElement.textContent = `偏差角: ${deviationAngle.toFixed(1)}°`;
+    // }
+    // if (altitudeMatchElement) {
+    //     altitudeMatchElement.textContent = `方向一致度: ${directionMatchPercentage.toFixed(1)}%`;
+    // }
+    // if (altitudeDetailElement) {
+    //     let deviceElevationText = '--';
+    //     let moonAltitudeText = '--';
+    //     let needleLengthInfo = '';
+    //     
+    //     if (deviceOrientation.beta !== null) {
+    //         const deviceElev = calculateDeviceElevation(deviceOrientation.beta);
+    //         deviceElevationText = `${deviceElev.toFixed(1)}°`;
+    //     }
+    //     
+    //     if (currentMoonData) {
+    //         moonAltitudeText = `${currentMoonData.altitude.toFixed(1)}°`;
+    //     }
+    //     
+    //     // 針の長さ情報も追加
+    //     if (deviceOrientation.beta !== null && currentMoonData) {
+    //         const deviceElev = calculateDeviceElevation(deviceOrientation.beta);
+    //         const compassRad = Math.min(320, 320) * 0.4; // コンパス半径を推定
+    //         const lengthDiff = Math.abs(calculateNeedleLength(deviceElev, compassRad) - calculateNeedleLength(currentMoonData.altitude, compassRad));
+    //         needleLengthInfo = ` | 針長差: ${lengthDiff.toFixed(1)}px`;
+    //     }
+    //     
+    //     altitudeDetailElement.textContent = `デバイス高度: ${deviceElevationText} | 月高度: ${moonAltitudeText}${needleLengthInfo}`;
+    // }
+    
+    // 詳細情報ダイアログの方位一致度と高度一致度を更新
+    if (directionMatchDetailElement) {
+        directionMatchDetailElement.textContent = `方位一致度: ${directionMatchPercentage.toFixed(1)}% (デバイス: ${deviceDirection.toFixed(1)}°, 月: ${moonDirection.toFixed(1)}°)`;
     }
-    if (deviationAngleElement) {
-        deviationAngleElement.textContent = `偏差角: ${deviationAngle.toFixed(1)}°`;
-    }
-    if (altitudeMatchElement) {
-        altitudeMatchElement.textContent = `方向一致度: ${directionMatchPercentage.toFixed(1)}%`;
-    }
-    if (altitudeDetailElement) {
-        let deviceElevationText = '--';
-        let moonAltitudeText = '--';
-        let needleLengthInfo = '';
-        
-        if (deviceOrientation.beta !== null) {
-            const deviceElev = calculateDeviceElevation(deviceOrientation.beta);
-            deviceElevationText = `${deviceElev.toFixed(1)}°`;
-        }
-        
-        if (currentMoonData) {
-            moonAltitudeText = `${currentMoonData.altitude.toFixed(1)}°`;
-        }
-        
-        // 針の長さ情報も追加
-        if (deviceOrientation.beta !== null && currentMoonData) {
-            const deviceElev = calculateDeviceElevation(deviceOrientation.beta);
-            const compassRad = Math.min(320, 320) * 0.4; // コンパス半径を推定
-            const lengthDiff = Math.abs(calculateNeedleLength(deviceElev, compassRad) - calculateNeedleLength(currentMoonData.altitude, compassRad));
-            needleLengthInfo = ` | 針長差: ${lengthDiff.toFixed(1)}px`;
-        }
-        
-        altitudeDetailElement.textContent = `デバイス高度: ${deviceElevationText} | 月高度: ${moonAltitudeText}${needleLengthInfo}`;
+    if (altitudeMatchDetailElement) {
+        altitudeMatchDetailElement.textContent = `高度一致度: ${altitudeMatchPercentage.toFixed(1)}% (デバイス: ${deviceElevation.toFixed(1)}°, 月: ${moonElevation.toFixed(1)}°)`;
     }
 }
 

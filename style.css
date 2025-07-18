@@ -1,24 +1,18 @@
 body {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    background: linear-gradient(to bottom, #1a1a2e, #16213e, #0f3460);
+    padding: 20px;
+    background: #000000;
     font-family: 'Arial', sans-serif;
     color: #ecf0f1;
-}
-
-#container {
     text-align: center;
-    padding: 20px;
 }
 
-h1 {
-    color: #f39c12;
-    text-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
-    margin-bottom: 30px;
-}
+
 
 #moon-direction {
     font-size: 2em;
@@ -52,18 +46,13 @@ h1 {
 }
 
 #moon-detector {
-    margin: 20px 0;
-    padding: 20px;
-    border: 2px solid #3498db;
-    border-radius: 10px;
-    background: rgba(52, 73, 94, 0.3);
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
 }
 
-#moon-detector h2 {
-    margin: 0 0 15px 0;
-    color: #3498db;
-    font-size: 1.5em;
-}
 
 #permission-button,
 #location-permission-button {
@@ -433,21 +422,13 @@ h1 {
     to { box-shadow: 0 0 20px rgba(241, 196, 15, 0.8); }
 }
 
-/* 磁気コンパス探知機のスタイル */
-#compass-detector {
-    background: linear-gradient(135deg, #2c1810, #3d2817);
-    border: 2px solid #8b4513;
-}
 
-#compass-detector h3 {
-    color: #cd853f;
-}
 
 #compass-canvas {
-    border: 2px solid #8b4513;
+    border: none;
     border-radius: 50%;
-    box-shadow: 0 0 20px rgba(139, 69, 19, 0.5);
-    background: radial-gradient(circle, #1a0f0a, #2c1810);
+    box-shadow: none;
+    background: #000000;
 }
 
 #compass-info {
