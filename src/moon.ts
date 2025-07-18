@@ -1,5 +1,19 @@
 import * as SunCalc from 'suncalc';
 
+// 定数定義
+const RADIANS_TO_DEGREES = 180 / Math.PI;
+const DEGREES_TO_RADIANS = Math.PI / 180;
+const FULL_CIRCLE_DEGREES = 360;
+const HALF_CIRCLE_DEGREES = 180;
+const RIGHT_ANGLE_DEGREES = 90;
+const PHASE_THRESHOLD_NEW_MOON = 0.01;
+const PHASE_THRESHOLD_CRESCENT = 0.25;
+const PHASE_THRESHOLD_QUARTER = 0.45;
+const PHASE_THRESHOLD_GIBBOUS = 0.55;
+const PHASE_THRESHOLD_FULL_MOON = 0.95;
+const PHASE_THRESHOLD_HALF_MOON = 0.5;
+const PHASE_THRESHOLD_PERFECT_FULL = 0.99;
+
 export type MoonData = {
     azimuth: number;
     distance: number;
@@ -31,22 +45,13 @@ export function getMoonData(lat: number, lon: number, ): MoonData {
     // 1. ラジアンを度に変換
     // 2. 南基準から北基準に変換（+180°）
     // 3. 0°〜360°の範囲に正規化
-    let azimuthDegrees = (moonPosition.azimuth * 180 / Math.PI + 180);
+    let azimuthDegrees = (moonPosition.azimuth * RADIANS_TO_DEGREES + HALF_CIRCLE_DEGREES);
     
     // 0°〜360°の範囲に正規化
-    while (azimuthDegrees < 0) azimuthDegrees += 360;
-    while (azimuthDegrees >= 360) azimuthDegrees -= 360;
+    while (azimuthDegrees < 0) azimuthDegrees += FULL_CIRCLE_DEGREES;
+    while (azimuthDegrees >= FULL_CIRCLE_DEGREES) azimuthDegrees -= FULL_CIRCLE_DEGREES;
     
-    // デバッグ情報をログ出力
-    console.log('SunCalc raw data:', {
-        azimuthRadians: moonPosition.azimuth,
-        azimuthDegrees: moonPosition.azimuth * 180 / Math.PI,
-        convertedAzimuth: azimuthDegrees,
-        altitudeRadians: moonPosition.altitude,
-        altitudeDegrees: moonPosition.altitude * 180 / Math.PI
-    });
-    
-    const altitudeDegrees = moonPosition.altitude * 180 / Math.PI;
+    const altitudeDegrees = moonPosition.altitude * RADIANS_TO_DEGREES;
 
     return {
       azimuth: azimuthDegrees,
@@ -73,16 +78,16 @@ export function testSunCalcCoordinates(lat: number, lon: number): void {
         altitude: sunPosition.altitude
     });
     console.log('太陽位置 (度):', {
-        azimuth: sunPosition.azimuth * 180 / Math.PI,
-        altitude: sunPosition.altitude * 180 / Math.PI
+        azimuth: sunPosition.azimuth * RADIANS_TO_DEGREES,
+        altitude: sunPosition.altitude * RADIANS_TO_DEGREES
     });
     console.log('月位置 (ラジアン):', {
         azimuth: moonPosition.azimuth,
         altitude: moonPosition.altitude
     });
     console.log('月位置 (度):', {
-        azimuth: moonPosition.azimuth * 180 / Math.PI,
-        altitude: moonPosition.altitude * 180 / Math.PI
+        azimuth: moonPosition.azimuth * RADIANS_TO_DEGREES,
+        altitude: moonPosition.altitude * RADIANS_TO_DEGREES
     });
     console.log('========================');
 }
@@ -136,7 +141,7 @@ export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData, bli
     ctx.fillStyle = '#f4d03f';
     
     // illuminationに基づいて月の形を描画、phaseで対称性を判定
-    if (illumination < 0.01) {
+    if (illumination < PHASE_THRESHOLD_NEW_MOON) {
         // 新月 - ほぼ暗い円のみ（わずかに輪郭を見せる）
         ctx.strokeStyle = '#555';
         ctx.lineWidth = 1;
@@ -145,7 +150,7 @@ export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData, bli
         ctx.stroke();
     } else {
         // 月の明るい部分を描画
-        const isWaxing = phase < 0.5; // 上弦期（0〜0.5）か下弦期（0.5〜1）か
+        const isWaxing = phase < PHASE_THRESHOLD_HALF_MOON; // 上弦期（0〜0.5）か下弦期（0.5〜1）か
         drawMoonShape(ctx, centerX, centerY, radius, illumination, isWaxing);
     }
 
@@ -244,19 +249,19 @@ function drawBlinkRing(
  * illuminationとphaseに基づいて月相名を取得
  */
 function getPhaseName(phase: number, illumination: number): string {
-    if (illumination < 0.01) {
+    if (illumination < PHASE_THRESHOLD_NEW_MOON) {
         return '新月';
-    } else if (illumination < 0.25) {
-        return phase < 0.5 ? '三日月' : '有明月';
-    } else if (illumination < 0.45) {
-        return phase < 0.5 ? '上弦前' : '下弦後';
-    } else if (illumination > 0.55 && illumination < 0.95) {
-        return phase < 0.5 ? '上弦後' : '下弦前';
-    } else if (illumination >= 0.95) {
+    } else if (illumination < PHASE_THRESHOLD_CRESCENT) {
+        return phase < PHASE_THRESHOLD_HALF_MOON ? '三日月' : '有明月';
+    } else if (illumination < PHASE_THRESHOLD_QUARTER) {
+        return phase < PHASE_THRESHOLD_HALF_MOON ? '上弦前' : '下弦後';
+    } else if (illumination > PHASE_THRESHOLD_GIBBOUS && illumination < PHASE_THRESHOLD_FULL_MOON) {
+        return phase < PHASE_THRESHOLD_HALF_MOON ? '上弦後' : '下弦前';
+    } else if (illumination >= PHASE_THRESHOLD_FULL_MOON) {
         return '満月';
     } else {
         // illumination ≈ 0.5 の場合
-        return phase < 0.5 ? '上弦の月' : '下弦の月';
+        return phase < PHASE_THRESHOLD_HALF_MOON ? '上弦の月' : '下弦の月';
     }
 }
 
@@ -278,7 +283,7 @@ function drawMoonShape(
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     ctx.clip();
 
-    if (illumination >= 0.99) {
+    if (illumination >= PHASE_THRESHOLD_PERFECT_FULL) {
         // 満月
         ctx.fillStyle = '#f4d03f';
         ctx.beginPath();
@@ -289,7 +294,7 @@ function drawMoonShape(
         // illuminationから正確な位相角を計算
         const k = illumination; // illumination fraction (0-1)
         
-        if (k <= 0.5) {
+        if (k <= PHASE_THRESHOLD_HALF_MOON) {
             // 三日月〜半月：月の右端または左端から光が当たり始める
             drawCrescentShape(ctx, centerX, centerY, radius, k, isWaxing);
         } else {
@@ -582,8 +587,8 @@ export function calculateAngleDifference(
 ): number {
     // 方位角の差（360度を考慮）
     let azimuthDiff = Math.abs(deviceAzimuth - moonAzimuth);
-    if (azimuthDiff > 180) {
-        azimuthDiff = 360 - azimuthDiff;
+    if (azimuthDiff > HALF_CIRCLE_DEGREES) {
+        azimuthDiff = FULL_CIRCLE_DEGREES - azimuthDiff;
     }
     
     // 高度角の差

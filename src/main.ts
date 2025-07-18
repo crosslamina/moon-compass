@@ -712,7 +712,7 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
     };
     
     const levelNames = {
-        'calibrating': '較正中',
+        'calibrating': '校正中',
         'searching': '探索中',
         'weak': '微弱検出',
         'strong': '強磁場',
