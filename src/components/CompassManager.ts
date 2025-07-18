@@ -341,13 +341,13 @@ export class CompassManager {
             moonData.altitude
         );
 
-        this.updateCompassDetector(moonData.azimuth, angleDiff, moonData.altitude);
+        this.updateCompassDetector(angleDiff, moonData.altitude);
     }
 
     /**
      * コンパス検出器の更新
      */
-    public updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clampedMoonAltitude: number): void {
+    public updateCompassDetector(totalAngleDiff: number, clampedMoonAltitude: number): void {
         const now = Date.now();
         
         // 角度差に基づく磁場強度計算

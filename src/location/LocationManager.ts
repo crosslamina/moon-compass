@@ -6,7 +6,6 @@ export class LocationManager {
     private locationStatusElement: HTMLElement | null;
     private locationPermissionButton: HTMLButtonElement | null;
     private currentPosition: GeolocationPosition | null = null;
-    private watchId: number | null = null;
 
     private constructor() {
         this.stateManager = StateManager.getInstance();

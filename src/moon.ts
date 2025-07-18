@@ -2,10 +2,8 @@ import * as SunCalc from 'suncalc';
 
 // 定数定義
 const RADIANS_TO_DEGREES = 180 / Math.PI;
-const DEGREES_TO_RADIANS = Math.PI / 180;
 const FULL_CIRCLE_DEGREES = 360;
 const HALF_CIRCLE_DEGREES = 180;
-const RIGHT_ANGLE_DEGREES = 90;
 const PHASE_THRESHOLD_NEW_MOON = 0.01;
 const PHASE_THRESHOLD_CRESCENT = 0.25;
 const PHASE_THRESHOLD_QUARTER = 0.45;
@@ -125,7 +123,7 @@ export function testSunCalcCoordinates(lat: number, lon: number): void {
 }
 
 
-export function getMoonTimes(lat: number, lon: number, library: 'suncalc' | 'astronomia' = 'suncalc'): MoonTimes {
+export function getMoonTimes(lat: number, lon: number): MoonTimes {
 
     const now = new Date();
     const moonTimes = SunCalc.getMoonTimes(now, lat, lon);
@@ -164,7 +162,7 @@ export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData, bli
     const illumination = moonData.illumination;
 
     // 統一された月の形状描画を使用
-    drawMoonShapeCommon(ctx, centerX, centerY, radius, moonData, false);
+    drawMoonShapeCommon(ctx, centerX, centerY, radius, moonData);
 
     // 点滅リングの描画（月の周辺）- 角度差が大きい時のみ表示
     if (blinkIntensity < 0.99) {
@@ -277,15 +275,13 @@ function getPhaseName(phase: number, illumination: number): string {
  * @param centerY - 中心Y座標
  * @param radius - 月の半径
  * @param moonData - 月のデータ
- * @param isSmall - 小さい描画かどうか（針の先端用）
  */
 function drawMoonShapeCommon(
     ctx: CanvasRenderingContext2D,
     centerX: number,
     centerY: number,
     radius: number,
-    moonData: MoonData,
-    isSmall: boolean = false
+    moonData: MoonData
 ): void {
     const phase = moonData.phase;
     const illumination = moonData.illumination;
@@ -458,7 +454,7 @@ export function drawMoonPhaseSmall(
     moonData: MoonData
 ): void {
     // 統一された関数を使用
-    drawMoonShapeCommon(ctx, centerX, centerY, radius, moonData, true);
+    drawMoonShapeCommon(ctx, centerX, centerY, radius, moonData);
 }
 
 /**

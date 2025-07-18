@@ -146,9 +146,6 @@ export class AccuracyDisplayManager {
         
         if (!deviceAltitudeMarker || !moonAltitudeMarker) return;
 
-        // 高度インジケーターのゲージ幅（CSSから取得）
-        const gaugeWidth = 200; // px（CSSの#altitude-gaugeのwidthと一致）
-        
         /**
          * 高度角（-90°〜90°）を高度ゲージの位置（0〜100%）に変換
          * @param altitude 高度角（-90°〜90°）

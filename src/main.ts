@@ -1,15 +1,11 @@
-import { getMoonData, getMoonTimes, MoonData, drawMoonPhase, calculateAngleDifference, resetBlinkTimer, testSunCalcCoordinates } from './moon';
+import { getMoonData, getMoonTimes, MoonData, calculateAngleDifference, resetBlinkTimer, testSunCalcCoordinates } from './moon';
 import { CompassManager } from './components/CompassManager';
-import { DOMManager } from './ui/DOMManager';
 import { DialogManager } from './ui/DialogManager';
 import { StateManager } from './state/StateManager';
 import { LocationManager } from './location/LocationManager';
 import { DeviceOrientationManager } from './sensors/DeviceOrientationManager';
 import { AccuracyDisplayManager } from './accuracy/AccuracyDisplayManager';
 import { MoonDisplayManager } from './display/MoonDisplayManager';
-
-// DOM要素の取得
-const currentTimeElement = document.getElementById('current-time');
 
 // 磁気コンパス関連の要素
 const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasElement;
@@ -24,7 +20,6 @@ const resetCorrectionBtn = document.getElementById('reset-correction-btn') as HT
 const correctionStatusElement = document.getElementById('correction-status');
 
 // マネージャーインスタンス
-const domManager = DOMManager.getInstance();
 const stateManager = StateManager.getInstance();
 const dialogManager = DialogManager.getInstance();
 const locationManager = LocationManager.getInstance();
@@ -122,9 +117,8 @@ function setupEventListeners() {
     });
     
     // デバイス方向更新イベント
-    window.addEventListener('orientationUpdate', (event: any) => {
-        const orientation = event.detail.orientation;
-        handleOrientationUpdate(orientation);
+    window.addEventListener('orientationUpdate', () => {
+        handleOrientationUpdate();
     });
     
     // UI操作のイベントリスナー設定
@@ -166,7 +160,7 @@ function handleLocationUpdate(position: GeolocationPosition) {
     updateDisplay();
 }
 
-function handleOrientationUpdate(orientation: any) {
+function handleOrientationUpdate() {
     // デバイス向きの更新処理
     updateDisplay();
     updateCorrectionStatus();
@@ -206,9 +200,9 @@ function updateAccuracyDisplay() {
 /**
  * 磁気コンパスの更新
  */
-function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clampedMoonAltitude: number) {
+function updateCompassDetector(totalAngleDiff: number, clampedMoonAltitude: number) {
     if (compassManager) {
-        compassManager.updateCompassDetector(moonAzimuth, totalAngleDiff, clampedMoonAltitude);
+        compassManager.updateCompassDetector(totalAngleDiff, clampedMoonAltitude);
     }
 }
 
@@ -236,7 +230,7 @@ setInterval(() => {
         );
         
         // 磁気コンパス探知機の更新
-        updateCompassDetector(currentMoonData.azimuth, angleDiff, currentMoonData.altitude);
+        updateCompassDetector(angleDiff, currentMoonData.altitude);
     }
 }, 100); // 100ms間隔で滑らかだが敏感すぎない制御
 
@@ -355,7 +349,6 @@ function toggleOrientationReverseUI() {
     
     // 一時的にステータスにメッセージを表示
     if (correctionStatusElement) {
-        const originalText = correctionStatusElement.textContent;
         correctionStatusElement.textContent = message;
         correctionStatusElement.style.color = result ? '#2ecc71' : '#e74c3c';
         

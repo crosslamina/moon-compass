@@ -1,6 +1,7 @@
 import { DOMManager } from '../ui/DOMManager';
 import { StateManager } from '../state/StateManager';
 import { MoonData } from '../moon';
+import { getDirectionName } from '../direction';
 
 /**
  * 月情報表示を管理するクラス
@@ -29,7 +30,7 @@ export class MoonInfoDisplay {
     private updateMoonInfo(moonData: MoonData): void {
         // 方向表示
         this.domManager.setText('moon-direction', 
-            `${this.getDirectionName(moonData.azimuth)} ${moonData.azimuth.toFixed(1)}°`);
+            `${getDirectionName(moonData.azimuth)} ${moonData.azimuth.toFixed(1)}°`);
 
         // 距離表示
         this.domManager.setText('distance', 
@@ -46,13 +47,6 @@ export class MoonInfoDisplay {
         // 高度表示
         this.domManager.setText('altitude', 
             `高度: ${moonData.altitude.toFixed(2)}°`);
-    }
-
-    private getDirectionName(azimuth: number): string {
-        // 方向名の計算ロジック
-        const directions = ['北', '北東', '東', '南東', '南', '南西', '西', '北西'];
-        const index = Math.round(azimuth / 45) % 8;
-        return directions[index];
     }
 
     private getPhaseName(phase: number): string {
