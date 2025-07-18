@@ -22,12 +22,6 @@ const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasEle
 const compassVolumeSlider = document.getElementById('compass-volume-slider') as HTMLInputElement;
 const compassMuteButton = document.getElementById('compass-mute-button') as HTMLButtonElement;
 const sensitivitySlider = document.getElementById('sensitivity-slider') as HTMLInputElement;
-// 削除された要素（詳細情報ダイアログに移動）
-// const magneticFieldElement = document.getElementById('magnetic-field');
-// const compassBearingElement = document.getElementById('compass-bearing');
-// const deviationAngleElement = document.getElementById('deviation-angle');
-// const altitudeMatchElement = document.getElementById('altitude-match');
-// const altitudeDetailElement = document.getElementById('altitude-detail');
 const directionMatchDetailElement = document.getElementById('direction-match-detail');
 const altitudeMatchDetailElement = document.getElementById('altitude-match-detail');
 
