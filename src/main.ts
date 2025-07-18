@@ -38,6 +38,11 @@ const infoButton = document.getElementById('info-button') as HTMLButtonElement;
 const infoDialog = document.getElementById('info-dialog');
 const closeDialogButton = document.getElementById('close-dialog') as HTMLButtonElement;
 
+// 設定ダイアログ関連の要素
+const settingsButton = document.getElementById('settings-button') as HTMLButtonElement;
+const settingsDialog = document.getElementById('settings-dialog');
+const closeSettingsDialogButton = document.getElementById('close-settings-dialog') as HTMLButtonElement;
+
 // デバイスの向きを保存する変数
 let deviceOrientation = {
     alpha: null as number | null,  // 方位角（コンパス方向）
@@ -1181,6 +1186,11 @@ setupGeolocation();
  * ダイアログを開く
  */
 function openDialog() {
+    // 設定ダイアログが開いている場合は閉じる
+    if (settingsDialog && settingsDialog.style.display === 'flex') {
+        closeSettingsDialog();
+    }
+    
     if (infoDialog) {
         infoDialog.style.display = 'flex';
         // フェードイン効果
@@ -1203,6 +1213,37 @@ function closeDialog() {
     }
 }
 
+/**
+ * 設定ダイアログを開く
+ */
+function openSettingsDialog() {
+    // 詳細情報ダイアログが開いている場合は閉じる
+    if (infoDialog && infoDialog.style.display === 'flex') {
+        closeDialog();
+    }
+    
+    if (settingsDialog) {
+        settingsDialog.style.display = 'flex';
+        // フェードイン効果
+        setTimeout(() => {
+            settingsDialog.style.opacity = '1';
+        }, 10);
+    }
+}
+
+/**
+ * 設定ダイアログを閉じる
+ */
+function closeSettingsDialog() {
+    if (settingsDialog) {
+        settingsDialog.style.opacity = '0';
+        // フェードアウト後に非表示
+        setTimeout(() => {
+            settingsDialog.style.display = 'none';
+        }, 300);
+    }
+}
+
 // ダイアログのイベントリスナー設定
 if (infoButton) {
     infoButton.onclick = openDialog;
@@ -1210,6 +1251,15 @@ if (infoButton) {
 
 if (closeDialogButton) {
     closeDialogButton.onclick = closeDialog;
+}
+
+// 設定ダイアログのイベントリスナー設定
+if (settingsButton) {
+    settingsButton.onclick = openSettingsDialog;
+}
+
+if (closeSettingsDialogButton) {
+    closeSettingsDialogButton.onclick = closeSettingsDialog;
 }
 
 // ダイアログの背景をクリックしても閉じる
@@ -1221,10 +1271,23 @@ if (infoDialog) {
     };
 }
 
+// 設定ダイアログの背景をクリックしても閉じる
+if (settingsDialog) {
+    settingsDialog.onclick = (event) => {
+        if (event.target === settingsDialog) {
+            closeSettingsDialog();
+        }
+    };
+}
+
 // ESCキーでダイアログを閉じる
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && infoDialog && infoDialog.style.display === 'flex') {
-        closeDialog();
+    if (event.key === 'Escape') {
+        if (infoDialog && infoDialog.style.display === 'flex') {
+            closeDialog();
+        } else if (settingsDialog && settingsDialog.style.display === 'flex') {
+            closeSettingsDialog();
+        }
     }
 });
 

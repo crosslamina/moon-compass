@@ -34,31 +34,57 @@
                     </div>
                 </div>
                 <div id="compass-controls">
-                    <div class="compass-control">
-                        <label for="compass-volume-slider">音量:</label>
-                        <input type="range" id="compass-volume-slider" min="0" max="100" value="45">
-                        <button id="compass-mute-button" class="mute-btn">🔊</button>
+                    <!-- 設定は設定画面に移動 -->
+                </div>
+            </div>
+            
+            <!-- 設定と情報ボタン -->
+            <div class="button-group">
+                <button id="settings-button" class="info-btn">⚙️ 設定</button>
+                <button id="info-button" class="info-btn">ℹ️ 詳細情報</button>
+            </div>
+            
+            <!-- 設定ダイアログ -->
+            <div id="settings-dialog" class="dialog-overlay" style="display: none;">
+                <div class="dialog-content">
+                    <div class="dialog-header">
+                        <h3>設定</h3>
+                        <button id="close-settings-dialog" class="close-btn">×</button>
                     </div>
-                    <div class="compass-control">
-                        <label for="sensitivity-slider">感度:</label>
-                        <input type="range" id="sensitivity-slider" min="1" max="10" value="5">
+                    <div class="dialog-body">
+                        <!-- 音量設定 -->
+                        <div class="info-section">
+                            <h4>🔊 音量設定</h4>
+                            <div class="compass-control">
+                                <label for="compass-volume-slider">音量:</label>
+                                <input type="range" id="compass-volume-slider" min="0" max="100" value="45">
+                                <button id="compass-mute-button" class="mute-btn">🔊</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 感度設定 -->
+                        <div class="info-section">
+                            <h4>📡 感度設定</h4>
+                            <div class="compass-control">
+                                <label for="sensitivity-slider">感度:</label>
+                                <input type="range" id="sensitivity-slider" min="1" max="10" value="5">
+                            </div>
+                        </div>
+                        
+                        <!-- 方位角補正設定 -->
+                        <div class="info-section">
+                            <h4>🧭 方位角補正</h4>
+                            <div class="control-buttons">
+                                <button id="toggle-reverse-btn" class="control-btn">東西反転補正</button>
+                                <button id="reset-correction-btn" class="control-btn">補正リセット</button>
+                            </div>
+                            <div id="correction-status"></div>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- 方位角補正コントロール -->
-            <div id="orientation-controls">
-                <div class="controls-label">方位角補正</div>
-                <div class="control-buttons">
-                    <button id="toggle-reverse-btn" class="control-btn">東西反転補正</button>
-                    <button id="reset-correction-btn" class="control-btn">補正リセット</button>
-                </div>
-                <div id="correction-status"></div>
-            </div>
         </div>
-        
-        <!-- 情報ボタン -->
-        <button id="info-button" class="info-btn">ℹ️ 詳細情報</button>
         
         <!-- 詳細情報ダイアログ -->
         <div id="info-dialog" class="dialog-overlay" style="display: none;">
