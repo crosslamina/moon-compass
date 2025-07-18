@@ -561,35 +561,10 @@ function drawCompassDisplay(canvas: HTMLCanvasElement) {
         // 月の針の長さ：共通の計算関数を使用（デバイス針と同じ高度なら同じ長さ）
         moonNeedleLength = calculateNeedleLength(moonAltitude, compassRadius);
         
-        // 月の針の色：高度が正（可視）か負（不可視）かで色を変える
-        if (moonAltitude >= 0) {
-            // 地上から見える（正の高度）- 明るい金色
-            moonNeedleColor = '#ffd700';
-            moonTipColor = '#ffd700';
-            moonSymbolColor = '#ffa500';
-        } else {
-            // 地上から見えない（負の高度）- 暗い青灰色
-            moonNeedleColor = '#4a6fa5';
-            moonTipColor = '#6495ed';
-            moonSymbolColor = '#778899';
-        }
-        
-        // 高度が0に近い場合は中間色を使用（地平線付近）
-        const horizonThreshold = 5; // 地平線から±5度以内
-        if (Math.abs(moonAltitude) <= horizonThreshold) {
-            const blendFactor = Math.abs(moonAltitude) / horizonThreshold;
-            if (moonAltitude >= 0) {
-                // 地平線上 - オレンジがかった金色
-                moonNeedleColor = '#ffb347';
-                moonTipColor = '#ff8c00';
-                moonSymbolColor = '#ff7f50';
-            } else {
-                // 地平線下 - 紫がかった青色
-                moonNeedleColor = '#6a5acd';
-                moonTipColor = '#9370db';
-                moonSymbolColor = '#8470ff';
-            }
-        }
+        // 月の針の色：常に金色に固定
+        moonNeedleColor = '#ffd700';
+        moonTipColor = '#ffd700';
+        moonSymbolColor = '#ffa500';
     }
     
     ctx.strokeStyle = moonNeedleColor;
