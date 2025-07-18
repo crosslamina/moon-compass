@@ -1,9 +1,13 @@
+import { getMoonData, getMoonTimes, MoonData, drawMoonPhaseSmall, calculateAngleDifference, resetBlinkTimer, testSunCalcCoordinates } from './moon';
+import { getDirectionName } from './direction';
+import { CompassManager } from './components/CompassManager';
+import { DOMManager } from './ui/DOMManager';
+import { StateManager } from './state/StateManager';
+
+// DOM要素の取得
 const deviceOrientationElement = document.getElementById('device-orientation');
 const geoInfoElement = document.getElementById('geo-info');
-import { getMoonData, getMoonTimes, MoonData, drawMoonPhaseSmall, calculateAngleDifference, resetBlinkTimer, testSunCalcCoordinates } from './moon';
 const illuminationElement = document.getElementById('illumination');
-import { getDirectionName } from './direction';
-
 const moonDirectionElement = document.getElementById('moon-direction');
 const distanceElement = document.getElementById('distance');
 const currentTimeElement = document.getElementById('current-time');
@@ -76,162 +80,31 @@ const settingsButton = document.getElementById('settings-button') as HTMLButtonE
 const settingsDialog = document.getElementById('settings-dialog');
 const closeSettingsDialogButton = document.getElementById('close-settings-dialog') as HTMLButtonElement;
 
-// デバイスの向きを保存する変数
+// マネージャーインスタンス
+const domManager = DOMManager.getInstance();
+const stateManager = StateManager.getInstance();
+let compassManager: CompassManager | null = null;
+
+// CompassManagerの初期化
+async function initializeCompassManager() {
+    try {
+        compassManager = new CompassManager();
+        await compassManager.initialize();
+        console.log('✅ CompassManagerを初期化しました');
+    } catch (error) {
+        console.error('❌ CompassManagerの初期化に失敗:', error);
+    }
+}
+
+// デバイスの向きを保存する変数（後でStateManagerに移行予定）
 let deviceOrientation = {
     alpha: null as number | null,  // 方位角（コンパス方向）
     beta: null as number | null,   // 前後の傾き（高度に対応）
     gamma: null as number | null   // 左右の傾き
 };
 
-// 磁気コンパス探知機の状態管理
-interface CompassState {
-    isActive: boolean;
-    magneticField: number;
-    compassBearing: number;
-    deviationAngle: number;
-    sensitivity: number;
-    needleAngle: number;
-    magneticNoise: number;
-    lastTick: number;
-    tickInterval: number;
-    detectionLevel: 'calibrating' | 'searching' | 'weak' | 'strong' | 'locked';
-    audioContext?: AudioContext;
-}
-
-let compassState: CompassState = {
-    isActive: true,
-    magneticField: 0,
-    compassBearing: 0,
-    deviationAngle: 0,
-    sensitivity: 5,
-    needleAngle: 0,
-    magneticNoise: 0,
-    lastTick: 0,
-    tickInterval: 1000,
-    detectionLevel: 'calibrating'
-};
-
 // 磁気コンパス用オーディオクラス
-class CompassAudio {
-    private audioContext: AudioContext | null = null;
-    private gainNode: GainNode | null = null;
-    private isInitialized = false;
-    private isMuted = false;
-    private volume = 0.45;
-
-    async initialize() {
-        if (this.isInitialized) return;
-        
-        try {
-            this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-            this.gainNode = this.audioContext.createGain();
-            this.gainNode.connect(this.audioContext.destination);
-            this.gainNode.gain.value = this.volume;
-            this.isInitialized = true;
-            console.log('✅ 磁気コンパス オーディオシステムを初期化しました');
-        } catch (error) {
-            console.error('❌ 磁気コンパス オーディオシステムの初期化に失敗:', error);
-        }
-    }
-
-    setVolume(volume: number) {
-        this.volume = volume;
-        if (this.gainNode) {
-            this.gainNode.gain.value = this.isMuted ? 0 : volume;
-        }
-    }
-
-    setMuted(muted: boolean) {
-        this.isMuted = muted;
-        if (this.gainNode) {
-            this.gainNode.gain.value = muted ? 0 : this.volume;
-        }
-    }
-
-    // 磁気コンパス特有のチック音（機械式コンパスの音）
-    playTick(magneticStrength: number, detectionLevel: CompassState['detectionLevel']) {
-        if (!this.audioContext || !this.gainNode || this.isMuted) return;
-
-        try {
-            const now = this.audioContext.currentTime;
-            
-            // チック音の基本周波数（検知レベルによって変化）
-            let baseFreq = 200;
-            let duration = 0.1;
-            
-            switch (detectionLevel) {
-                case 'calibrating': baseFreq = 150; duration = 0.05; break;
-                case 'searching': baseFreq = 200; duration = 0.08; break;
-                case 'weak': baseFreq = 300; duration = 0.12; break;
-                case 'strong': baseFreq = 450; duration = 0.15; break;
-                case 'locked': baseFreq = 600; duration = 0.2; break;
-            }
-            
-            // メカニカルなチック音を生成
-            const oscillator = this.audioContext.createOscillator();
-            const tickGain = this.audioContext.createGain();
-            const filter = this.audioContext.createBiquadFilter();
-            
-            oscillator.connect(filter);
-            filter.connect(tickGain);
-            tickGain.connect(this.gainNode);
-            
-            // 鋭いチック音のための設定
-            oscillator.type = 'square';
-            oscillator.frequency.value = baseFreq;
-            
-            // ローパスフィルターでメカニカルな音質に
-            filter.type = 'lowpass';
-            filter.frequency.value = baseFreq * 2;
-            filter.Q.value = 5;
-            
-            // 鋭いアタックとクイックディケイ
-            tickGain.gain.setValueAtTime(0, now);
-            tickGain.gain.linearRampToValueAtTime(magneticStrength * 0.8, now + 0.001);
-            tickGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-            
-            oscillator.start(now);
-            oscillator.stop(now + duration);
-        } catch (error) {
-            console.error('磁気コンパス チック音の再生に失敗:', error);
-        }
-    }
-
-    // 磁気異常検出時の警告音
-    playMagneticWarning() {
-        if (!this.audioContext || !this.gainNode || this.isMuted) return;
-
-        try {
-            const now = this.audioContext.currentTime;
-            
-            // 不協和音で磁気異常を表現
-            const frequencies = [220, 277, 330]; // 不協和音
-            
-            frequencies.forEach((freq, index) => {
-                const oscillator = this.audioContext!.createOscillator();
-                const warningGain = this.audioContext!.createGain();
-                
-                oscillator.connect(warningGain);
-                warningGain.connect(this.gainNode!);
-                
-                oscillator.type = 'sawtooth';
-                oscillator.frequency.value = freq;
-                
-                const startTime = now + index * 0.1;
-                warningGain.gain.setValueAtTime(0, startTime);
-                warningGain.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
-                warningGain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
-                
-                oscillator.start(startTime);
-                oscillator.stop(startTime + 0.3);
-            });
-        } catch (error) {
-            console.error('磁気異常警告音の再生に失敗:', error);
-        }
-    }
-}
-
-const compassAudio = new CompassAudio();
+// CompassAudio class moved to CompassManager
 
 
 let currentPosition: GeolocationPosition | null = null;
@@ -253,6 +126,9 @@ function updateDisplay() {
 
     // 現在の月データを保存
     currentMoonData = moonData;
+    
+    // StateManagerに月データを設定
+    stateManager.set('moonData', moonData);
 
     if (moonDirectionElement) {
         // 補正後のデバイス方位角と月の方位角の差分を計算
@@ -326,81 +202,24 @@ function updateDisplay() {
     if (mapLinkElement) {
         mapLinkElement.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
     }
+    
+    // 精度表示を更新
+    updateAccuracyDisplay();
 }
 
 /**
  * 磁気コンパスの更新
  */
 function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clampedMoonAltitude: number) {
-    if (!compassState.isActive) return;
+    if (compassManager) {
+        compassManager.updateCompassDetector(moonAzimuth, totalAngleDiff, clampedMoonAltitude);
+    }
+}
 
-    const currentTime = Date.now();
-    
-    // 地磁気シミュレーション（実際のdeviceOrientationから磁気偏差を計算）
-    let magneticBearing = moonAzimuth;
-    if (deviceOrientation.alpha !== null) {
-        // 磁気偏差をシミュレート（日本では約7度西偏）
-        const magneticDeclination = -7; // 度
-        magneticBearing = (deviceOrientation.alpha + magneticDeclination + 360) % 360;
-    }
-    
-    // 月の方向との偏差角を計算
-    let deviationAngle = Math.abs(magneticBearing - moonAzimuth);
-    if (deviationAngle > 180) {
-        deviationAngle = 360 - deviationAngle;
-    }
-    
-    // 磁場強度を月までの近さで定義（方位角の差と高度の差）
-    const maxDetectionAngle = 45; // 45度以内で磁場を検出
-    let magneticStrength = 0;
-    
-    if (totalAngleDiff <= maxDetectionAngle) {
-        // 単純に角度差の逆数で磁場強度を計算
-        // totalAngleDiffが小さいほど（月に近いほど）磁場強度が高くなる
-        magneticStrength = Math.max(0, 1 - (totalAngleDiff / maxDetectionAngle));
-        
-        // 0〜1の範囲に制限
-        magneticStrength = Math.max(0, Math.min(1, magneticStrength));
-    }
-    
-    // 磁場ノイズの計算
-    compassState.magneticNoise = Math.random() * 0.05;
-    
-    // 状態の更新
-    compassState.compassBearing = magneticBearing;
-    compassState.deviationAngle = deviationAngle;
-    compassState.magneticField = magneticStrength;
-    
-    // 針の角度を更新（磁場強度に応じて振動）
-    const targetAngle = moonAzimuth + (magneticStrength * 10 * Math.sin(currentTime / 100));
-    compassState.needleAngle = compassState.needleAngle * 0.9 + targetAngle * 0.1; // スムージング
-    
-    // 検知レベルの判定
-    if (magneticStrength > 0.8) {
-        compassState.detectionLevel = 'locked';
-    } else if (magneticStrength > 0.6) {
-        compassState.detectionLevel = 'strong';
-    } else if (magneticStrength > 0.3) {
-        compassState.detectionLevel = 'weak';
-    } else {
-        compassState.detectionLevel = 'searching';
-    }
-    
-    // チック音の間隔を調整
-    const baseInterval = 1200;
-    compassState.tickInterval = Math.max(100, baseInterval * (1 - magneticStrength));
-    
-    // チック音を再生
-    if (currentTime - compassState.lastTick > compassState.tickInterval) {
-        compassAudio.playTick(magneticStrength, compassState.detectionLevel);
-        compassState.lastTick = currentTime;
-        
-        // 強い磁気異常検出時は警告音も再生
-        if (magneticStrength > 0.9 && Math.random() < 0.3) {
-            setTimeout(() => compassAudio.playMagneticWarning(), 200);
-        }
-    }
-    
+/**
+ * 方向一致度と高度一致度の計算・表示更新
+ */
+function updateAccuracyDisplay() {
     // 方向一致度の計算
     let directionMatchPercentage = 0;
     let altitudeMatchPercentage = 0;
@@ -411,7 +230,7 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
     
     if (currentMoonData && deviceOrientation.alpha !== null) {
         deviceDirection = deviceOrientation.alpha;
-        moonDirection = currentMoonData.azimuth;
+        moonDirection = (currentMoonData as MoonData).azimuth;
         let directionDiff = Math.abs(deviceDirection - moonDirection);
         if (directionDiff > 180) {
             directionDiff = 360 - directionDiff;
@@ -423,49 +242,11 @@ function updateCompassDetector(moonAzimuth: number, totalAngleDiff: number, clam
     // 高度一致度の計算
     if (currentMoonData && deviceOrientation.beta !== null) {
         deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
-        moonElevation = currentMoonData.altitude;
+        moonElevation = (currentMoonData as MoonData).altitude;
         const elevationDiff = Math.abs(deviceElevation - moonElevation);
         const maxElevationDiff = 180; // 最大差180度
         altitudeMatchPercentage = Math.max(0, (1 - elevationDiff / maxElevationDiff) * 100);
     }
-    
-    // 磁気コンパス情報の表示を更新（メイン画面からは削除済み）
-    // if (magneticFieldElement) {
-    //     magneticFieldElement.textContent = `磁場強度: ${(magneticStrength * 100).toFixed(1)}%`;
-    // }
-    // if (compassBearingElement) {
-    //     compassBearingElement.textContent = `磁気方位: ${magneticBearing.toFixed(1)}°`;
-    // }
-    // if (deviationAngleElement) {
-    //     deviationAngleElement.textContent = `偏差角: ${deviationAngle.toFixed(1)}°`;
-    // }
-    // if (altitudeMatchElement) {
-    //     altitudeMatchElement.textContent = `方向一致度: ${directionMatchPercentage.toFixed(1)}%`;
-    // }
-    // if (altitudeDetailElement) {
-    //     let deviceElevationText = '--';
-    //     let moonAltitudeText = '--';
-    //     let needleLengthInfo = '';
-    //     
-    //     if (deviceOrientation.beta !== null) {
-    //         const deviceElev = calculateDeviceElevation(deviceOrientation.beta);
-    //         deviceElevationText = `${deviceElev.toFixed(1)}°`;
-    //     }
-    //     
-    //     if (currentMoonData) {
-    //         moonAltitudeText = `${currentMoonData.altitude.toFixed(1)}°`;
-    //     }
-    //     
-    //     // 針の長さ情報も追加
-    //     if (deviceOrientation.beta !== null && currentMoonData) {
-    //         const deviceElev = calculateDeviceElevation(deviceOrientation.beta);
-    //         const compassRad = Math.min(320, 320) * 0.4; // コンパス半径を推定
-    //         const lengthDiff = Math.abs(calculateNeedleLength(deviceElev, compassRad) - calculateNeedleLength(currentMoonData.altitude, compassRad));
-    //         needleLengthInfo = ` | 針長差: ${lengthDiff.toFixed(1)}px`;
-    //     }
-    //     
-    //     altitudeDetailElement.textContent = `デバイス高度: ${deviceElevationText} | 月高度: ${moonAltitudeText}${needleLengthInfo}`;
-    // }
     
     // 詳細情報ダイアログの方位一致度と高度一致度を更新
     if (directionMatchDetailElement) {
@@ -502,227 +283,9 @@ function calculateNeedleLength(altitude: number, compassRadius: number): number 
  * 磁気コンパスの画面を描画
  */
 function drawCompassDisplay(canvas: HTMLCanvasElement) {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    const width = canvas.width;
-    const height = canvas.height;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const compassRadius = Math.min(width, height) * 0.4;
-    
-    // 背景をクリア
-    ctx.fillStyle = '#1a0f0a';
-    ctx.fillRect(0, 0, width, height);
-    
-    // コンパスの外枠を描画
-    ctx.strokeStyle = '#8b4513';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, compassRadius, 0, Math.PI * 2);
-    ctx.stroke();
-    
-    // 内側のリング
-    ctx.strokeStyle = '#cd853f';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, compassRadius - 15, 0, Math.PI * 2);
-    ctx.stroke();
-    
-    // 方位目盛りを描画
-    for (let angle = 0; angle < 360; angle += 10) {
-        const radian = (angle - 90) * Math.PI / 180; // -90で北を上に
-        const isMainDirection = angle % 90 === 0;
-        const isMidDirection = angle % 30 === 0;
-        
-        const outerRadius = compassRadius - 5;
-        const innerRadius = isMainDirection ? compassRadius - 25 : 
-                           isMidDirection ? compassRadius - 20 : compassRadius - 15;
-        
-        const x1 = centerX + Math.cos(radian) * outerRadius;
-        const y1 = centerY + Math.sin(radian) * outerRadius;
-        const x2 = centerX + Math.cos(radian) * innerRadius;
-        const y2 = centerY + Math.sin(radian) * innerRadius;
-        
-        ctx.strokeStyle = isMainDirection ? '#daa520' : '#cd853f';
-        ctx.lineWidth = isMainDirection ? 3 : isMidDirection ? 2 : 1;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-        
-        // 主要方位のラベル
-        if (isMainDirection) {
-            const labelRadius = compassRadius - 35;
-            const labelX = centerX + Math.cos(radian) * labelRadius;
-            const labelY = centerY + Math.sin(radian) * labelRadius;
-            
-            const directions = ['N', 'E', 'S', 'W'];
-            const directionIndex = angle / 90;
-            
-            ctx.fillStyle = '#daa520';
-            ctx.font = 'bold 16px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(directions[directionIndex], labelX, labelY);
-        }
+    if (compassManager) {
+        compassManager.drawCompass(canvas, currentMoonData);
     }
-    
-    // 地平線を表す円を描画（高度0度 = 60%の長さ位置）
-    const horizonRadius = (compassRadius - 30) * 0.6; // 地平線の半径
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([5, 5]); // 破線
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, horizonRadius, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.setLineDash([]); // 破線をリセット
-    
-    // 地平線のラベル
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.font = '10px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('地平線', centerX, centerY + horizonRadius + 15);
-    
-    // 共通の針の長さ計算を使用
-    // デバイス方向針（赤）の長さ計算 - beta値に応じて変化
-    let deviceNeedleLength = compassRadius - 30; // デフォルト長さ
-    let deviceElevation = 0;
-    if (deviceOrientation.beta !== null) {
-        deviceElevation = calculateDeviceElevation(deviceOrientation.beta);
-        deviceNeedleLength = calculateNeedleLength(deviceElevation, compassRadius);
-    }
-    
-    // 月の位置針の長さ計算 - 月の高度に応じて変化
-    let moonNeedleLength = compassRadius - 30; // デフォルト長さ
-    
-    // デバイス方向針を描画（赤）- alpha値で回転、beta値で長さ変化
-    const deviceNeedleAngle = deviceOrientation.alpha !== null ? 
-        (deviceOrientation.alpha - 90) * Math.PI / 180 : 0;
-    
-    // デバイス針の影
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(centerX + 2, centerY + 2);
-    ctx.lineTo(
-        centerX + Math.cos(deviceNeedleAngle) * deviceNeedleLength + 2,
-        centerY + Math.sin(deviceNeedleAngle) * deviceNeedleLength + 2
-    );
-    ctx.stroke();
-    
-    // デバイス針本体（赤）
-    ctx.strokeStyle = '#dc143c';
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.lineTo(
-        centerX + Math.cos(deviceNeedleAngle) * deviceNeedleLength,
-        centerY + Math.sin(deviceNeedleAngle) * deviceNeedleLength
-    );
-    ctx.stroke();
-    
-    // 月の位置針 - 高度の絶対値と可視性で長さと色を決定
-    const moonNeedleAngle = currentMoonData ? 
-        (currentMoonData.azimuth - 90) * Math.PI / 180 : 0;
-    
-    let moonNeedleColor = '#ffd700'; // デフォルト色（金色）
-    let moonTipColor = '#ffd700';
-    let moonSymbolColor = '#ffa500';
-    
-    if (currentMoonData) {
-        const moonAltitude = currentMoonData.altitude;
-        
-        // 月の針の長さ：共通の計算関数を使用（デバイス針と同じ高度なら同じ長さ）
-        moonNeedleLength = calculateNeedleLength(moonAltitude, compassRadius);
-        
-        // 月の針の色：常に金色に固定
-        moonNeedleColor = '#ffd700';
-        moonTipColor = '#ffd700';
-        moonSymbolColor = '#ffa500';
-    }
-    
-    ctx.strokeStyle = moonNeedleColor;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.lineTo(
-        centerX + Math.cos(moonNeedleAngle) * moonNeedleLength,
-        centerY + Math.sin(moonNeedleAngle) * moonNeedleLength
-    );
-    ctx.stroke();
-    
-    // 月の針の先端マーカー - 実際の月の照射率を反映した描画
-    if (moonNeedleLength > 10 && currentMoonData) {
-        const tipX = centerX + Math.cos(moonNeedleAngle) * moonNeedleLength;
-        const tipY = centerY + Math.sin(moonNeedleAngle) * moonNeedleLength;
-        const tipRadius = 12; // 針の先端の月の半径
-        
-        // 月の照射率を反映した月相描画
-        drawMoonPhaseSmall(ctx, tipX, tipY, tipRadius, currentMoonData);
-    }
-    
-    // 針の中心点
-    ctx.fillStyle = '#8b4513';
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.fillStyle = '#cd853f';
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // 磁場強度の視覚化（周囲の光輪）
-    if (compassState.magneticField > 0) {
-        const intensity = compassState.magneticField;
-        const glowRadius = compassRadius + 20;
-        
-        const gradient = ctx.createRadialGradient(centerX, centerY, compassRadius, centerX, centerY, glowRadius);
-        gradient.addColorStop(0, `rgba(255, 215, 0, ${intensity * 0.3})`);
-        gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, glowRadius, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
-    // 磁場ノイズの視覚化（小さな粒子）
-    for (let i = 0; i < compassState.magneticField * 20; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const distance = compassRadius * 0.3 + Math.random() * compassRadius * 0.4;
-        const x = centerX + Math.cos(angle) * distance;
-        const y = centerY + Math.sin(angle) * distance;
-        
-        ctx.fillStyle = `rgba(255, 215, 0, ${Math.random() * 0.5})`;
-        ctx.beginPath();
-        ctx.arc(x, y, 1, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
-    // 検知レベル表示
-    const levelColors = {
-        'calibrating': '#888888',
-        'searching': '#4169e1',
-        'weak': '#32cd32',
-        'strong': '#ffd700',
-        'locked': '#ff4500'
-    };
-    
-    const levelNames = {
-        'calibrating': '校正中',
-        'searching': '探索中',
-        'weak': '微弱検出',
-        'strong': '強磁場',
-        'locked': '月磁場！'
-    };
-    
-    ctx.fillStyle = levelColors[compassState.detectionLevel];
-    ctx.font = 'bold 14px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(levelNames[compassState.detectionLevel], centerX, centerY + compassRadius + 25);
 }
 
 /**
@@ -754,16 +317,16 @@ function startSonarAnimation() {
 
 // 音波探知機の初期化
 async function initializeSonar() {
-    // オーディオシステムの初期化
-    await compassAudio.initialize();
-    
+    // CompassManagerのオーディオシステムは内部で初期化される
     
     // 磁気コンパス音量スライダーのイベントリスナー
     if (compassVolumeSlider) {
         compassVolumeSlider.value = '45'; // 初期音量45%
         compassVolumeSlider.addEventListener('input', (e) => {
             const volume = parseInt((e.target as HTMLInputElement).value) / 100;
-            compassAudio.setVolume(volume);
+            if (compassManager) {
+                compassManager.setVolume(volume);
+            }
         });
     }
     
@@ -771,7 +334,9 @@ async function initializeSonar() {
     if (compassMuteButton) {
         compassMuteButton.addEventListener('click', () => {
             const isMuted = compassMuteButton.classList.contains('muted');
-            compassAudio.setMuted(!isMuted);
+            if (compassManager) {
+                compassManager.setMuted(!isMuted);
+            }
             
             if (isMuted) {
                 compassMuteButton.classList.remove('muted');
@@ -788,7 +353,9 @@ async function initializeSonar() {
         sensitivitySlider.value = '5'; // 初期感度
         sensitivitySlider.addEventListener('input', (e) => {
             const value = parseInt((e.target as HTMLInputElement).value);
-            compassState.sensitivity = value;
+            if (compassManager) {
+                compassManager.setSensitivity(value);
+            }
             if (sensitivityValue) {
                 sensitivityValue.textContent = value.toString();
             }
@@ -801,8 +368,9 @@ async function initializeSonar() {
     console.log('✅ 磁気コンパスシステムを初期化しました');
 }
 
-// ページ読み込み時に音波探知機を初期化
+// ページ読み込み時に音波探知機とCompassManagerを初期化
 initializeSonar();
+initializeCompassManager();
 
 function getPhaseName(phase: number): string {
     if (phase < 0.03 || phase > 0.97) return '新月';
@@ -868,6 +436,9 @@ function handleOrientation(event: DeviceOrientationEvent) {
     deviceOrientation.alpha = correctedAlpha;
     deviceOrientation.beta = filteredBeta;
     deviceOrientation.gamma = filteredGamma;
+
+    // StateManagerにデバイス向きを設定
+    stateManager.set('deviceOrientation', deviceOrientation);
 
     console.log('Updated deviceOrientation:', deviceOrientation);
     console.log('=========================================');
