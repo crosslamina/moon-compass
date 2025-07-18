@@ -15,19 +15,18 @@
     <!-- メインコンパス -->
     <canvas id="compass-canvas" width="320" height="320"></canvas>
     
-    <!-- コンパス情報 -->
-    <div id="compass-info">
-        <div class="needle-legend">
-            <span style="color: #dc143c;">●</span> 赤針: あなたの方向 (α回転, β長さ)
-            <br><span style="color: #ffd700;">●</span> 金針: 月の位置 (常に金色)
-            <br>※針の長さ: -90°→20%, 0°(地平線)→60%, +90°→100%
-        </div>
-    </div>
-    
     <!-- 設定と情報ボタン -->
     <div class="button-group">
-        <button id="settings-button" class="info-btn">⚙️ 設定</button>
-        <button id="info-button" class="info-btn">ℹ️ 詳細情報</button>
+        <button id="settings-button" class="info-btn">⚙️</button>
+        <button id="info-button" class="info-btn">ℹ️</button>
+    </div>
+    
+    <!-- コンパス情報（凡例） -->
+    <div id="compass-info">
+        <div class="needle-legend">
+            <span style="color: #dc143c;">●</span> 赤針: あなたの方向
+            <br><span style="color: #ffd700;">●</span> 金針: 月の位置
+        </div>
     </div>
     
     <!-- 設定ダイアログ -->

@@ -1084,12 +1084,10 @@ function positionUpdate(position: GeolocationPosition) {
     
     updateDisplay();
     
-    // 位置情報取得成功時のステータス更新
+    // 位置情報取得成功時のステータス更新（表示を消す）
     if (locationStatusElement) {
-        locationStatusElement.textContent = '✅ 位置情報を取得しました';
-        locationStatusElement.style.background = 'rgba(46, 204, 113, 0.3)';
-        locationStatusElement.style.color = '#2ecc71';
-        locationStatusElement.style.border = '1px solid #2ecc71';
+        locationStatusElement.textContent = '';
+        locationStatusElement.style.display = 'none';
     }
 }
 
@@ -1114,6 +1112,7 @@ function positionError(error: GeolocationPositionError) {
     
     if (locationStatusElement) {
         locationStatusElement.textContent = errorMessage;
+        locationStatusElement.style.display = 'block';
         locationStatusElement.style.background = 'rgba(231, 76, 60, 0.3)';
         locationStatusElement.style.color = '#e74c3c';
         locationStatusElement.style.border = '1px solid #e74c3c';
@@ -1163,6 +1162,7 @@ async function setupGeolocation() {
 function requestLocation() {
     if (locationStatusElement) {
         locationStatusElement.textContent = '🔍 位置情報を取得中...';
+        locationStatusElement.style.display = 'block';
         locationStatusElement.style.background = 'rgba(241, 196, 15, 0.3)';
         locationStatusElement.style.color = '#f1c40f';
         locationStatusElement.style.border = '1px solid #f1c40f';
