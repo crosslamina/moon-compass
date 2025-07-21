@@ -37,7 +37,7 @@ function resizeCanvas() {
     // ビューポートサイズに基づいてサイズを直接計算
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const maxSize = 400;
+    const maxSize = 800;
     
     // CSS と同じ計算: min(80vw, 80vh, 400px)
     const targetSize = Math.min(vw * 0.8, vh * 0.8, maxSize);

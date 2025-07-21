@@ -426,6 +426,10 @@ export class CompassManager {
      */
     private calculateDeviceElevation(beta: number): number {
         let elevation = 0;
+        
+        // デバッグログ追加
+        console.log(`デバイス仰角計算: 入力beta=${beta.toFixed(1)}°`);
+        
         if (beta >= -30 && beta <= 30) {
             elevation = beta;
         } else if (beta > 30 && beta <= 90) {
@@ -441,7 +445,11 @@ export class CompassManager {
         } else if (beta < -150 && beta >= -180) {
             elevation = -180 - beta;
         }
-        return Math.max(-90, Math.min(90, elevation));
+        
+        const clampedElevation = Math.max(-90, Math.min(90, elevation));
+        console.log(`デバイス仰角計算結果: elevation=${elevation.toFixed(1)}°, clamped=${clampedElevation.toFixed(1)}°`);
+        
+        return clampedElevation;
     }
 
     /**
@@ -463,17 +471,20 @@ export class CompassManager {
     }
 
     /**
-     * 針の長さ計算
+     * 針の長さ計算（コンパス半径ベース）
      */
     private calculateNeedleLength(altitude: number, compassRadius: number): number {
-        const baseLength = compassRadius - 30;
-        const maxLength = baseLength * 0.95;
-        const minLength = baseLength * 0.3;
+        const maxLength = compassRadius; // 最大長100%（高度90°）
+        const minLength = compassRadius * 0.2; // 最小長20%（高度-90°）
         
         const clampedAltitude = Math.max(-90, Math.min(90, altitude));
         const normalizedAltitude = (clampedAltitude + 90) / 180;
+        const calculatedLength = minLength + (maxLength - minLength) * normalizedAltitude;
         
-        return minLength + (maxLength - minLength) * normalizedAltitude;
+        // デバッグログ追加
+        console.log(`針の長さ計算: 高度=${altitude.toFixed(1)}°, クランプ後=${clampedAltitude.toFixed(1)}°, 正規化=${normalizedAltitude.toFixed(3)}, 長さ=${calculatedLength.toFixed(1)}px (半径=${compassRadius.toFixed(1)}px)`);
+        
+        return calculatedLength;
     }
 
     /**
@@ -499,7 +510,7 @@ export class CompassManager {
         this.drawDirectionMarks(ctx, centerX, centerY, compassRadius);
         this.drawHorizonLine(ctx, centerX, centerY, compassRadius);
         this.drawNeedles(ctx, centerX, centerY, compassRadius);
-        this.drawCenter(ctx, centerX, centerY);
+        this.drawCenter(ctx, centerX, centerY, compassRadius);
         this.drawMagneticField(ctx, centerX, centerY, compassRadius);
         this.drawDetectionLevel(ctx, centerX, centerY, compassRadius);
     }
@@ -508,18 +519,22 @@ export class CompassManager {
      * コンパスリングの描画
      */
     private drawCompassRing(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        const ringThickness = compassRadius * 0.02; // 外枠の太さをさらに増加（1.5%→2%）
+        const innerRingThickness = compassRadius * 0.012; // 内側リングの太さをさらに増加（0.8%→1.2%）
+        const innerRingOffset = compassRadius * 0.06; // 内側リングのオフセットをさらに増加（5%→6%）
+        
         // 外枠
         ctx.strokeStyle = '#8b4513';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = Math.max(3, ringThickness);
         ctx.beginPath();
         ctx.arc(centerX, centerY, compassRadius, 0, Math.PI * 2);
         ctx.stroke();
         
         // 内側リング
         ctx.strokeStyle = '#cd853f';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = Math.max(2, innerRingThickness);
         ctx.beginPath();
-        ctx.arc(centerX, centerY, compassRadius - 15, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, compassRadius - innerRingOffset, 0, Math.PI * 2);
         ctx.stroke();
     }
 
@@ -529,14 +544,29 @@ export class CompassManager {
     private drawDirectionMarks(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
         const directions = ['N', 'E', 'S', 'W'];
         
+        // スケール比率をコンパス半径ベースで計算
+        const markOuterOffset = compassRadius * 0.008; // 外側オフセットをさらに減少（1%→0.8%）
+        const mainMarkLength = compassRadius * 0.1; // 主要方位マークの長さをさらに増加（8%→10%）
+        const midMarkLength = compassRadius * 0.08; // 中間マークの長さをさらに増加（6.5%→8%）
+        const minorMarkLength = compassRadius * 0.06; // 小さなマークの長さをさらに増加（5%→6%）
+        const labelOffset = compassRadius * 0.13; // ラベルのオフセットをさらに増加（11%→13%）
+        
+        // ライン幅もコンパス半径ベースで計算
+        const mainLineWidth = Math.max(2, compassRadius * 0.013); // 主要ラインをさらに太く（1%→1.3%）
+        const midLineWidth = Math.max(1.5, compassRadius * 0.009); // 中間ラインをさらに太く（0.7%→0.9%）
+        const minorLineWidth = Math.max(1, compassRadius * 0.005); // 小さなラインをさらに太く（0.4%→0.5%）
+        
+        // フォントサイズをコンパス半径ベースで計算
+        const fontSize = Math.max(16, compassRadius * 0.08); // フォントサイズをさらに大幅増加（6%→8%）
+        
         for (let angle = 0; angle < 360; angle += 10) {
             const radian = (angle - 90) * Math.PI / 180;
             const isMainDirection = angle % 90 === 0;
             const isMidDirection = angle % 30 === 0;
             
-            const outerRadius = compassRadius - 5;
-            const innerRadius = isMainDirection ? compassRadius - 25 : 
-                               isMidDirection ? compassRadius - 20 : compassRadius - 15;
+            const outerRadius = compassRadius - markOuterOffset;
+            const innerRadius = isMainDirection ? compassRadius - mainMarkLength : 
+                               isMidDirection ? compassRadius - midMarkLength : compassRadius - minorMarkLength;
             
             const x1 = centerX + Math.cos(radian) * outerRadius;
             const y1 = centerY + Math.sin(radian) * outerRadius;
@@ -544,7 +574,7 @@ export class CompassManager {
             const y2 = centerY + Math.sin(radian) * innerRadius;
             
             ctx.strokeStyle = isMainDirection ? '#daa520' : '#cd853f';
-            ctx.lineWidth = isMainDirection ? 3 : isMidDirection ? 2 : 1;
+            ctx.lineWidth = isMainDirection ? mainLineWidth : isMidDirection ? midLineWidth : minorLineWidth;
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
@@ -552,13 +582,13 @@ export class CompassManager {
             
             // 主要方位ラベル
             if (isMainDirection) {
-                const labelRadius = compassRadius - 35;
+                const labelRadius = compassRadius - labelOffset;
                 const labelX = centerX + Math.cos(radian) * labelRadius;
                 const labelY = centerY + Math.sin(radian) * labelRadius;
                 const directionIndex = angle / 90;
                 
                 ctx.fillStyle = '#daa520';
-                ctx.font = 'bold 16px Arial';
+                ctx.font = `bold ${fontSize}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(directions[directionIndex], labelX, labelY);
@@ -570,20 +600,25 @@ export class CompassManager {
      * 地平線の描画
      */
     private drawHorizonLine(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const horizonRadius = (compassRadius - 30) * 0.6;
+        const horizonRadius = compassRadius * 0.7; // コンパス半径の70%（65%→70%にさらに増加）
+        const dashLength = compassRadius * 0.025; // ダッシュの長さをさらに増加（2%→2.5%）
+        const lineWidth = Math.max(1.5, compassRadius * 0.005); // ライン幅をさらに増加（0.4%→0.5%）
+        const labelOffset = compassRadius * 0.06; // ラベルオフセットをさらに増加（5%→6%）
+        const fontSize = Math.max(12, compassRadius * 0.04); // フォントサイズをさらに増加（3.2%→4%）
+        
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = lineWidth;
+        ctx.setLineDash([dashLength, dashLength]);
         ctx.beginPath();
         ctx.arc(centerX, centerY, horizonRadius, 0, Math.PI * 2);
         ctx.stroke();
         ctx.setLineDash([]);
         
         ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '10px Arial';
+        ctx.font = `${fontSize}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('地平線', centerX, centerY + horizonRadius + 15);
+        ctx.fillText('地平線', centerX, centerY + horizonRadius + labelOffset);
     }
 
     /**
@@ -593,39 +628,42 @@ export class CompassManager {
         const deviceOrientation = this.stateManager.get('deviceOrientation');
         const moonData = this.currentMoonData || this.stateManager.get('moonData');
         
+        // 針の太さをコンパス半径ベースで計算
+        const deviceNeedleWidth = Math.max(4, compassRadius * 0.02); // デバイス針をさらに太く（1.5%→2%）
+        const moonNeedleWidth = Math.max(3, compassRadius * 0.015); // 月針をさらに太く（1.2%→1.5%）
+        const shadowOffset = compassRadius * 0.01; // 影のオフセットをさらに増加（0.8%→1%）
+        const shadowWidth = deviceNeedleWidth * 1.5;
+        
         console.log('Drawing needles - deviceOrientation:', deviceOrientation, 'moonData:', moonData);
+        console.log('コンパス半径:', compassRadius.toFixed(1), 'px');
         
         // デバイス針
         if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
-            console.log('Drawing device needle with:', {
-                alpha: deviceOrientation.alpha,
-                beta: deviceOrientation.beta
-            });
-            
             const deviceElevation = this.calculateDeviceElevation(deviceOrientation.beta);
             const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
             const deviceNeedleAngle = (deviceOrientation.alpha - 90) * Math.PI / 180;
             
-            console.log('Device needle calculations:', {
-                elevation: deviceElevation,
-                length: deviceNeedleLength,
-                angle: deviceNeedleAngle
+            console.log('デバイス針の描画:', {
+                beta: deviceOrientation.beta.toFixed(1),
+                elevation: deviceElevation.toFixed(1),
+                needleLength: deviceNeedleLength.toFixed(1),
+                angle: deviceNeedleAngle.toFixed(3)
             });
             
             // デバイス針の影
             ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-            ctx.lineWidth = 6;
+            ctx.lineWidth = shadowWidth;
             ctx.beginPath();
-            ctx.moveTo(centerX + 2, centerY + 2);
+            ctx.moveTo(centerX + shadowOffset, centerY + shadowOffset);
             ctx.lineTo(
-                centerX + Math.cos(deviceNeedleAngle) * deviceNeedleLength + 2,
-                centerY + Math.sin(deviceNeedleAngle) * deviceNeedleLength + 2
+                centerX + Math.cos(deviceNeedleAngle) * deviceNeedleLength + shadowOffset,
+                centerY + Math.sin(deviceNeedleAngle) * deviceNeedleLength + shadowOffset
             );
             ctx.stroke();
             
             // デバイス針本体
             ctx.strokeStyle = '#dc143c';
-            ctx.lineWidth = 4;
+            ctx.lineWidth = deviceNeedleWidth;
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
             ctx.lineTo(
@@ -637,21 +675,18 @@ export class CompassManager {
         
         // 月針
         if (moonData) {
-            console.log('Drawing moon needle with:', {
-                azimuth: moonData.azimuth,
-                altitude: moonData.altitude
-            });
-            
             const moonNeedleLength = this.calculateNeedleLength(moonData.altitude, compassRadius);
             const moonNeedleAngle = (moonData.azimuth - 90) * Math.PI / 180;
             
-            console.log('Moon needle calculations:', {
-                length: moonNeedleLength,
-                angle: moonNeedleAngle
+            console.log('月針の描画:', {
+                azimuth: moonData.azimuth.toFixed(1),
+                altitude: moonData.altitude.toFixed(1),
+                needleLength: moonNeedleLength.toFixed(1),
+                angle: moonNeedleAngle.toFixed(3)
             });
             
             ctx.strokeStyle = '#ffd700';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = moonNeedleWidth;
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
             ctx.lineTo(
@@ -660,11 +695,12 @@ export class CompassManager {
             );
             ctx.stroke();
             
-            // 月の先端
-            if (moonNeedleLength > 10) {
+            // 月の先端（最小サイズを設定）
+            const minTipRadius = compassRadius * 0.07; // 月の先端サイズを大幅増加（5%→7%）
+            if (moonNeedleLength > minTipRadius) {
                 const tipX = centerX + Math.cos(moonNeedleAngle) * moonNeedleLength;
                 const tipY = centerY + Math.sin(moonNeedleAngle) * moonNeedleLength;
-                const tipRadius = 12;
+                const tipRadius = Math.max(minTipRadius, compassRadius * 0.08); // 月の先端サイズを大幅増加（5.5%→8%）
                 
                 drawMoonPhaseSmall(ctx, tipX, tipY, tipRadius, moonData);
             }
@@ -674,15 +710,18 @@ export class CompassManager {
     /**
      * 中心点の描画
      */
-    private drawCenter(ctx: CanvasRenderingContext2D, centerX: number, centerY: number): void {
+    private drawCenter(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        const outerRadius = Math.max(10, compassRadius * 0.05); // 外側半径をさらに増加（4%→5%）
+        const innerRadius = Math.max(7, compassRadius * 0.032); // 内側半径をさらに増加（2.6%→3.2%）
+        
         ctx.fillStyle = '#8b4513';
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
         ctx.fill();
         
         ctx.fillStyle = '#cd853f';
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
         ctx.fill();
     }
 
@@ -692,7 +731,7 @@ export class CompassManager {
     private drawMagneticField(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
         if (this.compassState.magneticField > 0) {
             const intensity = this.compassState.magneticField;
-            const glowRadius = compassRadius + 20;
+            const glowRadius = compassRadius + (compassRadius * 0.05); // グローエフェクトの半径をコンパス半径ベースに
             
             const gradient = ctx.createRadialGradient(centerX, centerY, compassRadius, centerX, centerY, glowRadius);
             gradient.addColorStop(0, `rgba(255, 215, 0, ${intensity * 0.3})`);
@@ -704,8 +743,11 @@ export class CompassManager {
             ctx.fill();
         }
         
-        // ノイズ粒子
-        for (let i = 0; i < this.compassState.magneticField * 20; i++) {
+        // ノイズ粒子（サイズをコンパス半径ベースに）
+        const particleCount = Math.floor(this.compassState.magneticField * compassRadius * 0.1); // パーティクル数をさらに増加（8%→10%）
+        const particleSize = Math.max(1.5, compassRadius * 0.005); // パーティクルサイズをさらに増加（0.4%→0.5%）
+        
+        for (let i = 0; i < particleCount; i++) {
             const angle = Math.random() * Math.PI * 2;
             const distance = compassRadius * 0.3 + Math.random() * compassRadius * 0.4;
             const x = centerX + Math.cos(angle) * distance;
@@ -713,7 +755,7 @@ export class CompassManager {
             
             ctx.fillStyle = `rgba(255, 215, 0, ${Math.random() * 0.5})`;
             ctx.beginPath();
-            ctx.arc(x, y, 1, 0, Math.PI * 2);
+            ctx.arc(x, y, particleSize, 0, Math.PI * 2);
             ctx.fill();
         }
     }
@@ -738,10 +780,13 @@ export class CompassManager {
             'locked': '月磁場！'
         };
         
+        const fontSize = Math.max(14, compassRadius * 0.055); // フォントサイズをさらに増加（4.5%→5.5%）
+        const textOffset = compassRadius * 0.1; // テキストオフセットをさらに増加（8%→10%）
+        
         ctx.fillStyle = levelColors[this.compassState.detectionLevel];
-        ctx.font = 'bold 14px monospace';
+        ctx.font = `bold ${fontSize}px monospace`;
         ctx.textAlign = 'center';
-        ctx.fillText(levelNames[this.compassState.detectionLevel], centerX, centerY + compassRadius + 25);
+        ctx.fillText(levelNames[this.compassState.detectionLevel], centerX, centerY + compassRadius + textOffset);
     }
 
     /**
