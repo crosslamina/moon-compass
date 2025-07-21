@@ -425,31 +425,8 @@ export class CompassManager {
      * デバイス仰角の計算
      */
     private calculateDeviceElevation(beta: number): number {
-        let elevation = 0;
         
-        // デバッグログ追加
-        console.log(`デバイス仰角計算: 入力beta=${beta.toFixed(1)}°`);
-        
-        if (beta >= -30 && beta <= 30) {
-            elevation = beta;
-        } else if (beta > 30 && beta <= 90) {
-            elevation = 90 - beta;
-        } else if (beta > 90 && beta <= 150) {
-            elevation = beta - 90;
-        } else if (beta > 150 && beta <= 180) {
-            elevation = 180 - beta;
-        } else if (beta < -30 && beta >= -90) {
-            elevation = -90 - beta;
-        } else if (beta < -90 && beta >= -150) {
-            elevation = beta + 90;
-        } else if (beta < -150 && beta >= -180) {
-            elevation = -180 - beta;
-        }
-        
-        const clampedElevation = Math.max(-90, Math.min(90, elevation));
-        console.log(`デバイス仰角計算結果: elevation=${elevation.toFixed(1)}°, clamped=${clampedElevation.toFixed(1)}°`);
-        
-        return clampedElevation;
+        return beta;
     }
 
     /**
@@ -481,8 +458,16 @@ export class CompassManager {
         const normalizedAltitude = (clampedAltitude + 90) / 180;
         const calculatedLength = minLength + (maxLength - minLength) * normalizedAltitude;
         
-        // デバッグログ追加
-        console.log(`針の長さ計算: 高度=${altitude.toFixed(1)}°, クランプ後=${clampedAltitude.toFixed(1)}°, 正規化=${normalizedAltitude.toFixed(3)}, 長さ=${calculatedLength.toFixed(1)}px (半径=${compassRadius.toFixed(1)}px)`);
+        // 詳細デバッグログ
+        console.log(`=== 針の長さ計算 ===`);
+        console.log(`入力高度: ${altitude.toFixed(1)}°`);
+        console.log(`クランプ後: ${clampedAltitude.toFixed(1)}° (範囲: -90°～90°)`);
+        console.log(`正規化: ${normalizedAltitude.toFixed(4)} (0.0～1.0)`);
+        console.log(`最小長: ${minLength.toFixed(1)}px (20%)`);
+        console.log(`最大長: ${maxLength.toFixed(1)}px (100%)`);
+        console.log(`範囲: ${(maxLength - minLength).toFixed(1)}px`);
+        console.log(`計算長: ${calculatedLength.toFixed(1)}px (${(calculatedLength/compassRadius*100).toFixed(1)}%)`);
+        console.log(`==================`);
         
         return calculatedLength;
     }
@@ -600,7 +585,7 @@ export class CompassManager {
      * 地平線の描画
      */
     private drawHorizonLine(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const horizonRadius = compassRadius * 0.7; // コンパス半径の70%（65%→70%にさらに増加）
+        const horizonRadius = compassRadius * 0.6; // コンパス半径の60%（高度0°の針の長さに対応）
         const dashLength = compassRadius * 0.025; // ダッシュの長さをさらに増加（2%→2.5%）
         const lineWidth = Math.max(1.5, compassRadius * 0.005); // ライン幅をさらに増加（0.4%→0.5%）
         const labelOffset = compassRadius * 0.06; // ラベルオフセットをさらに増加（5%→6%）
@@ -643,12 +628,12 @@ export class CompassManager {
             const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
             const deviceNeedleAngle = (deviceOrientation.alpha - 90) * Math.PI / 180;
             
-            console.log('デバイス針の描画:', {
-                beta: deviceOrientation.beta.toFixed(1),
-                elevation: deviceElevation.toFixed(1),
-                needleLength: deviceNeedleLength.toFixed(1),
-                angle: deviceNeedleAngle.toFixed(3)
-            });
+            console.log('=== デバイス針の描画 ===');
+            console.log(`生ベータ値: ${deviceOrientation.beta.toFixed(1)}°`);
+            console.log(`計算された仰角: ${deviceElevation.toFixed(1)}°`);
+            console.log(`針の長さ: ${deviceNeedleLength.toFixed(1)}px (${(deviceNeedleLength/compassRadius*100).toFixed(1)}%)`);
+            console.log(`コンパス半径: ${compassRadius.toFixed(1)}px`);
+            console.log('========================');
             
             // デバイス針の影
             ctx.strokeStyle = 'rgba(0,0,0,0.5)';
