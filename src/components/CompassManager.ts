@@ -458,17 +458,6 @@ export class CompassManager {
         const normalizedAltitude = (clampedAltitude + 90) / 180;
         const calculatedLength = minLength + (maxLength - minLength) * normalizedAltitude;
         
-        // 詳細デバッグログ
-        console.log(`=== 針の長さ計算 ===`);
-        console.log(`入力高度: ${altitude.toFixed(1)}°`);
-        console.log(`クランプ後: ${clampedAltitude.toFixed(1)}° (範囲: -90°～90°)`);
-        console.log(`正規化: ${normalizedAltitude.toFixed(4)} (0.0～1.0)`);
-        console.log(`最小長: ${minLength.toFixed(1)}px (20%)`);
-        console.log(`最大長: ${maxLength.toFixed(1)}px (100%)`);
-        console.log(`範囲: ${(maxLength - minLength).toFixed(1)}px`);
-        console.log(`計算長: ${calculatedLength.toFixed(1)}px (${(calculatedLength/compassRadius*100).toFixed(1)}%)`);
-        console.log(`==================`);
-        
         return calculatedLength;
     }
 
