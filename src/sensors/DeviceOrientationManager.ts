@@ -331,31 +331,6 @@ export class DeviceOrientationManager {
         return { ...this.orientationCorrection };
     }
 
-    // デバッグ用メソッド
-    public resetToAbsoluteSensor(): void {
-        if ('ondeviceorientationabsolute' in window) {
-            console.log('🔄 deviceorientationabsoluteセンサーをリセットします');
-            this.setupSensorListener();
-        } else {
-            console.warn('⚠️ deviceorientationabsoluteはサポートされていません');
-        }
-    }
-
-    public testSensorValues(alpha: number, beta: number, gamma: number): void {
-        console.log(`手動センサー値設定: Alpha=${alpha}°, Beta=${beta}°, Gamma=${gamma}°`);
-        
-        // 手動でイベントを作成してhandleOrientationを呼び出し
-        const mockEvent = {
-            alpha: alpha,
-            beta: beta,
-            gamma: gamma
-        } as DeviceOrientationEvent;
-        
-        this.handleOrientation(mockEvent);
-        
-        console.log('センサー値を手動で設定しました。UIの変化を確認してください。');
-    }
-
     // Local Storage 関連メソッド
     private loadOrientationCorrectionFromStorage(): void {
         try {

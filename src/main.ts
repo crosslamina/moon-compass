@@ -1,4 +1,4 @@
-import { getMoonData, getMoonTimes, MoonData, calculateAngleDifference, resetBlinkTimer, testSunCalcCoordinates } from './moon';
+import { getMoonData, getMoonTimes, MoonData, calculateAngleDifference, resetBlinkTimer } from './moon';
 import { CompassManager } from './components/CompassManager';
 import { DialogManager } from './ui/DialogManager';
 import { StateManager } from './state/StateManager';
@@ -150,9 +150,6 @@ function setupEventListeners() {
 
 function handleLocationUpdate(position: GeolocationPosition) {
     currentPosition = position;
-    
-    // SunCalcの座標系をテスト（デバッグ用）
-    testSunCalcCoordinates(position.coords.latitude, position.coords.longitude);
     
     // 位置情報表示を更新
     moonDisplayManager.updateLocationInfo(position);
@@ -385,8 +382,6 @@ function resetOrientationCorrectionUI() {
 (window as any).toggleOrientationReverse = () => orientationManager.toggleOrientationReverse();
 (window as any).setOrientationOffset = (offset: number) => orientationManager.setOrientationOffset(offset);
 (window as any).resetOrientationCorrection = () => orientationManager.resetOrientationCorrection();
-(window as any).resetToAbsoluteSensor = () => orientationManager.resetToAbsoluteSensor();
-(window as any).testSensorValues = (alpha: number, beta: number, gamma: number) => orientationManager.testSensorValues(alpha, beta, gamma);
 
 // 初期状態の表示
 updateCorrectionStatus();
@@ -398,21 +393,4 @@ console.log('=== 方位角キャリブレーション機能 ===');
 console.log('東西が逆の場合: toggleOrientationReverse()');
 console.log('オフセット設定: setOrientationOffset(角度)');
 console.log('リセット: resetOrientationCorrection()');
-console.log('=====================================');
-
-console.log('=== 開発者ツールでのテスト方法 ===');
-console.log('1. Chrome DevTools を開く（F12）');
-console.log('2. [...]メニュー → More tools → Sensors');
-console.log('3. Orientation を "Custom orientation" に設定');
-console.log('4. Alpha（方位角）、Beta（前後傾き）、Gamma（左右傾き）を調整');
-console.log('   - Alpha: 0°=北, 90°=東, 180°=南, 270°=西');
-console.log('   - Beta: -90°=下向き, 0°=水平, 90°=上向き');
-console.log('   - Gamma: -90°=左傾き, 0°=水平, 90°=右傾き');
-console.log('5. 相対センサーのため、実際の磁北とは異なる値になります');
-console.log('=====================================');
-
-console.log('=== デバッグ用手動センサー設定 ===');
-console.log('testSensorValues(alpha, beta, gamma) - 手動でセンサー値を設定');
-console.log('例: testSensorValues(90, 0, 0) - 東向き水平');
-console.log('例: testSensorValues(0, 45, 0) - 北向き上向き45度');
 console.log('=====================================');
