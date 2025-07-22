@@ -382,6 +382,8 @@ function resetOrientationCorrectionUI() {
 if (import.meta.env.DEV) {
     console.log('=== 開発モード検出 ===');
     console.log('デバッグ機能を有効化します');
+    console.log('📱 deviceorientationセンサー（相対センサー）を使用中');
+    console.log('🛠️  Chrome DevTools > Sensors パネルでセンサー値をシミュレート可能');
     
     (window as any).toggleOrientationReverse = () => orientationManager.toggleOrientationReverse();
     (window as any).setOrientationOffset = (offset: number) => orientationManager.setOrientationOffset(offset);
@@ -393,7 +395,20 @@ if (import.meta.env.DEV) {
     console.log('リセット: resetOrientationCorrection()');
     console.log('=====================================');
     
+    console.log('=== Chrome DevTools でのセンサーテスト方法 ===');
+    console.log('1. F12 で DevTools を開く');
+    console.log('2. [...] メニュー → More tools → Sensors');
+    console.log('3. Orientation を "Custom orientation" に設定');
+    console.log('4. Alpha（方位角）、Beta（前後傾き）、Gamma（左右傾き）を調整');
+    console.log('   - Alpha: 0°=北, 90°=東, 180°=南, 270°=西');
+    console.log('   - Beta: -90°=下向き, 0°=水平, 90°=上向き');
+    console.log('   - Gamma: -90°=左傾き, 0°=水平, 90°=右傾き');
+    console.log('===============================================');
+    
     console.log('デバッグ用関数をグローバルに公開しました');
+} else {
+    console.log('=== 本番モード ===');
+    console.log('📱 deviceorientationabsoluteセンサー（絶対センサー）を使用中');
 }
 
 // 初期状態の表示

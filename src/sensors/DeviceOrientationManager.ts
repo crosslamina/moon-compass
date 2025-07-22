@@ -29,7 +29,7 @@ export class DeviceOrientationManager {
         lastKnownTrueDirection: null
     };
 
-    private currentEventType: 'deviceorientationabsolute' | null = null;
+    private currentEventType: 'deviceorientationabsolute' | 'deviceorientation' | null = null;
     private readonly CALIBRATION_SAMPLE_SIZE = 10;
 
     private constructor() {
@@ -62,35 +62,50 @@ export class DeviceOrientationManager {
             return;
         }
 
-        // deviceorientationabsoluteが利用可能かチェック
-        const hasAbsoluteOrientation = 'ondeviceorientationabsolute' in window;
-        console.log('deviceorientationabsolute サポート:', hasAbsoluteOrientation);
-        
-        if (hasAbsoluteOrientation) {
-            console.log('✅ 絶対方位センサー（deviceorientationabsolute）を使用します');
-            this.setupSensorListener();
+        // 開発モードでは deviceorientation を使用（DevToolsのSensorsでデバッグ可能）
+        if (import.meta.env.DEV) {
+            console.log('🔧 開発モード: deviceorientation（相対センサー）を使用します');
+            console.log('💡 Chrome DevTools > Sensors パネルでセンサー値をシミュレートできます');
+            this.setupSensorListener('deviceorientation');
         } else {
-            console.error('❌ deviceorientationabsolute が利用できません');
-            this.updateOrientationDisplay('絶対方位センサー未対応');
-            return;
+            // 本番モードでは deviceorientationabsolute を使用
+            const hasAbsoluteOrientation = 'ondeviceorientationabsolute' in window;
+            console.log('deviceorientationabsolute サポート:', hasAbsoluteOrientation);
+            
+            if (hasAbsoluteOrientation) {
+                console.log('✅ 本番モード: 絶対方位センサー（deviceorientationabsolute）を使用します');
+                this.setupSensorListener('deviceorientationabsolute');
+            } else {
+                console.error('❌ deviceorientationabsolute が利用できません');
+                this.updateOrientationDisplay('絶対方位センサー未対応');
+                return;
+            }
         }
         console.log('=== センサー初期化完了 ===');
     }
 
-    private setupSensorListener(): void {
+    private setupSensorListener(eventType: 'deviceorientationabsolute' | 'deviceorientation'): void {
         // 既存のリスナーを削除
         if (this.currentEventType) {
             window.removeEventListener(this.currentEventType, this.handleOrientation.bind(this));
             console.log(`既存の${this.currentEventType}リスナーを削除しました`);
         }
         
-        this.currentEventType = 'deviceorientationabsolute';
+        this.currentEventType = eventType;
         
         // センサーの種類を判定
-        const sensorType = '絶対方位センサー（deviceorientationabsolute）- 磁北基準';
-        const isAbsoluteSensor = true;
+        let sensorType = '';
+        let isAbsoluteSensor = false;
         
-        console.log('✅ 絶対方位センサーを使用します');
+        if (eventType === 'deviceorientationabsolute') {
+            sensorType = '絶対方位センサー（deviceorientationabsolute）- 磁北基準';
+            isAbsoluteSensor = true;
+            console.log('✅ 絶対方位センサーを使用します');
+        } else {
+            sensorType = '相対方位センサー（deviceorientation）- 端末起動時基準';
+            isAbsoluteSensor = false;
+            console.log('✅ 相対方位センサーを使用します');
+        }
         
         // センサー種別をグローバル変数として保存
         (window as any).currentSensorType = sensorType;
@@ -109,7 +124,7 @@ export class DeviceOrientationManager {
                         console.log('iOS権限結果:', permission);
                         
                         if (permission === 'granted') {
-                            window.addEventListener('deviceorientationabsolute', this.handleOrientation.bind(this));
+                            window.addEventListener(eventType, this.handleOrientation.bind(this));
                             console.log(`✅ iOS: ${sensorType}を使用`);
                             this.permissionButton!.style.display = 'none';
                         } else {
@@ -126,8 +141,8 @@ export class DeviceOrientationManager {
             // Android等、権限要求が不要な場合
             console.log('権限要求不要: イベントリスナーを直接登録');
             
-            window.addEventListener('deviceorientationabsolute', this.handleOrientation.bind(this));
-            console.log(`✅ イベントリスナーを登録しました: deviceorientationabsolute`);
+            window.addEventListener(eventType, this.handleOrientation.bind(this));
+            console.log(`✅ イベントリスナーを登録しました: ${eventType}`);
         }
     }
 
