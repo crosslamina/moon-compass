@@ -1,14 +1,17 @@
 import { MoonTimes } from '../moon';
 import { CompassState } from './CompassManager';
+import { DOMManager } from '../ui/DOMManager';
 
 /**
  * 月探査ステータス表示管理クラス
  * コンパスの下部に表示される情報を管理
  */
 export class MoonStatusDisplay {
+    private domManager: DOMManager;
     private statusElement: HTMLElement | null = null;
 
     constructor() {
+        this.domManager = DOMManager.getInstance();
         this.createStatusElement();
     }
 
@@ -17,7 +20,7 @@ export class MoonStatusDisplay {
      */
     private createStatusElement(): void {
         // 既存の要素があれば削除
-        const existingElement = document.getElementById('moon-status-display');
+        const existingElement = this.domManager.getElement('moon-status-display');
         if (existingElement) {
             existingElement.remove();
         }
@@ -28,7 +31,7 @@ export class MoonStatusDisplay {
         this.statusElement.className = 'moon-status-display';
         
         // コンパスコンテナの後に挿入
-        const compassContainer = document.getElementById('compass-container');
+        const compassContainer = this.domManager.getElement('compass-container');
         if (compassContainer && compassContainer.parentNode) {
             compassContainer.parentNode.insertBefore(this.statusElement, compassContainer.nextSibling);
         } else {
