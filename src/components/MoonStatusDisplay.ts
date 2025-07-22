@@ -30,13 +30,19 @@ export class MoonStatusDisplay {
         this.statusElement.id = 'moon-status-display';
         this.statusElement.className = 'moon-status-display';
         
-        // コンパスコンテナの後に挿入
-        const compassContainer = this.domManager.getElement('compass-container');
-        if (compassContainer && compassContainer.parentNode) {
-            compassContainer.parentNode.insertBefore(this.statusElement, compassContainer.nextSibling);
+        // 挿入ポイントに挿入（ボタンの前）
+        const insertionPoint = document.getElementById('status-insertion-point');
+        if (insertionPoint && insertionPoint.parentNode) {
+            insertionPoint.parentNode.insertBefore(this.statusElement, insertionPoint.nextSibling);
         } else {
-            // フォールバック：body に追加
-            document.body.appendChild(this.statusElement);
+            // フォールバック：コンパス情報の後に挿入
+            const compassInfo = document.getElementById('compass-info');
+            if (compassInfo && compassInfo.parentNode) {
+                compassInfo.parentNode.insertBefore(this.statusElement, compassInfo.nextSibling);
+            } else {
+                // 最終フォールバック：body に追加
+                document.body.appendChild(this.statusElement);
+            }
         }
     }
 

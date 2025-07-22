@@ -15,18 +15,21 @@
     <!-- メインコンパス -->
     <canvas id="compass-canvas"></canvas>
     
-    <!-- 設定と情報ボタン -->
-    <div class="button-group">
-        <button id="settings-button" class="info-btn">⚙️</button>
-        <button id="info-button" class="info-btn">ℹ️</button>
-    </div>
-    
     <!-- コンパス情報（凡例） -->
     <div id="compass-info">
         <div class="needle-legend">
             <span style="color: #dc143c;">●</span> 赤針: あなたの方向
             <br><span style="color: #ffd700;">●</span> 金針: 月の位置
         </div>
+    </div>
+    
+    <!-- MoonStatusDisplayの挿入ポイント（ここに動的に挿入される） -->
+    <div id="status-insertion-point"></div>
+    
+    <!-- 設定と情報ボタン（最後に配置） -->
+    <div class="button-group">
+        <button id="settings-button" class="info-btn">⚙️</button>
+        <button id="info-button" class="info-btn">ℹ️</button>
     </div>
     
     <!-- 設定ダイアログ -->
