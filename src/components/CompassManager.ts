@@ -302,7 +302,9 @@ export class CompassManager {
         this.canvas.style.width = targetSize + 'px';
         this.canvas.style.height = targetSize + 'px';
         
-        console.log(`Canvas resized: ${targetSize}px (canvas: ${canvasSize}px, dpr: ${dpr})`);
+        if (import.meta.env.DEV) {
+            console.log(`Canvas resized: ${targetSize}px (canvas: ${canvasSize}px, dpr: ${dpr})`);
+        }
     }
 
     /**
@@ -390,8 +392,8 @@ export class CompassManager {
             newLevel = 'searching';
         }
         
-        // レベル変更時のログ出力（デバッグ用）
-        if (newLevel !== currentLevel) {
+        // レベル変更時のログ出力（開発モードのみ）
+        if (import.meta.env.DEV && newLevel !== currentLevel) {
             console.log(`検知レベル変更: ${currentLevel} → ${newLevel} (平滑化角度差: ${smoothedAngleDiff.toFixed(1)}°, 生角度差: ${totalAngleDiff.toFixed(1)}°)`);
         }
         
@@ -605,8 +607,10 @@ export class CompassManager {
         const shadowOffset = compassRadius * 0.01; // 影のオフセットをさらに増加（0.8%→1%）
         const shadowWidth = deviceNeedleWidth * 1.5;
         
-        console.log('Drawing needles - deviceOrientation:', deviceOrientation, 'moonData:', moonData);
-        console.log('コンパス半径:', compassRadius.toFixed(1), 'px');
+        if (import.meta.env.DEV) {
+            console.log('Drawing needles - deviceOrientation:', deviceOrientation, 'moonData:', moonData);
+            console.log('コンパス半径:', compassRadius.toFixed(1), 'px');
+        }
         
         // デバイス針
         if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
@@ -614,12 +618,14 @@ export class CompassManager {
             const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
             const deviceNeedleAngle = (deviceOrientation.alpha - 90) * Math.PI / 180;
             
-            console.log('=== デバイス針の描画 ===');
-            console.log(`生ベータ値: ${deviceOrientation.beta.toFixed(1)}°`);
-            console.log(`計算された仰角: ${deviceElevation.toFixed(1)}°`);
-            console.log(`針の長さ: ${deviceNeedleLength.toFixed(1)}px (${(deviceNeedleLength/compassRadius*100).toFixed(1)}%)`);
-            console.log(`コンパス半径: ${compassRadius.toFixed(1)}px`);
-            console.log('========================');
+            if (import.meta.env.DEV) {
+                console.log('=== デバイス針の描画 ===');
+                console.log(`生ベータ値: ${deviceOrientation.beta.toFixed(1)}°`);
+                console.log(`計算された仰角: ${deviceElevation.toFixed(1)}°`);
+                console.log(`針の長さ: ${deviceNeedleLength.toFixed(1)}px (${(deviceNeedleLength/compassRadius*100).toFixed(1)}%)`);
+                console.log(`コンパス半径: ${compassRadius.toFixed(1)}px`);
+                console.log('========================');
+            }
             
             // デバイス針の影
             ctx.strokeStyle = 'rgba(0,0,0,0.5)';
@@ -649,12 +655,14 @@ export class CompassManager {
             const moonNeedleLength = this.calculateNeedleLength(moonData.altitude, compassRadius);
             const moonNeedleAngle = (moonData.azimuth - 90) * Math.PI / 180;
             
-            console.log('月針の描画:', {
-                azimuth: moonData.azimuth.toFixed(1),
-                altitude: moonData.altitude.toFixed(1),
-                needleLength: moonNeedleLength.toFixed(1),
-                angle: moonNeedleAngle.toFixed(3)
-            });
+            if (import.meta.env.DEV) {
+                console.log('月針の描画:', {
+                    azimuth: moonData.azimuth.toFixed(1),
+                    altitude: moonData.altitude.toFixed(1),
+                    needleLength: moonNeedleLength.toFixed(1),
+                    angle: moonNeedleAngle.toFixed(3)
+                });
+            }
             
             ctx.strokeStyle = '#ffd700';
             ctx.lineWidth = moonNeedleWidth;

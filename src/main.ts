@@ -378,10 +378,23 @@ function resetOrientationCorrectionUI() {
     }
 }
 
-// デバッグ用関数をグローバルに公開
-(window as any).toggleOrientationReverse = () => orientationManager.toggleOrientationReverse();
-(window as any).setOrientationOffset = (offset: number) => orientationManager.setOrientationOffset(offset);
-(window as any).resetOrientationCorrection = () => orientationManager.resetOrientationCorrection();
+// デバッグ用関数をグローバルに公開（開発モードのみ）
+if (import.meta.env.DEV) {
+    console.log('=== 開発モード検出 ===');
+    console.log('デバッグ機能を有効化します');
+    
+    (window as any).toggleOrientationReverse = () => orientationManager.toggleOrientationReverse();
+    (window as any).setOrientationOffset = (offset: number) => orientationManager.setOrientationOffset(offset);
+    (window as any).resetOrientationCorrection = () => orientationManager.resetOrientationCorrection();
+    
+    console.log('=== 方位角キャリブレーション機能 ===');
+    console.log('東西が逆の場合: toggleOrientationReverse()');
+    console.log('オフセット設定: setOrientationOffset(角度)');
+    console.log('リセット: resetOrientationCorrection()');
+    console.log('=====================================');
+    
+    console.log('デバッグ用関数をグローバルに公開しました');
+}
 
 // 初期状態の表示
 updateCorrectionStatus();

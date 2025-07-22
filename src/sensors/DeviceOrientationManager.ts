@@ -132,14 +132,16 @@ export class DeviceOrientationManager {
     }
 
     private handleOrientation(event: DeviceOrientationEvent): void {
-        // センサー値取得状況をデバッグ出力
-        console.log('=== handleOrientation イベント発火 ===');
-        console.log('Raw sensor values:', {
-            alpha: event.alpha,
-            beta: event.beta,
-            gamma: event.gamma,
-            absolute: event.absolute
-        });
+        if (import.meta.env.DEV) {
+            // センサー値取得状況をデバッグ出力
+            console.log('=== handleOrientation イベント発火 ===');
+            console.log('Raw sensor values:', {
+                alpha: event.alpha,
+                beta: event.beta,
+                gamma: event.gamma,
+                absolute: event.absolute
+            });
+        }
         
         const rawAlpha = event.alpha;
         const rawBeta = event.beta;
@@ -147,7 +149,9 @@ export class DeviceOrientationManager {
 
         // null値チェック
         if (rawAlpha === null && rawBeta === null && rawGamma === null) {
-            console.error('❌ 全てのセンサー値がnullです！');
+            if (import.meta.env.DEV) {
+                console.error('❌ 全てのセンサー値がnullです！');
+            }
         }
 
         // フィルターを無効化：生のセンサー値をそのまま使用
@@ -177,8 +181,10 @@ export class DeviceOrientationManager {
         // カスタムイベントを発火
         this.dispatchOrientationUpdate();
 
-        console.log('Updated deviceOrientation:', this.deviceOrientation);
-        console.log('=========================================');
+        if (import.meta.env.DEV) {
+            console.log('Updated deviceOrientation:', this.deviceOrientation);
+            console.log('=========================================');
+        }
     }
 
     private correctOrientationForBrowser(alpha: number | null, userAgent: string): number | null {
