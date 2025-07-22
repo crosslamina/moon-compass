@@ -1,6 +1,6 @@
 import { DOMManager } from '../ui/DOMManager';
 import { StateManager } from '../state/StateManager';
-import { MoonData } from '../moon';
+import { MoonData, getMoonTimes } from '../moon';
 import { getDirectionName } from '../direction';
 
 /**
@@ -19,12 +19,20 @@ export class MoonInfoDisplay {
 
     private setupSubscriptions(): void {
         // 月データの変更を監視
-        const unsubscribe = this.stateManager.subscribe('moonData', (moonData) => {
+        const moonDataUnsubscribe = this.stateManager.subscribe('moonData', (moonData) => {
             if (moonData) {
                 this.updateMoonInfo(moonData);
             }
         });
-        this.unsubscribers.push(unsubscribe);
+        this.unsubscribers.push(moonDataUnsubscribe);
+
+        // 位置情報の変更を監視（月時刻の更新のため）
+        const positionUnsubscribe = this.stateManager.subscribe('position', (position) => {
+            if (position) {
+                this.updateMoonTimes(position);
+            }
+        });
+        this.unsubscribers.push(positionUnsubscribe);
     }
 
     private updateMoonInfo(moonData: MoonData): void {
@@ -49,6 +57,37 @@ export class MoonInfoDisplay {
             `高度: ${moonData.altitude.toFixed(2)}°`);
     }
 
+    private updateMoonTimes(position: GeolocationPosition): void {
+        const { latitude, longitude } = position.coords;
+        const moonTimes = getMoonTimes(latitude, longitude);
+
+        // 月の出時刻
+        if (moonTimes.rise) {
+            const riseTime = moonTimes.rise.toLocaleString('ja-JP', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            this.domManager.setText('moon-rise', `月の出: ${riseTime}`);
+        } else {
+            this.domManager.setText('moon-rise', '月の出: 本日なし');
+        }
+
+        // 月の入り時刻
+        if (moonTimes.set) {
+            const setTime = moonTimes.set.toLocaleString('ja-JP', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            this.domManager.setText('moon-set', `月の入り: ${setTime}`);
+        } else {
+            this.domManager.setText('moon-set', '月の入り: 本日なし');
+        }
+    }
+
     private getPhaseName(phase: number): string {
         // 月相名の計算ロジック
         if (phase < 0.0625) return '新月';
@@ -60,6 +99,16 @@ export class MoonInfoDisplay {
         if (phase < 0.8125) return '満月';
         if (phase < 0.9375) return '下弦前';
         return '下弦の月';
+    }
+
+    /**
+     * 現在の位置に基づいて月時刻を手動更新
+     */
+    public refreshMoonTimes(): void {
+        const position = this.stateManager.get('position');
+        if (position) {
+            this.updateMoonTimes(position);
+        }
     }
 
     /**

@@ -501,6 +501,28 @@ body {
     color: #888;
 }
 
+.moon-time.no-event {
+    border-left-color: #666;
+    opacity: 0.6;
+}
+
+.moon-time.no-event .time-value.no-data {
+    color: #e74c3c;
+    font-style: italic;
+    font-weight: normal;
+}
+
+.moon-time.special-notice {
+    border-left-color: #f39c12;
+    background: rgba(243, 156, 18, 0.1);
+}
+
+.moon-time.special-notice .time-value {
+    color: #f39c12;
+    font-size: 0.9em;
+    font-weight: normal;
+}
+
 .time-icon {
     font-size: 1.2em;
     min-width: 24px;

@@ -125,9 +125,11 @@ export class MoonStatusDisplay {
 
         const now = new Date();
         let html = '<div class="moon-times">';
+        let hasAnyTime = false;
 
         // 月の出
         if (moonTimes.rise) {
+            hasAnyTime = true;
             const riseTime = moonTimes.rise.toLocaleTimeString('ja-JP', { 
                 hour: '2-digit', 
                 minute: '2-digit' 
@@ -154,10 +156,19 @@ export class MoonStatusDisplay {
                     </div>
                 `;
             }
+        } else {
+            html += `
+                <div class="moon-time moon-rise no-event">
+                    <span class="time-icon">🌅</span>
+                    <span class="time-label">月の出:</span>
+                    <span class="time-value no-data">本日なし</span>
+                </div>
+            `;
         }
 
         // 月の入り
         if (moonTimes.set) {
+            hasAnyTime = true;
             const setTime = moonTimes.set.toLocaleTimeString('ja-JP', { 
                 hour: '2-digit', 
                 minute: '2-digit' 
@@ -184,6 +195,25 @@ export class MoonStatusDisplay {
                     </div>
                 `;
             }
+        } else {
+            html += `
+                <div class="moon-time moon-set no-event">
+                    <span class="time-icon">🌇</span>
+                    <span class="time-label">月の入り:</span>
+                    <span class="time-value no-data">本日なし</span>
+                </div>
+            `;
+        }
+
+        // 両方とも存在しない場合の特別メッセージ
+        if (!hasAnyTime) {
+            html += `
+                <div class="moon-time special-notice">
+                    <span class="time-icon">🌙</span>
+                    <span class="time-label">月の状態:</span>
+                    <span class="time-value">常に地平線下 または 常に地平線上</span>
+                </div>
+            `;
         }
 
         html += '</div>';
