@@ -13,6 +13,7 @@ export class DeviceOrientationManager {
     private stateManager: StateManager;
     private deviceOrientationElement: HTMLElement | null;
     private permissionButton: HTMLButtonElement | null;
+    private readonly STORAGE_KEY = 'tsuki-ga-kirei-orientation-correction';
     
     private deviceOrientation = {
         alpha: null as number | null,
@@ -38,6 +39,9 @@ export class DeviceOrientationManager {
         this.stateManager = StateManager.getInstance();
         this.deviceOrientationElement = document.getElementById('device-orientation');
         this.permissionButton = document.getElementById('permission-button') as HTMLButtonElement;
+        
+        // localStorage から補正設定を読み込み
+        this.loadOrientationCorrectionFromStorage();
     }
 
     public static getInstance(): DeviceOrientationManager {
@@ -351,6 +355,9 @@ export class DeviceOrientationManager {
         const status = this.orientationCorrection.isReversed ? '有効' : '無効';
         console.log(`方位角東西反転補正: ${status}`);
         
+        // localStorage に保存
+        this.saveOrientationCorrectionToStorage();
+        
         return this.orientationCorrection.isReversed;
     }
 
@@ -359,6 +366,9 @@ export class DeviceOrientationManager {
         this.orientationCorrection.isCalibrated = true;
         
         console.log(`方位角オフセット設定: ${offset}°`);
+        
+        // localStorage に保存
+        this.saveOrientationCorrectionToStorage();
     }
 
     public resetOrientationCorrection(): void {
@@ -369,6 +379,9 @@ export class DeviceOrientationManager {
         this.orientationCorrection.lastKnownTrueDirection = null;
         
         console.log('方位角補正をリセットしました');
+        
+        // localStorage に保存
+        this.saveOrientationCorrectionToStorage();
     }
 
     public getCorrectionStatus() {
@@ -403,5 +416,59 @@ export class DeviceOrientationManager {
         this.handleOrientation(mockEvent);
         
         console.log('センサー値を手動で設定しました。UIの変化を確認してください。');
+    }
+
+    // Local Storage 関連メソッド
+    private loadOrientationCorrectionFromStorage(): void {
+        try {
+            const stored = localStorage.getItem(this.STORAGE_KEY);
+            if (stored) {
+                const parsedCorrection = JSON.parse(stored);
+                
+                // calibrationSamplesとlastKnownTrueDirection以外の設定を復元
+                this.orientationCorrection.isCalibrated = parsedCorrection.isCalibrated || false;
+                this.orientationCorrection.offsetAngle = parsedCorrection.offsetAngle || 0;
+                this.orientationCorrection.isReversed = parsedCorrection.isReversed || false;
+                
+                console.log('localStorage から方位角補正設定を読み込みました:', {
+                    isCalibrated: this.orientationCorrection.isCalibrated,
+                    offsetAngle: this.orientationCorrection.offsetAngle,
+                    isReversed: this.orientationCorrection.isReversed
+                });
+            }
+        } catch (error) {
+            console.warn('localStorage から方位角補正設定の読み込みに失敗しました:', error);
+        }
+    }
+
+    private saveOrientationCorrectionToStorage(): void {
+        try {
+            const correctionToSave = {
+                isCalibrated: this.orientationCorrection.isCalibrated,
+                offsetAngle: this.orientationCorrection.offsetAngle,
+                isReversed: this.orientationCorrection.isReversed
+                // calibrationSamples と lastKnownTrueDirection は保存しない（セッション固有のデータのため）
+            };
+            
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(correctionToSave));
+            console.log('方位角補正設定を localStorage に保存しました:', correctionToSave);
+        } catch (error) {
+            console.warn('localStorage への方位角補正設定の保存に失敗しました:', error);
+        }
+    }
+
+    private clearOrientationCorrectionFromStorage(): void {
+        try {
+            localStorage.removeItem(this.STORAGE_KEY);
+            console.log('localStorage から方位角補正設定を削除しました');
+        } catch (error) {
+            console.warn('localStorage からの方位角補正設定の削除に失敗しました:', error);
+        }
+    }
+
+    // 公開メソッド: localStorage の設定をクリア
+    public clearStoredCorrection(): void {
+        this.clearOrientationCorrectionFromStorage();
+        console.log('保存された方位角補正設定をクリアしました');
     }
 }
