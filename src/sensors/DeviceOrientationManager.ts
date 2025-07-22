@@ -29,10 +29,7 @@ export class DeviceOrientationManager {
         lastKnownTrueDirection: null
     };
 
-    private currentEventType: 'deviceorientationabsolute' | 'deviceorientation' | null = null;
-    private fallbackTimer: number | null = null;
-    private nullValueCount = 0;
-    private readonly MAX_NULL_VALUES = 10;
+    private currentEventType: 'deviceorientationabsolute' | null = null;
     private readonly CALIBRATION_SAMPLE_SIZE = 10;
 
     private constructor() {
@@ -69,46 +66,31 @@ export class DeviceOrientationManager {
         const hasAbsoluteOrientation = 'ondeviceorientationabsolute' in window;
         console.log('deviceorientationabsolute サポート:', hasAbsoluteOrientation);
         
-        // まず絶対センサーから試行
         if (hasAbsoluteOrientation) {
-            console.log('✅ 絶対方位センサー（deviceorientationabsolute）を試行します');
-            this.setupSensorListener('deviceorientationabsolute');
+            console.log('✅ 絶対方位センサー（deviceorientationabsolute）を使用します');
+            this.setupSensorListener();
         } else {
-            console.warn('⚠️ deviceorientationabsolute が利用できません。通常のdeviceorientationを使用します。');
-            this.setupSensorListener('deviceorientation');
+            console.error('❌ deviceorientationabsolute が利用できません');
+            this.updateOrientationDisplay('絶対方位センサー未対応');
+            return;
         }
         console.log('=== センサー初期化完了 ===');
     }
 
-    private setupSensorListener(eventType: 'deviceorientationabsolute' | 'deviceorientation'): void {
+    private setupSensorListener(): void {
         // 既存のリスナーを削除
         if (this.currentEventType) {
-            window.removeEventListener(this.currentEventType, this.handleOrientationWithFallback.bind(this));
+            window.removeEventListener(this.currentEventType, this.handleOrientation.bind(this));
             console.log(`既存の${this.currentEventType}リスナーを削除しました`);
         }
         
-        // フォールバックタイマーをリセット
-        if (this.fallbackTimer) {
-            clearTimeout(this.fallbackTimer);
-            this.fallbackTimer = null;
-        }
-        
-        this.currentEventType = eventType;
-        this.nullValueCount = 0;
+        this.currentEventType = 'deviceorientationabsolute';
         
         // センサーの種類を判定
-        let sensorType = '';
-        let isAbsoluteSensor = false;
+        const sensorType = '絶対方位センサー（deviceorientationabsolute）- 磁北基準';
+        const isAbsoluteSensor = true;
         
-        if (eventType === 'deviceorientationabsolute') {
-            sensorType = '絶対方位センサー（deviceorientationabsolute）- 磁北基準';
-            isAbsoluteSensor = true;
-            console.log('✅ 絶対方位センサーを使用します');
-        } else {
-            sensorType = '相対方位センサー（deviceorientation）- 端末起動時基準';
-            isAbsoluteSensor = false;
-            console.log('✅ 相対方位センサーを使用します（フォールバック）');
-        }
+        console.log('✅ 絶対方位センサーを使用します');
         
         // センサー種別をグローバル変数として保存
         (window as any).currentSensorType = sensorType;
@@ -127,7 +109,7 @@ export class DeviceOrientationManager {
                         console.log('iOS権限結果:', permission);
                         
                         if (permission === 'granted') {
-                            window.addEventListener(eventType, this.handleOrientationWithFallback.bind(this));
+                            window.addEventListener('deviceorientationabsolute', this.handleOrientation.bind(this));
                             console.log(`✅ iOS: ${sensorType}を使用`);
                             this.permissionButton!.style.display = 'none';
                         } else {
@@ -144,48 +126,9 @@ export class DeviceOrientationManager {
             // Android等、権限要求が不要な場合
             console.log('権限要求不要: イベントリスナーを直接登録');
             
-            window.addEventListener(eventType, this.handleOrientationWithFallback.bind(this));
-            console.log(`✅ イベントリスナーを登録しました: ${eventType}`);
-            
-            // フォールバック監視タイマーを設定（10秒後）
-            this.fallbackTimer = window.setTimeout(() => {
-                console.log('=== 10秒後のフォールバックチェック ===');
-                if (this.nullValueCount >= this.MAX_NULL_VALUES && eventType === 'deviceorientationabsolute') {
-                    console.warn(`❌ ${this.MAX_NULL_VALUES}回連続でnull値を検出。deviceorientationにフォールバックします`);
-                    this.setupSensorListener('deviceorientation');
-                } else if (this.deviceOrientation.alpha === null && this.deviceOrientation.beta === null && this.deviceOrientation.gamma === null) {
-                    console.warn('⚠️ 5秒経過してもセンサー値が取得できていません');
-                    if (eventType === 'deviceorientationabsolute') {
-                        console.log('🔄 deviceorientationにフォールバックを試行します');
-                        this.setupSensorListener('deviceorientation');
-                    }
-                } else {
-                    console.log('✅ センサー値は正常に取得できています');
-                }
-                console.log('==========================================');
-            }, 5000);
+            window.addEventListener('deviceorientationabsolute', this.handleOrientation.bind(this));
+            console.log(`✅ イベントリスナーを登録しました: deviceorientationabsolute`);
         }
-    }
-
-    private handleOrientationWithFallback(event: DeviceOrientationEvent): void {
-        // null値カウント
-        if (event.alpha === null && event.beta === null && event.gamma === null) {
-            this.nullValueCount++;
-            console.log(`null値検出 ${this.nullValueCount}/${this.MAX_NULL_VALUES} (イベント: ${this.currentEventType})`);
-            
-            // 連続してnull値が来た場合のフォールバック
-            if (this.nullValueCount >= this.MAX_NULL_VALUES && this.currentEventType === 'deviceorientationabsolute') {
-                console.warn(`❌ ${this.MAX_NULL_VALUES}回連続でnull値を検出。deviceorientationにフォールバックします`);
-                this.setupSensorListener('deviceorientation');
-                return;
-            }
-        } else {
-            // 有効な値が取得できた場合はカウントをリセット
-            this.nullValueCount = 0;
-        }
-        
-        // 通常のhandleOrientationを呼び出し
-        this.handleOrientation(event);
     }
 
     private handleOrientation(event: DeviceOrientationEvent): void {
@@ -389,15 +332,10 @@ export class DeviceOrientationManager {
     }
 
     // デバッグ用メソッド
-    public forceFallbackToRelative(): void {
-        console.log('🔄 強制的にdeviceorientationセンサーに切り替えます');
-        this.setupSensorListener('deviceorientation');
-    }
-
     public resetToAbsoluteSensor(): void {
         if ('ondeviceorientationabsolute' in window) {
-            console.log('🔄 deviceorientationabsoluteセンサーに戻します');
-            this.setupSensorListener('deviceorientationabsolute');
+            console.log('🔄 deviceorientationabsoluteセンサーをリセットします');
+            this.setupSensorListener();
         } else {
             console.warn('⚠️ deviceorientationabsoluteはサポートされていません');
         }

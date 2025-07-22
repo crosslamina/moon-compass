@@ -385,7 +385,6 @@ function resetOrientationCorrectionUI() {
 (window as any).toggleOrientationReverse = () => orientationManager.toggleOrientationReverse();
 (window as any).setOrientationOffset = (offset: number) => orientationManager.setOrientationOffset(offset);
 (window as any).resetOrientationCorrection = () => orientationManager.resetOrientationCorrection();
-(window as any).forceFallbackToRelative = () => orientationManager.forceFallbackToRelative();
 (window as any).resetToAbsoluteSensor = () => orientationManager.resetToAbsoluteSensor();
 (window as any).testSensorValues = (alpha: number, beta: number, gamma: number) => orientationManager.testSensorValues(alpha, beta, gamma);
 
