@@ -49,6 +49,9 @@ export class MoonStatusDisplay {
     ): void {
         if (!this.statusElement) return;
 
+        // デバッグ用：検出レベルの変化をログ出力
+        console.log(`🎯 Detection Level: ${compassState.detectionLevel}, Magnetic Field: ${compassState.magneticField?.toFixed(3)}`);
+
         const detectionLevelHtml = this.createDetectionLevelHtml(compassState);
         const moonTimesHtml = this.createMoonTimesHtml(moonTimes);
 

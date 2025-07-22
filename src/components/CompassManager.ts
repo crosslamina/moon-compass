@@ -552,10 +552,10 @@ export class CompassManager {
         const height = this.canvas.height;
         const centerX = width / 2;
         const centerY = height / 2;
-        const compassRadius = Math.min(width, height) * 0.4;
+        const compassRadius = Math.min(width, height) * 0.48;
         
-        // 最外層装飾の半径を計算（コンパスリングと一致）
-        const outerOffset = compassRadius * 0.05;
+        // 最外層装飾の半径を計算（キャンバスサイズに近づける）
+        const outerOffset = compassRadius * 0.02;
         const outerDecorationRadius = compassRadius + outerOffset;
         
         // 荘厳なアンティーク風背景（最外層装飾と同じ大きさ）
@@ -593,7 +593,7 @@ export class CompassManager {
      * 外側装飾の描画（最外層）
      */
     private drawOuterDecorations(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const outerOffset = compassRadius * 0.05;
+        const outerOffset = compassRadius * 0.02;
         
         // 最外側のベベル効果リング
         const bevelGradient = ctx.createRadialGradient(centerX, centerY, compassRadius + outerOffset - 10, centerX, centerY, compassRadius + outerOffset + 10);
