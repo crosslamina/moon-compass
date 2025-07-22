@@ -459,6 +459,7 @@ body {
     text-shadow: 0 0 10px currentColor;
 }
 
+/* 月時刻表示セクション */
 .moon-times {
     display: flex;
     flex-direction: column;

@@ -8,6 +8,11 @@ export class DialogManager {
     private settingsButton: HTMLButtonElement | null;
     private settingsDialog: HTMLElement | null;
     private closeSettingsDialogButton: HTMLButtonElement | null;
+    
+    // 設定関連
+    private detectionDisplayEnabled: boolean = false;
+    private toggleDetectionDisplayButton: HTMLButtonElement | null;
+    private detectionDisplayStatus: HTMLElement | null;
 
     private constructor() {
         this.infoButton = document.getElementById('info-button') as HTMLButtonElement;
@@ -17,7 +22,12 @@ export class DialogManager {
         this.settingsDialog = document.getElementById('settings-dialog');
         this.closeSettingsDialogButton = document.getElementById('close-settings-dialog') as HTMLButtonElement;
         
+        // 新しい設定関連要素
+        this.toggleDetectionDisplayButton = document.getElementById('toggle-detection-display-btn') as HTMLButtonElement;
+        this.detectionDisplayStatus = document.getElementById('detection-display-status');
+        
         this.setupEventListeners();
+        this.loadSettings();
     }
 
     public static getInstance(): DialogManager {
@@ -44,6 +54,11 @@ export class DialogManager {
 
         if (this.closeSettingsDialogButton) {
             this.closeSettingsDialogButton.onclick = () => this.closeSettingsDialog();
+        }
+
+        // 検出レベル表示設定ボタン
+        if (this.toggleDetectionDisplayButton) {
+            this.toggleDetectionDisplayButton.onclick = () => this.toggleDetectionDisplay();
         }
 
         // ダイアログの背景クリックで閉じる
@@ -169,5 +184,70 @@ export class DialogManager {
     public closeAllDialogs(): void {
         this.closeInfoDialog();
         this.closeSettingsDialog();
+    }
+
+    /**
+     * 設定を読み込み
+     */
+    private loadSettings(): void {
+        // LocalStorageから設定を読み込み
+        const saved = localStorage.getItem('moonapp_detection_display');
+        this.detectionDisplayEnabled = saved === 'true';
+        this.updateDetectionDisplayStatus();
+    }
+
+    /**
+     * 検出レベル表示の切り替え
+     */
+    private toggleDetectionDisplay(): void {
+        this.detectionDisplayEnabled = !this.detectionDisplayEnabled;
+        
+        // LocalStorageに保存
+        localStorage.setItem('moonapp_detection_display', this.detectionDisplayEnabled.toString());
+        
+        // ステータス表示を更新
+        this.updateDetectionDisplayStatus();
+        
+        // 月ステータス表示の更新
+        this.updateMoonStatusDisplayMode();
+    }
+
+    /**
+     * 検出レベル表示ステータスの更新
+     */
+    private updateDetectionDisplayStatus(): void {
+        if (this.detectionDisplayStatus) {
+            const statusText = this.detectionDisplayEnabled ? 'ON' : 'OFF';
+            this.detectionDisplayStatus.textContent = `検出レベル表示: ${statusText}`;
+        }
+
+        if (this.toggleDetectionDisplayButton) {
+            if (this.detectionDisplayEnabled) {
+                this.toggleDetectionDisplayButton.classList.add('active');
+            } else {
+                this.toggleDetectionDisplayButton.classList.remove('active');
+            }
+        }
+    }
+
+    /**
+     * 月ステータス表示モードの更新
+     */
+    private updateMoonStatusDisplayMode(): void {
+        const moonStatusDisplay = document.querySelector('.moon-status-display');
+        if (moonStatusDisplay) {
+            if (this.detectionDisplayEnabled) {
+                moonStatusDisplay.classList.add('detailed');
+            } else {
+                moonStatusDisplay.classList.remove('detailed');
+            }
+        }
+    }
+
+    /**
+     * 検出レベル表示の状態を取得
+     */
+    public isDetectionDisplayEnabled(): boolean {
+        return this.detectionDisplayEnabled;
     }
 }

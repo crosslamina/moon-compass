@@ -1,6 +1,7 @@
 import { MoonTimes } from '../moon';
 import { CompassState } from './CompassManager';
 import { DOMManager } from '../ui/DOMManager';
+import { DialogManager } from '../ui/DialogManager';
 
 /**
  * 月探査ステータス表示管理クラス
@@ -8,10 +9,12 @@ import { DOMManager } from '../ui/DOMManager';
  */
 export class MoonStatusDisplay {
     private domManager: DOMManager;
+    private dialogManager: DialogManager;
     private statusElement: HTMLElement | null = null;
 
     constructor() {
         this.domManager = DOMManager.getInstance();
+        this.dialogManager = DialogManager.getInstance();
         this.createStatusElement();
     }
 
@@ -29,6 +32,11 @@ export class MoonStatusDisplay {
         this.statusElement = document.createElement('div');
         this.statusElement.id = 'moon-status-display';
         this.statusElement.className = 'moon-status-display';
+        
+        // 検出レベル表示の設定を反映
+        if (this.dialogManager.isDetectionDisplayEnabled()) {
+            this.statusElement.classList.add('detailed');
+        }
         
         // 挿入ポイントに挿入（ボタンの前）
         const insertionPoint = document.getElementById('status-insertion-point');
