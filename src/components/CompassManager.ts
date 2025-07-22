@@ -1,6 +1,6 @@
 import { DOMManager } from '../ui/DOMManager';
 import { StateManager } from '../state/StateManager';
-import { MoonData, drawMoonPhaseSmall } from '../moon';
+import { MoonData, drawMoonPhaseSmall, calculateAngleDifference } from '../moon';
 
 /**
  * コンパス状態の型定義
@@ -198,6 +198,9 @@ export class CompassManager {
     private updateIntervalId: number | null = null;
     private unsubscribers: (() => void)[] = [];
     
+    // パフォーマンス設定
+    private detailLevel: 'high' | 'medium' | 'low' = 'medium';
+    
     // 角度差の平滑化用
     private angleDiffHistory: number[] = [];
     private readonly ANGLE_DIFF_HISTORY_SIZE = 5;
@@ -233,6 +236,23 @@ export class CompassManager {
         this.startAnimation();
         this.setupGlobalAudioContextResumption();
         console.log('✅ CompassManager を初期化しました');
+    }
+
+    /**
+     * キャンバスサイズに基づいて詳細レベルを自動調整
+     */
+    private updateDetailLevel(): void {
+        if (!this.canvas) return;
+        
+        const canvasSize = Math.min(this.canvas.width, this.canvas.height);
+        
+        if (canvasSize >= 800) {
+            this.detailLevel = 'high';
+        } else if (canvasSize >= 400) {
+            this.detailLevel = 'medium';
+        } else {
+            this.detailLevel = 'low';
+        }
     }
 
     /**
@@ -381,8 +401,11 @@ export class CompassManager {
         this.canvas.style.width = targetSize + 'px';
         this.canvas.style.height = targetSize + 'px';
         
+        // 詳細レベルを更新
+        this.updateDetailLevel();
+        
         if (import.meta.env.DEV) {
-            console.log(`Canvas resized: ${targetSize}px (canvas: ${canvasSize}px, dpr: ${dpr})`);
+            console.log(`Canvas resized: ${targetSize}px (canvas: ${canvasSize}px, dpr: ${dpr}), detail level: ${this.detailLevel}`);
         }
     }
 
@@ -417,8 +440,8 @@ export class CompassManager {
             return;
         }
 
-        const deviceElevation = this.calculateDeviceElevation(deviceOrientation.beta);
-        const angleDiff = this.calculateAngleDifference(
+        const deviceElevation = deviceOrientation.beta;
+        const angleDiff = calculateAngleDifference(
             deviceOrientation.alpha,
             deviceElevation,
             moonData.azimuth,
@@ -502,29 +525,6 @@ export class CompassManager {
     /**
      * デバイス仰角の計算
      */
-    private calculateDeviceElevation(beta: number): number {
-        
-        return beta;
-    }
-
-    /**
-     * 角度差の計算
-     */
-    private calculateAngleDifference(
-        deviceAzimuth: number,
-        deviceAltitude: number,
-        moonAzimuth: number,
-        moonAltitude: number
-    ): number {
-        let azimuthDiff = Math.abs(deviceAzimuth - moonAzimuth);
-        if (azimuthDiff > 180) {
-            azimuthDiff = 360 - azimuthDiff;
-        }
-        
-        const altitudeDiff = Math.abs(deviceAltitude - moonAltitude);
-        return Math.sqrt(azimuthDiff * azimuthDiff + altitudeDiff * altitudeDiff);
-    }
-
     /**
      * 針の長さ計算（コンパス半径ベース）
      */
@@ -586,7 +586,11 @@ export class CompassManager {
         this.drawMainFrame(ctx, centerX, centerY, compassRadius);
         this.drawInnerDecorations(ctx, centerX, centerY, compassRadius);
         this.drawDecorativeNotches(ctx, centerX, centerY, compassRadius);
-        this.drawCelestialOrnaments(ctx, centerX, centerY, compassRadius);
+        
+        // 天体装飾は中〜高詳細レベルでのみ描画
+        if (this.detailLevel !== 'low') {
+            this.drawCelestialOrnaments(ctx, centerX, centerY, compassRadius);
+        }
     }
 
     /**
@@ -821,10 +825,14 @@ export class CompassManager {
         this.drawMajorNotches(ctx, centerX, centerY, compassRadius);
         
         // マイナー刻み（5度間隔）
-        this.drawMinorNotches(ctx, centerX, centerY, compassRadius);
+        if (this.detailLevel !== 'low') {
+            this.drawMinorNotches(ctx, centerX, centerY, compassRadius);
+        }
         
-        // マイクロ刻み（1度間隔、特定範囲のみ）
-        this.drawMicroNotches(ctx, centerX, centerY, compassRadius);
+        // マイクロ刻み（1度間隔、特定範囲のみ）- 高詳細モードのみ
+        if (this.detailLevel === 'high') {
+            this.drawMicroNotches(ctx, centerX, centerY, compassRadius);
+        }
     }
 
     /**
@@ -1159,7 +1167,7 @@ export class CompassManager {
         
         // デバイス針（装飾的なクラシック針）
         if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
-            const deviceElevation = this.calculateDeviceElevation(deviceOrientation.beta);
+            const deviceElevation = deviceOrientation.beta;
             const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
             const deviceNeedleAngle = (deviceOrientation.alpha - 90) * Math.PI / 180;
             
