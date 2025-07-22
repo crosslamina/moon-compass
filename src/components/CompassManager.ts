@@ -523,7 +523,7 @@ export class CompassManager {
         const mainMarkLength = compassRadius * 0.1; // 主要方位マークの長さをさらに増加（8%→10%）
         const midMarkLength = compassRadius * 0.08; // 中間マークの長さをさらに増加（6.5%→8%）
         const minorMarkLength = compassRadius * 0.06; // 小さなマークの長さをさらに増加（5%→6%）
-        const labelOffset = compassRadius * 0.13; // ラベルのオフセットをさらに増加（11%→13%）
+        const labelOffset = compassRadius * 0.18; // ラベルを目盛板より外側に配置（負の値で外側へ）
         
         // ライン幅もコンパス半径ベースで計算
         const mainLineWidth = Math.max(2, compassRadius * 0.013); // 主要ラインをさらに太く（1%→1.3%）
@@ -531,7 +531,7 @@ export class CompassManager {
         const minorLineWidth = Math.max(1, compassRadius * 0.005); // 小さなラインをさらに太く（0.4%→0.5%）
         
         // フォントサイズをコンパス半径ベースで計算
-        const fontSize = Math.max(16, compassRadius * 0.08); // フォントサイズをさらに大幅増加（6%→8%）
+        const fontSize = Math.max(20, compassRadius * 0.12); // フォントサイズを大幅増加（8%→12%）
         
         for (let angle = 0; angle < 360; angle += 10) {
             const radian = (angle - 90) * Math.PI / 180;
