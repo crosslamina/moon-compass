@@ -1,5 +1,6 @@
-import { getMoonData, getMoonTimes, MoonData, calculateAngleDifference, resetBlinkTimer } from './moon';
+import { getMoonData, getMoonTimes, MoonData, MoonTimes, calculateAngleDifference, resetBlinkTimer } from './moon';
 import { CompassManager } from './components/CompassManager';
+import { MoonStatusDisplay } from './components/MoonStatusDisplay';
 import { DialogManager } from './ui/DialogManager';
 import { StateManager } from './state/StateManager';
 import { LocationManager } from './location/LocationManager';
@@ -27,6 +28,7 @@ const orientationManager = DeviceOrientationManager.getInstance();
 const accuracyManager = AccuracyDisplayManager.getInstance();
 const moonDisplayManager = MoonDisplayManager.getInstance();
 let compassManager: CompassManager | null = null;
+let moonStatusDisplay: MoonStatusDisplay | null = null;
 
 /**
  * Canvasのサイズをレスポンシブに調整
@@ -74,6 +76,16 @@ async function initializeCompassManager() {
     }
 }
 
+// MoonStatusDisplayの初期化
+function initializeMoonStatusDisplay() {
+    try {
+        moonStatusDisplay = new MoonStatusDisplay();
+        console.log('✅ MoonStatusDisplayを初期化しました');
+    } catch (error) {
+        console.error('❌ MoonStatusDisplayの初期化に失敗:', error);
+    }
+}
+
 // アプリケーション全体の初期化
 async function initializeApp() {
     try {
@@ -86,6 +98,7 @@ async function initializeApp() {
         accuracyManager.initialize();
         moonDisplayManager.initialize();
         await initializeCompassManager();
+        initializeMoonStatusDisplay();
         
         // イベントリスナーの設定
         setupEventListeners();
@@ -107,6 +120,7 @@ async function initializeApp() {
 
 let currentPosition: GeolocationPosition | null = null;
 let currentMoonData: MoonData | null = null;
+let currentMoonTimes: MoonTimes | null = null;
 
 // イベントリスナーの設定
 function setupEventListeners() {
@@ -170,8 +184,9 @@ function updateDisplay() {
     const moonData = getMoonData(latitude, longitude);
     const moonTimes = getMoonTimes(latitude, longitude);
     
-    // 現在の月データを保存
+    // 現在の月データと月時刻を保存
     currentMoonData = moonData;
+    currentMoonTimes = moonTimes;
     
     // StateManagerに月データを設定
     stateManager.set('moonData', moonData);
@@ -181,6 +196,12 @@ function updateDisplay() {
     
     // 月表示を更新
     moonDisplayManager.updateMoonDisplay(moonData, moonTimes, currentPosition, deviceOrientation);
+    
+    // 月ステータス表示を更新
+    if (moonStatusDisplay && compassManager) {
+        const compassState = compassManager.getCompassState();
+        moonStatusDisplay.updateStatus(compassState, moonTimes);
+    }
     
     // 精度表示を更新
     updateAccuracyDisplay();

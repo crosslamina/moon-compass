@@ -554,11 +554,16 @@ export class CompassManager {
         const centerY = height / 2;
         const compassRadius = Math.min(width, height) * 0.4;
         
-        // 荘厳なアンティーク風背景
-        const backgroundGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height));
+        // 最外層装飾の半径を計算（コンパスリングと一致）
+        const outerOffset = compassRadius * 0.05;
+        const outerDecorationRadius = compassRadius + outerOffset;
+        
+        // 荘厳なアンティーク風背景（最外層装飾と同じ大きさ）
+        const backgroundGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, outerDecorationRadius);
         backgroundGradient.addColorStop(0, '#2F1B14'); // ダークブラウン
-        backgroundGradient.addColorStop(0.6, '#1A0F0A'); // より暗いブラウン
-        backgroundGradient.addColorStop(1, '#0D0806'); // 最も暗いブラウン
+        backgroundGradient.addColorStop(0.4, '#1A0F0A'); // より暗いブラウン
+        backgroundGradient.addColorStop(0.8, '#0A0605'); // さらに暗く
+        backgroundGradient.addColorStop(1, '#000000'); // アプリ背景と同じ純粋な黒
         
         ctx.fillStyle = backgroundGradient;
         ctx.fillRect(0, 0, width, height);
@@ -569,7 +574,7 @@ export class CompassManager {
         this.drawNeedles(ctx, centerX, centerY, compassRadius);
         this.drawCenter(ctx, centerX, centerY, compassRadius);
         this.drawMagneticField(ctx, centerX, centerY, compassRadius);
-        this.drawDetectionLevel(ctx, centerX, centerY, compassRadius);
+        // 検出レベルと月時刻表示は別コンポーネントに移行
     }
 
     /**
@@ -1525,62 +1530,6 @@ export class CompassManager {
             ctx.arc(x, y, particleSize, 0, Math.PI * 2);
             ctx.fill();
         }
-    }
-
-    /**
-     * 検出レベル表示（日本語）
-     */
-    private drawDetectionLevel(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const levelStyles = {
-            'searching': { 
-                color: '#4169E1', 
-                text: '探索中'
-            },
-            'weak': { 
-                color: '#32CD32', 
-                text: '微弱検出'
-            },
-            'strong': { 
-                color: '#FFD700', 
-                text: '強磁場'
-            },
-            'locked': { 
-                color: '#FF4500', 
-                text: '月磁場！'
-            }
-        };
-        
-        const style = levelStyles[this.compassState.detectionLevel];
-        const fontSize = Math.max(16, compassRadius * 0.06);
-        const textOffset = compassRadius * 0.12;
-        
-        // 背景装飾
-        if (this.compassState.detectionLevel === 'locked') {
-            const pulseRadius = compassRadius * (1.1 + Math.sin(Date.now() * 0.01) * 0.05);
-            const pulseGradient = ctx.createRadialGradient(centerX, centerY, compassRadius, centerX, centerY, pulseRadius);
-            pulseGradient.addColorStop(0, 'rgba(255, 69, 0, 0.1)');
-            pulseGradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
-            
-            ctx.fillStyle = pulseGradient;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        // メインテキストの影
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.font = `bold ${fontSize}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(style.text, centerX + 2, centerY + compassRadius + textOffset + 2);
-        
-        // メインテキスト
-        ctx.fillStyle = style.color;
-        ctx.font = `bold ${fontSize}px serif`;
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-        ctx.lineWidth = 1;
-        ctx.strokeText(style.text, centerX, centerY + compassRadius + textOffset);
-        ctx.fillText(style.text, centerX, centerY + compassRadius + textOffset);
     }
 
     /**

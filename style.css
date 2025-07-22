@@ -340,6 +340,156 @@ body {
     transform: translateY(-1px);
 }
 
+/* 月ステータス表示コンポーネント */
+.moon-status-display {
+    margin: 20px auto;
+    max-width: 600px;
+    padding: 0 20px;
+}
+
+.status-container {
+    background: rgba(44, 62, 80, 0.9);
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px solid rgba(52, 73, 94, 0.8);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.detection-level {
+    text-align: center;
+    padding: 15px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.detection-level.pulse {
+    animation: statusPulse 1s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(255, 69, 0, 0.3);
+    }
+    50% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(255, 69, 0, 0.6);
+    }
+}
+
+.detection-icon {
+    font-size: 1.3em;
+}
+
+.detection-text {
+    text-shadow: 0 0 10px currentColor;
+}
+
+.moon-times {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.moon-time {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.moon-time:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(5px);
+}
+
+.moon-time.future {
+    border-left-color: #ffd700;
+}
+
+.moon-time.past {
+    border-left-color: #666;
+    opacity: 0.7;
+}
+
+.moon-time.future .time-value,
+.moon-time.future .time-countdown {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.moon-time.past .time-value {
+    color: #888;
+}
+
+.time-icon {
+    font-size: 1.2em;
+    min-width: 24px;
+}
+
+.time-label {
+    color: #ecf0f1;
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.time-value {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.time-countdown {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.no-data {
+    text-align: center;
+    color: #e74c3c;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 600px) {
+    .moon-status-display {
+        margin: 15px auto;
+        padding: 0 15px;
+    }
+    
+    .status-container {
+        padding: 15px;
+    }
+    
+    .detection-level {
+        font-size: 1em;
+        padding: 12px;
+    }
+    
+    .moon-time {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .time-label {
+        min-width: auto;
+    }
+}
+
 .control-btn:active {
     transform: translateY(0);
 }
