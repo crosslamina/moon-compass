@@ -15,7 +15,7 @@ export interface CompassState {
     magneticNoise: number;
     lastTick: number;
     tickInterval: number;
-    detectionLevel: 'calibrating' | 'searching' | 'weak' | 'strong' | 'locked';
+    detectionLevel: 'searching' | 'weak' | 'strong' | 'locked';
 }
 
 /**
@@ -71,8 +71,7 @@ class CompassAudio {
             let duration = 0.1;
             
             switch (detectionLevel) {
-                case 'calibrating': baseFreq = 150; duration = 0.05; break;
-                case 'searching': baseFreq = 200; duration = 0.08; break;
+                case 'searching': baseFreq = 150; duration = 0.05; break;
                 case 'weak': baseFreq = 300; duration = 0.12; break;
                 case 'strong': baseFreq = 450; duration = 0.15; break;
                 case 'locked': baseFreq = 600; duration = 0.2; break;
@@ -162,7 +161,7 @@ export class CompassManager {
         magneticNoise: 0,
         lastTick: 0,
         tickInterval: 1000,
-        detectionLevel: 'calibrating'
+        detectionLevel: 'searching'
     };
 
     constructor() {
@@ -387,10 +386,8 @@ export class CompassManager {
             newLevel = 'strong';
         } else if (smoothedAngleDiff <= 45 + (currentLevel === 'strong' ? hysteresis : 0)) {
             newLevel = 'weak';
-        } else if (smoothedAngleDiff <= 90 + (currentLevel === 'weak' ? hysteresis : 0)) {
-            newLevel = 'searching';
         } else {
-            newLevel = 'calibrating';
+            newLevel = 'searching';
         }
         
         // レベル変更時のログ出力（デバッグ用）
@@ -739,7 +736,6 @@ export class CompassManager {
      */
     private drawDetectionLevel(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
         const levelColors = {
-            'calibrating': '#888888',
             'searching': '#4169e1',
             'weak': '#32cd32',
             'strong': '#ffd700',
@@ -747,7 +743,6 @@ export class CompassManager {
         };
         
         const levelNames = {
-            'calibrating': '校正中',
             'searching': '探索中',
             'weak': '微弱検出',
             'strong': '強磁場',
