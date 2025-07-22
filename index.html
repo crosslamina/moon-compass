@@ -7,29 +7,32 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 権限関連のボタン -->
-    <button id="location-permission-button" style="display: none;">位置情報の許可</button>
-    <button id="permission-button" style="display: none;">センサー権限を許可</button>
-    <div id="location-status"></div>
-    
-    <!-- メインコンパス -->
-    <canvas id="compass-canvas"></canvas>
-    
-    <!-- コンパス情報（凡例） -->
-    <div id="compass-info">
-        <div class="needle-legend">
-            <span style="color: #dc143c;">●</span> 赤針: あなたの方向
-            <br><span style="color: #ffd700;">●</span> 金針: 月の位置
+    <!-- メインコンテンツコンテナ -->
+    <div class="main-container">
+        <!-- 権限関連のボタン -->
+        <button id="location-permission-button" style="display: none;">位置情報の許可</button>
+        <button id="permission-button" style="display: none;">センサー権限を許可</button>
+        <div id="location-status"></div>
+        
+        <!-- メインコンパス -->
+        <canvas id="compass-canvas"></canvas>
+        
+        <!-- コンパス情報（凡例） -->
+        <div id="compass-info">
+            <div class="needle-legend">
+                <span style="color: #dc143c;">●</span> 赤針: あなたの方向
+                <br><span style="color: #ffd700;">●</span> 金針: 月の位置
+            </div>
         </div>
-    </div>
-    
-    <!-- MoonStatusDisplayの挿入ポイント（ここに動的に挿入される） -->
-    <div id="status-insertion-point"></div>
-    
-    <!-- 設定と情報ボタン（最後に配置） -->
-    <div class="button-group">
-        <button id="settings-button" class="info-btn">⚙️</button>
-        <button id="info-button" class="info-btn">ℹ️</button>
+        
+        <!-- MoonStatusDisplayの挿入ポイント（ここに動的に挿入される） -->
+        <div id="status-insertion-point"></div>
+        
+        <!-- 設定と情報ボタン（最後に配置） -->
+        <div class="button-group">
+            <button id="settings-button" class="info-btn">⚙️</button>
+            <button id="info-button" class="info-btn">ℹ️</button>
+        </div>
     </div>
     
     <!-- 設定ダイアログ -->

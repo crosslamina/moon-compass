@@ -1,9 +1,10 @@
 body {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
     margin: 0;
     padding: 20px;
     background: #000000;
@@ -11,9 +12,22 @@ body {
     color: #ecf0f1;
     text-align: center;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
+/* メインコンテンツコンテナ - ビューポート内に収まるように調整 */
+.main-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    gap: 15px;
+    flex-grow: 1;
+    justify-content: center;
+    min-height: 0;
+}
 
 #moon-detector {
     margin: 0;
@@ -180,12 +194,14 @@ body {
     border-radius: 15px;
     width: 90%;
     max-width: 500px;
-    max-height: 80vh;
+    max-height: 85vh;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     border: 1px solid #34495e;
     transform: scale(0.9);
     transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .dialog-overlay[style*="flex"] .dialog-content {
@@ -224,9 +240,10 @@ body {
 
 .dialog-body {
     padding: 20px;
-    max-height: 60vh;
+    max-height: calc(85vh - 120px);
     overflow-y: auto;
     color: #ecf0f1;
+    flex-grow: 1;
 }
 
 /* 情報セクションのスタイル */
@@ -353,22 +370,31 @@ body {
     transform: translateY(-1px);
 }
 
-/* 月ステータス表示コンポーネント */
+/* 月ステータス表示コンポーネント - ミニマル版 */
 .moon-status-display {
-    margin: 15px auto 10px auto;
+    margin: 12px auto 8px auto;
     max-width: 600px;
     padding: 0 20px;
 }
 
 .status-container {
-    background: rgba(44, 62, 80, 0.9);
-    border-radius: 15px;
-    padding: 20px;
-    border: 1px solid rgba(52, 73, 94, 0.8);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    background: rgba(44, 62, 80, 0.92);
+    border-radius: 12px;
+    padding: 18px;
+    border: 1px solid rgba(52, 73, 94, 0.7);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.35);
+    transition: all 0.3s ease;
 }
 
+.status-container:hover {
+    background: rgba(52, 73, 94, 0.95);
+    border-color: rgba(255, 215, 0, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* 検出レベル表示 - デフォルトでは非表示 */
 .detection-level {
     text-align: center;
     padding: 15px;
@@ -377,15 +403,41 @@ body {
     margin-bottom: 20px;
     font-size: 1.2em;
     font-weight: bold;
-    display: flex;
+    display: none; /* デフォルトで非表示 */
     align-items: center;
     justify-content: center;
     gap: 10px;
     transition: all 0.3s ease;
 }
 
+/* 詳細モード時は表示 */
+.moon-status-display.detailed .detection-level {
+    display: flex;
+}
+
 .detection-level.pulse {
     animation: statusPulse 1s ease-in-out infinite;
+}
+
+/* 月時刻表示は常に表示 */
+.moon-times {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ミニマル版では月時刻のスタイルをよりシンプルに */
+.moon-status-display:not(.detailed) .moon-times {
+    gap: 8px;
+}
+
+.moon-status-display:not(.detailed) .moon-time {
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.moon-status-display:not(.detailed) .time-icon {
+    font-size: 1em;
 }
 
 @keyframes statusPulse {
@@ -565,10 +617,14 @@ body {
     background: #000000;
     display: block;
     margin: 0 auto;
+    max-width: min(400px, 70vw);
+    max-height: min(400px, 50vh);
+    width: auto;
+    height: auto;
 }
 
 #compass-info {
-    margin: 15px auto 10px auto;
+    margin: 12px auto 8px auto;
     font-family: 'Arial', sans-serif;
     color: #ecf0f1;
     font-size: 13px;
@@ -577,16 +633,24 @@ body {
 
 .needle-legend {
     margin: 0;
-    padding: 12px 16px;
-    background: rgba(44, 62, 80, 0.9);
-    border-radius: 10px;
-    font-size: 13px;
-    line-height: 1.6;
+    padding: 10px 14px;
+    background: rgba(44, 62, 80, 0.85);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
     color: #ecf0f1;
-    border: 1px solid #34495e;
-    backdrop-filter: blur(5px);
+    border: 1px solid rgba(52, 73, 94, 0.6);
+    backdrop-filter: blur(8px);
     text-align: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    transition: all 0.3s ease;
+}
+
+.needle-legend:hover {
+    background: rgba(52, 73, 94, 0.9);
+    border-color: rgba(52, 152, 219, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
 }
 
 /* ステータス挿入ポイント */
@@ -968,4 +1032,52 @@ body {
     font-size: 12px;
     color: #bdc3c7;
     background: rgba(255, 255, 255, 0.03);
+}
+
+/* レスポンシブデザイン - 小さな画面向け調整 */
+@media (max-height: 600px) {
+    body {
+        padding: 10px;
+    }
+    
+    .main-container {
+        gap: 10px;
+    }
+    
+    #compass-canvas {
+        max-height: min(300px, 40vh);
+    }
+    
+    .button-group {
+        margin: 15px 0 10px 0;
+    }
+    
+    .dialog-content {
+        max-height: 90vh;
+    }
+    
+    .dialog-body {
+        max-height: calc(90vh - 120px);
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+    
+    #compass-canvas {
+        max-width: 80vw;
+    }
+    
+    .dialog-content {
+        width: 95%;
+    }
+    
+    .button-group .info-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1em;
+    }
 }
