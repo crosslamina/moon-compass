@@ -64,6 +64,20 @@ class CompassAudio {
     playTick(magneticStrength: number, detectionLevel: CompassState['detectionLevel']): void {
         if (!this.audioContext || !this.gainNode || this.isMuted) return;
 
+        // オーディオコンテキストが一時停止状態の場合は再開を試みる
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume().catch(error => {
+                console.warn('オーディオコンテキストの再開に失敗:', error);
+                return;
+            });
+            return; // 再開処理中は音を再生しない
+        }
+
+        // オーディオコンテキストが実行状態でない場合は音を再生しない
+        if (this.audioContext.state !== 'running') {
+            return;
+        }
+
         try {
             const now = this.audioContext.currentTime;
             
@@ -106,6 +120,20 @@ class CompassAudio {
     playMagneticWarning(): void {
         if (!this.audioContext || !this.gainNode || this.isMuted) return;
 
+        // オーディオコンテキストが一時停止状態の場合は再開を試みる
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume().catch(error => {
+                console.warn('オーディオコンテキストの再開に失敗:', error);
+                return;
+            });
+            return; // 再開処理中は音を再生しない
+        }
+
+        // オーディオコンテキストが実行状態でない場合は音を再生しない
+        if (this.audioContext.state !== 'running') {
+            return;
+        }
+
         try {
             const now = this.audioContext.currentTime;
             const frequencies = [220, 277, 330];
@@ -131,6 +159,29 @@ class CompassAudio {
         } catch (error) {
             console.error('磁気異常警告音の再生に失敗:', error);
         }
+    }
+
+    /**
+     * オーディオコンテキストの再開を試みる
+     */
+    async resumeAudioContext(): Promise<void> {
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+            try {
+                await this.audioContext.resume();
+                console.log('✅ オーディオコンテキストが再開されました');
+            } catch (error) {
+                console.warn('❌ オーディオコンテキストの再開に失敗:', error);
+            }
+        } else if (this.audioContext) {
+            console.log(`🔍 オーディオコンテキストの状態: ${this.audioContext.state}`);
+        }
+    }
+
+    /**
+     * オーディオコンテキストの状態を取得
+     */
+    getAudioContextState(): string {
+        return this.audioContext ? this.audioContext.state : 'not initialized';
     }
 }
 
@@ -180,6 +231,7 @@ export class CompassManager {
         await this.audio.initialize();
         this.setupUpdateLoop();
         this.startAnimation();
+        this.setupGlobalAudioContextResumption();
         console.log('✅ CompassManager を初期化しました');
     }
 
@@ -225,6 +277,9 @@ export class CompassManager {
             volumeSlider.addEventListener('input', (e) => {
                 const volume = parseInt((e.target as HTMLInputElement).value) / 100;
                 this.audio.setVolume(volume);
+                
+                // ユーザーインタラクションによりオーディオコンテキストを再開
+                this.audio.resumeAudioContext();
             });
         }
     }
@@ -238,6 +293,9 @@ export class CompassManager {
             muteButton.addEventListener('click', () => {
                 const isMuted = this.audio.getMuted();
                 this.audio.setMuted(!isMuted);
+                
+                // ユーザーインタラクションによりオーディオコンテキストを再開
+                this.audio.resumeAudioContext();
                 
                 if (isMuted) {
                     muteButton.classList.remove('muted');
@@ -265,6 +323,9 @@ export class CompassManager {
                 if (sensitivityValue) {
                     sensitivityValue.textContent = value.toString();
                 }
+                
+                // ユーザーインタラクションによりオーディオコンテキストを再開
+                this.audio.resumeAudioContext();
             });
         }
     }
@@ -282,6 +343,24 @@ export class CompassManager {
         });
         
         this.unsubscribers.push(unsubscribe1, unsubscribe2);
+    }
+
+    /**
+     * グローバルなオーディオコンテキスト再開の設定
+     * 最初のユーザーインタラクションでオーディオコンテキストを確実に開始する
+     */
+    private setupGlobalAudioContextResumption(): void {
+        const resumeAudioOnInteraction = () => {
+            this.audio.resumeAudioContext();
+            // 一度実行したらイベントリスナーを削除
+            document.removeEventListener('click', resumeAudioOnInteraction);
+            document.removeEventListener('touchstart', resumeAudioOnInteraction);
+            document.removeEventListener('keydown', resumeAudioOnInteraction);
+        };
+
+        document.addEventListener('click', resumeAudioOnInteraction);
+        document.addEventListener('touchstart', resumeAudioOnInteraction);
+        document.addEventListener('keydown', resumeAudioOnInteraction);
     }
 
     /**
@@ -475,8 +554,13 @@ export class CompassManager {
         const centerY = height / 2;
         const compassRadius = Math.min(width, height) * 0.4;
         
-        // 背景クリア
-        ctx.fillStyle = '#1a0f0a';
+        // 荘厳なアンティーク風背景
+        const backgroundGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.max(width, height));
+        backgroundGradient.addColorStop(0, '#2F1B14'); // ダークブラウン
+        backgroundGradient.addColorStop(0.6, '#1A0F0A'); // より暗いブラウン
+        backgroundGradient.addColorStop(1, '#0D0806'); // 最も暗いブラウン
+        
+        ctx.fillStyle = backgroundGradient;
         ctx.fillRect(0, 0, width, height);
         
         this.drawCompassRing(ctx, centerX, centerY, compassRadius);
@@ -489,48 +573,377 @@ export class CompassManager {
     }
 
     /**
-     * コンパスリングの描画
+     * コンパスリングの描画（豪華なアンティーク風）
      */
     private drawCompassRing(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const ringThickness = compassRadius * 0.02; // 外枠の太さをさらに増加（1.5%→2%）
-        const innerRingThickness = compassRadius * 0.012; // 内側リングの太さをさらに増加（0.8%→1.2%）
-        const innerRingOffset = compassRadius * 0.06; // 内側リングのオフセットをさらに増加（5%→6%）
+        // 多層の装飾リング構成
+        this.drawOuterDecorations(ctx, centerX, centerY, compassRadius);
+        this.drawMainFrame(ctx, centerX, centerY, compassRadius);
+        this.drawInnerDecorations(ctx, centerX, centerY, compassRadius);
+        this.drawDecorativeNotches(ctx, centerX, centerY, compassRadius);
+        this.drawCelestialOrnaments(ctx, centerX, centerY, compassRadius);
+    }
+
+    /**
+     * 外側装飾の描画（最外層）
+     */
+    private drawOuterDecorations(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        const outerOffset = compassRadius * 0.05;
         
-        // 外枠
-        ctx.strokeStyle = '#8b4513';
-        ctx.lineWidth = Math.max(3, ringThickness);
+        // 最外側のベベル効果リング
+        const bevelGradient = ctx.createRadialGradient(centerX, centerY, compassRadius + outerOffset - 10, centerX, centerY, compassRadius + outerOffset + 10);
+        bevelGradient.addColorStop(0, '#1a1a1a');
+        bevelGradient.addColorStop(0.3, '#4a4a4a');
+        bevelGradient.addColorStop(0.7, '#2a2a2a');
+        bevelGradient.addColorStop(1, '#0a0a0a');
+        
+        ctx.strokeStyle = bevelGradient;
+        ctx.lineWidth = Math.max(8, compassRadius * 0.04);
         ctx.beginPath();
-        ctx.arc(centerX, centerY, compassRadius, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, compassRadius + outerOffset, 0, Math.PI * 2);
         ctx.stroke();
         
-        // 内側リング
-        ctx.strokeStyle = '#cd853f';
-        ctx.lineWidth = Math.max(2, innerRingThickness);
+        // ハイライトリング
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+        ctx.lineWidth = Math.max(2, compassRadius * 0.01);
         ctx.beginPath();
-        ctx.arc(centerX, centerY, compassRadius - innerRingOffset, 0, Math.PI * 2);
+        ctx.arc(centerX - 1, centerY - 1, compassRadius + outerOffset - 2, 0, Math.PI * 2);
         ctx.stroke();
     }
 
     /**
-     * 方位目盛りの描画
+     * メインフレームの描画
+     */
+    private drawMainFrame(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        const ringThickness = compassRadius * 0.045;
+        
+        // 深い影効果
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.lineWidth = Math.max(6, ringThickness * 1.2);
+        ctx.beginPath();
+        ctx.arc(centerX + 3, centerY + 3, compassRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // メインの真鍮風グラデーション（より豪華に）
+        const mainGradient = ctx.createLinearGradient(centerX - compassRadius, centerY - compassRadius, centerX + compassRadius, centerY + compassRadius);
+        mainGradient.addColorStop(0, '#8B4513'); // サドルブラウン
+        mainGradient.addColorStop(0.15, '#CD853F'); // ペルー
+        mainGradient.addColorStop(0.35, '#DAA520'); // ゴールデンロッド
+        mainGradient.addColorStop(0.5, '#FFD700'); // ゴールド
+        mainGradient.addColorStop(0.65, '#FFA500'); // オレンジ
+        mainGradient.addColorStop(0.85, '#FF8C00'); // ダークオレンジ
+        mainGradient.addColorStop(1, '#B8860B'); // ダークゴールデンロッド
+        
+        ctx.strokeStyle = mainGradient;
+        ctx.lineWidth = Math.max(6, ringThickness);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, compassRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // 上部ハイライト
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = Math.max(3, ringThickness * 0.5);
+        ctx.beginPath();
+        ctx.arc(centerX - 1, centerY - 2, compassRadius - 1, Math.PI * 0.8, Math.PI * 1.2);
+        ctx.stroke();
+    }
+
+    /**
+     * 内側装飾の描画
+     */
+    private drawInnerDecorations(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        const innerOffset1 = compassRadius * 0.06;
+        const innerOffset2 = compassRadius * 0.12;
+        
+        // 第一内側リング（アンティークブロンズ）
+        const innerGradient1 = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, compassRadius - innerOffset1);
+        innerGradient1.addColorStop(0, '#F4A460'); // サンディブラウン
+        innerGradient1.addColorStop(0.5, '#CD7F32'); // ブロンズ
+        innerGradient1.addColorStop(1, '#8B4513'); // サドルブラウン
+        
+        ctx.strokeStyle = innerGradient1;
+        ctx.lineWidth = Math.max(4, compassRadius * 0.025);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, compassRadius - innerOffset1, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // 第二内側リング（より細い装飾）
+        const innerGradient2 = ctx.createLinearGradient(centerX - compassRadius, centerY - compassRadius, centerX + compassRadius, centerY + compassRadius);
+        innerGradient2.addColorStop(0, '#D2B48C'); // タン
+        innerGradient2.addColorStop(0.5, '#DEB887'); // バーリーウッド
+        innerGradient2.addColorStop(1, '#BC8F8F'); // ロージーブラウン
+        
+        ctx.strokeStyle = innerGradient2;
+        ctx.lineWidth = Math.max(2, compassRadius * 0.015);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, compassRadius - innerOffset2, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // エンボス効果の内側ハイライト
+        ctx.strokeStyle = 'rgba(255, 248, 220, 0.3)';
+        ctx.lineWidth = Math.max(1, compassRadius * 0.008);
+        ctx.beginPath();
+        ctx.arc(centerX - 0.5, centerY - 0.5, compassRadius - innerOffset2 + 1, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    /**
+     * 天体装飾の描画（星座風装飾）
+     */
+    private drawCelestialOrnaments(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        const ornamentRadius = compassRadius * 1.08;
+        const starSize = compassRadius * 0.015;
+        
+        // 4つの主要方位に星の装飾
+        const mainDirections = [0, 90, 180, 270]; // N, E, S, W
+        
+        for (const angle of mainDirections) {
+            const radian = (angle - 90) * Math.PI / 180;
+            const x = centerX + Math.cos(radian) * ornamentRadius;
+            const y = centerY + Math.sin(radian) * ornamentRadius;
+            
+            this.drawOrnamentalStar(ctx, x, y, starSize, angle);
+        }
+        
+        // 8つの副方位に小さな装飾
+        const subDirections = [45, 135, 225, 315]; // NE, SE, SW, NW
+        
+        for (const angle of subDirections) {
+            const radian = (angle - 90) * Math.PI / 180;
+            const x = centerX + Math.cos(radian) * (ornamentRadius * 0.95);
+            const y = centerY + Math.sin(radian) * (ornamentRadius * 0.95);
+            
+            this.drawOrnamentalDiamond(ctx, x, y, starSize * 0.7);
+        }
+    }
+
+    /**
+     * 装飾的な星の描画
+     */
+    private drawOrnamentalStar(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, rotation: number): void {
+        const points = 8;
+        const outerRadius = size;
+        const innerRadius = size * 0.4;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation * Math.PI / 180);
+        
+        // 星の影
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.beginPath();
+        for (let i = 0; i < points * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+            const angle = (i * Math.PI) / points;
+            const px = Math.cos(angle) * radius + 1;
+            const py = Math.sin(angle) * radius + 1;
+            
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        
+        // 星本体
+        const starGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, outerRadius);
+        starGradient.addColorStop(0, '#FFD700');
+        starGradient.addColorStop(0.7, '#DAA520');
+        starGradient.addColorStop(1, '#B8860B');
+        
+        ctx.fillStyle = starGradient;
+        ctx.beginPath();
+        for (let i = 0; i < points * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+            const angle = (i * Math.PI) / points;
+            const px = Math.cos(angle) * radius;
+            const py = Math.sin(angle) * radius;
+            
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        
+        // ハイライト
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(-size * 0.2, -size * 0.2, size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    /**
+     * 装飾的なダイヤモンドの描画
+     */
+    private drawOrnamentalDiamond(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {
+        ctx.save();
+        ctx.translate(x, y);
+        
+        // ダイヤモンドの影
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.beginPath();
+        ctx.moveTo(1, -size + 1);
+        ctx.lineTo(size + 1, 1);
+        ctx.lineTo(1, size + 1);
+        ctx.lineTo(-size + 1, 1);
+        ctx.closePath();
+        ctx.fill();
+        
+        // ダイヤモンド本体
+        const diamondGradient = ctx.createLinearGradient(-size, -size, size, size);
+        diamondGradient.addColorStop(0, '#F0E68C');
+        diamondGradient.addColorStop(0.5, '#FFD700');
+        diamondGradient.addColorStop(1, '#DAA520');
+        
+        ctx.fillStyle = diamondGradient;
+        ctx.beginPath();
+        ctx.moveTo(0, -size);
+        ctx.lineTo(size, 0);
+        ctx.lineTo(0, size);
+        ctx.lineTo(-size, 0);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    /**
+     * 装飾的な刻み線の描画（豪華版）
+     */
+    private drawDecorativeNotches(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        // メジャー刻み（15度間隔）
+        this.drawMajorNotches(ctx, centerX, centerY, compassRadius);
+        
+        // マイナー刻み（5度間隔）
+        this.drawMinorNotches(ctx, centerX, centerY, compassRadius);
+        
+        // マイクロ刻み（1度間隔、特定範囲のみ）
+        this.drawMicroNotches(ctx, centerX, centerY, compassRadius);
+    }
+
+    /**
+     * メジャー刻み線（15度間隔）
+     */
+    private drawMajorNotches(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        const notchCount = 24; // 15度間隔
+        const notchLength = compassRadius * 0.04;
+        const notchRadius = compassRadius * 0.94;
+        const lineWidth = Math.max(2, compassRadius * 0.008);
+        
+        for (let i = 0; i < notchCount; i++) {
+            if (i % 6 !== 0) { // 主要方位目盛りを避ける
+                const angle = (i * 15 - 90) * Math.PI / 180;
+                const x1 = centerX + Math.cos(angle) * notchRadius;
+                const y1 = centerY + Math.sin(angle) * notchRadius;
+                const x2 = centerX + Math.cos(angle) * (notchRadius - notchLength);
+                const y2 = centerY + Math.sin(angle) * (notchRadius - notchLength);
+                
+                // 刻みの影
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.lineWidth = lineWidth * 1.5;
+                ctx.beginPath();
+                ctx.moveTo(x1 + 1, y1 + 1);
+                ctx.lineTo(x2 + 1, y2 + 1);
+                ctx.stroke();
+                
+                // メイン刻み
+                const notchGradient = ctx.createLinearGradient(x2, y2, x1, y1);
+                notchGradient.addColorStop(0, '#8B4513');
+                notchGradient.addColorStop(0.5, '#CD853F');
+                notchGradient.addColorStop(1, '#DAA520');
+                
+                ctx.strokeStyle = notchGradient;
+                ctx.lineWidth = lineWidth;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                ctx.lineCap = 'butt';
+            }
+        }
+    }
+
+    /**
+     * マイナー刻み線（5度間隔）
+     */
+    private drawMinorNotches(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        const notchCount = 72; // 5度間隔
+        const notchLength = compassRadius * 0.02;
+        const notchRadius = compassRadius * 0.96;
+        const lineWidth = Math.max(1, compassRadius * 0.004);
+        
+        for (let i = 0; i < notchCount; i++) {
+            if (i % 18 !== 0 && i % 6 !== 0) { // メジャー刻みと主要方位を避ける
+                const angle = (i * 5 - 90) * Math.PI / 180;
+                const x1 = centerX + Math.cos(angle) * notchRadius;
+                const y1 = centerY + Math.sin(angle) * notchRadius;
+                const x2 = centerX + Math.cos(angle) * (notchRadius - notchLength);
+                const y2 = centerY + Math.sin(angle) * (notchRadius - notchLength);
+                
+                ctx.strokeStyle = 'rgba(139, 69, 19, 0.7)';
+                ctx.lineWidth = lineWidth;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+    }
+
+    /**
+     * マイクロ刻み線（1度間隔、主要方位周辺のみ）
+     */
+    private drawMicroNotches(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        const mainDirections = [0, 90, 180, 270]; // N, E, S, W
+        const notchLength = compassRadius * 0.01;
+        const notchRadius = compassRadius * 0.97;
+        const lineWidth = Math.max(0.5, compassRadius * 0.002);
+        
+        for (const mainDir of mainDirections) {
+            for (let offset = -10; offset <= 10; offset++) {
+                if (offset % 5 !== 0) { // 5度刻みを避ける
+                    const angle = (mainDir + offset - 90) * Math.PI / 180;
+                    const x1 = centerX + Math.cos(angle) * notchRadius;
+                    const y1 = centerY + Math.sin(angle) * notchRadius;
+                    const x2 = centerX + Math.cos(angle) * (notchRadius - notchLength);
+                    const y2 = centerY + Math.sin(angle) * (notchRadius - notchLength);
+                    
+                    ctx.strokeStyle = 'rgba(139, 69, 19, 0.4)';
+                    ctx.lineWidth = lineWidth;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    /**
+     * 方位目盛りの描画（豪華なクラシック風NSEW）
      */
     private drawDirectionMarks(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const directions = ['N', 'E', 'S', 'W'];
+        const directions = ['N', 'E', 'S', 'W']; // 標準方位（N, E, S, W）
         
         // スケール比率をコンパス半径ベースで計算
-        const markOuterOffset = compassRadius * 0.008; // 外側オフセットをさらに減少（1%→0.8%）
-        const mainMarkLength = compassRadius * 0.1; // 主要方位マークの長さをさらに増加（8%→10%）
-        const midMarkLength = compassRadius * 0.08; // 中間マークの長さをさらに増加（6.5%→8%）
-        const minorMarkLength = compassRadius * 0.06; // 小さなマークの長さをさらに増加（5%→6%）
-        const labelOffset = compassRadius * 0.18; // ラベルを目盛板より外側に配置（負の値で外側へ）
+        const markOuterOffset = compassRadius * 0.005;
+        const mainMarkLength = compassRadius * 0.15; // より長い主要方位マーク
+        const midMarkLength = compassRadius * 0.11;
+        const minorMarkLength = compassRadius * 0.07;
+        const labelOffset = compassRadius * 0.25; // より外側にラベル配置
         
         // ライン幅もコンパス半径ベースで計算
-        const mainLineWidth = Math.max(2, compassRadius * 0.013); // 主要ラインをさらに太く（1%→1.3%）
-        const midLineWidth = Math.max(1.5, compassRadius * 0.009); // 中間ラインをさらに太く（0.7%→0.9%）
-        const minorLineWidth = Math.max(1, compassRadius * 0.005); // 小さなラインをさらに太く（0.4%→0.5%）
+        const mainLineWidth = Math.max(4, compassRadius * 0.022); // より太い主要ライン
+        const midLineWidth = Math.max(3, compassRadius * 0.015);
+        const minorLineWidth = Math.max(1.5, compassRadius * 0.008);
         
         // フォントサイズをコンパス半径ベースで計算
-        const fontSize = Math.max(20, compassRadius * 0.12); // フォントサイズを大幅増加（8%→12%）
+        const fontSize = Math.max(28, compassRadius * 0.16); // より大きなフォント
+        
+        // 背景の古紙風パターン
+        this.drawAntiquePaperBackground(ctx, centerX, centerY, compassRadius * 0.85);
         
         for (let angle = 0; angle < 360; angle += 10) {
             const radian = (angle - 90) * Math.PI / 180;
@@ -546,193 +959,568 @@ export class CompassManager {
             const x2 = centerX + Math.cos(radian) * innerRadius;
             const y2 = centerY + Math.sin(radian) * innerRadius;
             
-            ctx.strokeStyle = isMainDirection ? '#daa520' : '#cd853f';
+            // 影の描画
+            if (isMainDirection || isMidDirection) {
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.lineWidth = (isMainDirection ? mainLineWidth : midLineWidth) * 1.5;
+                ctx.beginPath();
+                ctx.moveTo(x1 + 2, y1 + 2);
+                ctx.lineTo(x2 + 2, y2 + 2);
+                ctx.stroke();
+            }
+            
+            // グラデーション色を設定
+            const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+            if (isMainDirection) {
+                gradient.addColorStop(0, '#FFD700');
+                gradient.addColorStop(0.3, '#FFA500');
+                gradient.addColorStop(0.7, '#DAA520');
+                gradient.addColorStop(1, '#B8860B');
+            } else if (isMidDirection) {
+                gradient.addColorStop(0, '#F4A460');
+                gradient.addColorStop(0.5, '#CD853F');
+                gradient.addColorStop(1, '#A0522D');
+            } else {
+                gradient.addColorStop(0, '#DEB887');
+                gradient.addColorStop(1, '#8B4513');
+            }
+            
+            ctx.strokeStyle = gradient;
             ctx.lineWidth = isMainDirection ? mainLineWidth : isMidDirection ? midLineWidth : minorLineWidth;
+            
+            // 装飾的な先端
+            if (isMainDirection) {
+                ctx.lineCap = 'round';
+                // 主要方位の矢印先端
+                this.drawDirectionArrowHead(ctx, x2, y2, radian, compassRadius * 0.03);
+            } else if (isMidDirection) {
+                ctx.lineCap = 'round';
+            }
+            
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
             ctx.stroke();
+            ctx.lineCap = 'butt'; // リセット
             
-            // 主要方位ラベル
+            // 主要方位ラベル（NSEW）
             if (isMainDirection) {
                 const labelRadius = compassRadius - labelOffset;
                 const labelX = centerX + Math.cos(radian) * labelRadius;
                 const labelY = centerY + Math.sin(radian) * labelRadius;
                 const directionIndex = angle / 90;
                 
-                ctx.fillStyle = '#daa520';
-                ctx.font = `bold ${fontSize}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(directions[directionIndex], labelX, labelY);
+                this.drawDirectionLabel(ctx, labelX, labelY, directions[directionIndex], fontSize);
             }
         }
     }
 
     /**
-     * 地平線の描画
+     * 方位マーク用矢印先端の描画
      */
-    private drawHorizonLine(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const horizonRadius = compassRadius * 0.6; // コンパス半径の60%（高度0°の針の長さに対応）
-        const dashLength = compassRadius * 0.025; // ダッシュの長さをさらに増加（2%→2.5%）
-        const lineWidth = Math.max(1.5, compassRadius * 0.005); // ライン幅をさらに増加（0.4%→0.5%）
-        const labelOffset = compassRadius * 0.06; // ラベルオフセットをさらに増加（5%→6%）
-        const fontSize = Math.max(12, compassRadius * 0.04); // フォントサイズをさらに増加（3.2%→4%）
+    private drawDirectionArrowHead(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number, size: number): void {
+        const arrowAngle = Math.PI / 6; // 30度
         
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = lineWidth;
-        ctx.setLineDash([dashLength, dashLength]);
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle + Math.PI);
+        
+        const gradient = ctx.createLinearGradient(-size, 0, size, 0);
+        gradient.addColorStop(0, '#FFD700');
+        gradient.addColorStop(1, '#B8860B');
+        
+        ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, horizonRadius, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-size * Math.cos(arrowAngle), -size * Math.sin(arrowAngle));
+        ctx.lineTo(-size * Math.cos(arrowAngle), size * Math.sin(arrowAngle));
+        ctx.closePath();
+        ctx.fill();
         
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = `${fontSize}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('地平線', centerX, centerY + horizonRadius + labelOffset);
+        ctx.restore();
     }
 
     /**
-     * 針の描画
+     * 方位ラベルの描画（シンプルで洗練されたスタイル）
+     */
+    private drawDirectionLabel(ctx: CanvasRenderingContext2D, x: number, y: number, text: string, fontSize: number): void {
+        const fontFamily = 'serif';
+        
+        // 深い影を描画（より控えめに）
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.font = `bold ${fontSize}px ${fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, x + 1.5, y + 1.5);
+        
+        // アウトライン（より細く）
+        ctx.strokeStyle = '#4A4A4A';
+        ctx.lineWidth = Math.max(1, fontSize * 0.05);
+        ctx.strokeText(text, x, y);
+        
+        // メイン文字（よりエレガントな色）
+        const gradient = ctx.createLinearGradient(x, y - fontSize/2, x, y + fontSize/2);
+        gradient.addColorStop(0, '#F5DEB3'); // ウィート
+        gradient.addColorStop(0.3, '#DDD8C7'); // ライトベージュ
+        gradient.addColorStop(0.7, '#C9B683'); // ゴールデンタン
+        gradient.addColorStop(1, '#B8860B'); // ダークゴールデンロッド
+        
+        ctx.fillStyle = gradient;
+        ctx.fillText(text, x, y);
+        
+        // 控えめなハイライト
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.font = `bold ${fontSize * 0.9}px ${fontFamily}`;
+        ctx.fillText(text, x - 0.5, y - 0.5);
+    }
+
+    /**
+     * アンティーク紙風背景の描画（強化版）
+     */
+    private drawAntiquePaperBackground(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number): void {
+        // 古紙風の放射状グラデーション
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+        gradient.addColorStop(0, 'rgba(245, 245, 220, 0.15)'); // ベージュ（より濃く）
+        gradient.addColorStop(0.3, 'rgba(222, 184, 135, 0.1)'); // バーリーウッド
+        gradient.addColorStop(0.7, 'rgba(160, 82, 45, 0.06)'); // サドルブラウン
+        gradient.addColorStop(1, 'rgba(139, 69, 19, 0.03)'); // より暗いブラウン
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 古地図風の装飾線（より多く）
+        ctx.strokeStyle = 'rgba(139, 69, 19, 0.08)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 16; i++) {
+            const angle = (i * 22.5) * Math.PI / 180;
+            const innerR = radius * 0.2;
+            const outerR = radius * 0.95;
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX + Math.cos(angle) * innerR, centerY + Math.sin(angle) * innerR);
+            ctx.lineTo(centerX + Math.cos(angle) * outerR, centerY + Math.sin(angle) * outerR);
+            ctx.stroke();
+        }
+        
+        // 同心円の装飾
+        for (let r = radius * 0.3; r < radius; r += radius * 0.15) {
+            ctx.strokeStyle = `rgba(139, 69, 19, ${0.05 * (1 - r / radius)})`;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+
+    /**
+     * 地平線の描画（装飾的）
+     */
+    private drawHorizonLine(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
+        const horizonRadius = compassRadius * 0.6;
+        const dashLength = compassRadius * 0.03;
+        const lineWidth = Math.max(2, compassRadius * 0.006);
+        
+        // 装飾的な地平線（二重線）
+        ctx.strokeStyle = 'rgba(218, 165, 32, 0.4)'; // ゴールデンロッド
+        ctx.lineWidth = lineWidth;
+        ctx.setLineDash([dashLength, dashLength * 0.5]);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, horizonRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // 内側の地平線
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = lineWidth * 0.5;
+        ctx.setLineDash([dashLength * 0.7, dashLength * 0.3]);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, horizonRadius - 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    /**
+     * 針の描画（クラシック風装飾針）
      */
     private drawNeedles(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
         const deviceOrientation = this.stateManager.get('deviceOrientation');
         const moonData = this.currentMoonData || this.stateManager.get('moonData');
-        
-        // 針の太さをコンパス半径ベースで計算
-        const deviceNeedleWidth = Math.max(4, compassRadius * 0.02); // デバイス針をさらに太く（1.5%→2%）
-        const moonNeedleWidth = Math.max(3, compassRadius * 0.015); // 月針をさらに太く（1.2%→1.5%）
-        const shadowOffset = compassRadius * 0.01; // 影のオフセットをさらに増加（0.8%→1%）
-        const shadowWidth = deviceNeedleWidth * 1.5;
         
         if (import.meta.env.DEV) {
             console.log('Drawing needles - deviceOrientation:', deviceOrientation, 'moonData:', moonData);
             console.log('コンパス半径:', compassRadius.toFixed(1), 'px');
         }
         
-        // デバイス針
+        // デバイス針（装飾的なクラシック針）
         if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
             const deviceElevation = this.calculateDeviceElevation(deviceOrientation.beta);
             const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
             const deviceNeedleAngle = (deviceOrientation.alpha - 90) * Math.PI / 180;
             
-            if (import.meta.env.DEV) {
-                console.log('=== デバイス針の描画 ===');
-                console.log(`生ベータ値: ${deviceOrientation.beta.toFixed(1)}°`);
-                console.log(`計算された仰角: ${deviceElevation.toFixed(1)}°`);
-                console.log(`針の長さ: ${deviceNeedleLength.toFixed(1)}px (${(deviceNeedleLength/compassRadius*100).toFixed(1)}%)`);
-                console.log(`コンパス半径: ${compassRadius.toFixed(1)}px`);
-                console.log('========================');
-            }
-            
-            // デバイス針の影
-            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-            ctx.lineWidth = shadowWidth;
-            ctx.beginPath();
-            ctx.moveTo(centerX + shadowOffset, centerY + shadowOffset);
-            ctx.lineTo(
-                centerX + Math.cos(deviceNeedleAngle) * deviceNeedleLength + shadowOffset,
-                centerY + Math.sin(deviceNeedleAngle) * deviceNeedleLength + shadowOffset
-            );
-            ctx.stroke();
-            
-            // デバイス針本体
-            ctx.strokeStyle = '#dc143c';
-            ctx.lineWidth = deviceNeedleWidth;
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(
-                centerX + Math.cos(deviceNeedleAngle) * deviceNeedleLength,
-                centerY + Math.sin(deviceNeedleAngle) * deviceNeedleLength
-            );
-            ctx.stroke();
+            this.drawClassicNeedle(ctx, centerX, centerY, deviceNeedleAngle, deviceNeedleLength, 'device', compassRadius);
         }
         
-        // 月針
+        // 月針（より装飾的な月針）
         if (moonData) {
             const moonNeedleLength = this.calculateNeedleLength(moonData.altitude, compassRadius);
             const moonNeedleAngle = (moonData.azimuth - 90) * Math.PI / 180;
             
-            if (import.meta.env.DEV) {
-                console.log('月針の描画:', {
-                    azimuth: moonData.azimuth.toFixed(1),
-                    altitude: moonData.altitude.toFixed(1),
-                    needleLength: moonNeedleLength.toFixed(1),
-                    angle: moonNeedleAngle.toFixed(3)
-                });
-            }
+            this.drawClassicNeedle(ctx, centerX, centerY, moonNeedleAngle, moonNeedleLength, 'moon', compassRadius);
             
-            ctx.strokeStyle = '#ffd700';
-            ctx.lineWidth = moonNeedleWidth;
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(
-                centerX + Math.cos(moonNeedleAngle) * moonNeedleLength,
-                centerY + Math.sin(moonNeedleAngle) * moonNeedleLength
-            );
-            ctx.stroke();
-            
-            // 月の先端（最小サイズを設定）
-            const minTipRadius = compassRadius * 0.07; // 月の先端サイズを大幅増加（5%→7%）
-            if (moonNeedleLength > minTipRadius) {
+            // 月の先端装飾
+            if (moonNeedleLength > compassRadius * 0.1) {
                 const tipX = centerX + Math.cos(moonNeedleAngle) * moonNeedleLength;
                 const tipY = centerY + Math.sin(moonNeedleAngle) * moonNeedleLength;
-                const tipRadius = Math.max(minTipRadius, compassRadius * 0.08); // 月の先端サイズを大幅増加（5.5%→8%）
+                const tipRadius = Math.max(compassRadius * 0.08, compassRadius * 0.1);
                 
-                drawMoonPhaseSmall(ctx, tipX, tipY, tipRadius, moonData);
+                this.drawMoonOrnament(ctx, tipX, tipY, tipRadius, moonData);
             }
         }
     }
 
     /**
-     * 中心点の描画
+     * クラシック風装飾針の描画
+     */
+    private drawClassicNeedle(
+        ctx: CanvasRenderingContext2D, 
+        centerX: number, 
+        centerY: number, 
+        angle: number, 
+        length: number, 
+        type: 'device' | 'moon',
+        compassRadius: number
+    ): void {
+        const needleWidth = compassRadius * (type === 'device' ? 0.025 : 0.02);
+        const arrowHeadLength = compassRadius * 0.08;
+        const arrowHeadWidth = compassRadius * 0.04;
+        const shadowOffset = 3;
+        
+        // 針の先端と基部の座標
+        const tipX = centerX + Math.cos(angle) * length;
+        const tipY = centerY + Math.sin(angle) * length;
+        const baseX = centerX - Math.cos(angle) * (compassRadius * 0.15);
+        const baseY = centerY - Math.sin(angle) * (compassRadius * 0.15);
+        
+        // 影の描画
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.lineWidth = needleWidth * 1.5;
+        ctx.beginPath();
+        ctx.moveTo(baseX + shadowOffset, baseY + shadowOffset);
+        ctx.lineTo(tipX + shadowOffset, tipY + shadowOffset);
+        ctx.stroke();
+        
+        // 針本体のグラデーション
+        const gradient = ctx.createLinearGradient(baseX, baseY, tipX, tipY);
+        if (type === 'device') {
+            gradient.addColorStop(0, '#B22222'); // ファイアブリック
+            gradient.addColorStop(0.3, '#DC143C'); // クリムゾン
+            gradient.addColorStop(0.7, '#FF6347'); // トマト
+            gradient.addColorStop(1, '#FF0000'); // レッド
+        } else {
+            gradient.addColorStop(0, '#B8860B'); // ダークゴールデンロッド
+            gradient.addColorStop(0.3, '#DAA520'); // ゴールデンロッド
+            gradient.addColorStop(0.7, '#FFD700'); // ゴールド
+            gradient.addColorStop(1, '#FFFF00'); // イエロー
+        }
+        
+        // 針本体
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = needleWidth;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(baseX, baseY);
+        ctx.lineTo(tipX, tipY);
+        ctx.stroke();
+        
+        // 装飾的な矢尻
+        this.drawArrowHead(ctx, tipX, tipY, angle, arrowHeadLength, arrowHeadWidth, type);
+        
+        // 針の基部装飾
+        this.drawNeedleBase(ctx, baseX, baseY, compassRadius * 0.02, type);
+        
+        ctx.lineCap = 'butt'; // リセット
+    }
+
+    /**
+     * 装飾的な矢尻の描画
+     */
+    private drawArrowHead(
+        ctx: CanvasRenderingContext2D,
+        tipX: number,
+        tipY: number,
+        angle: number,
+        length: number,
+        _width: number, // 未使用だが型の一貫性のため保持
+        type: 'device' | 'moon'
+    ): void {
+        const leftAngle = angle - Math.PI * 0.85;
+        const rightAngle = angle + Math.PI * 0.85;
+        
+        const leftX = tipX + Math.cos(leftAngle) * length;
+        const leftY = tipY + Math.sin(leftAngle) * length;
+        const rightX = tipX + Math.cos(rightAngle) * length;
+        const rightY = tipY + Math.sin(rightAngle) * length;
+        
+        // 矢尻のグラデーション
+        const gradient = ctx.createLinearGradient(leftX, leftY, rightX, rightY);
+        if (type === 'device') {
+            gradient.addColorStop(0, '#8B0000'); // ダークレッド
+            gradient.addColorStop(0.5, '#DC143C'); // クリムゾン
+            gradient.addColorStop(1, '#8B0000'); // ダークレッド
+        } else {
+            gradient.addColorStop(0, '#B8860B'); // ダークゴールデンロッド
+            gradient.addColorStop(0.5, '#FFD700'); // ゴールド
+            gradient.addColorStop(1, '#B8860B'); // ダークゴールデンロッド
+        }
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(leftX, leftY);
+        ctx.lineTo(rightX, rightY);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 矢尻の縁取り
+        ctx.strokeStyle = type === 'device' ? '#4B0000' : '#8B6914';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    /**
+     * 針の基部装飾の描画
+     */
+    private drawNeedleBase(
+        ctx: CanvasRenderingContext2D,
+        baseX: number,
+        baseY: number,
+        radius: number,
+        type: 'device' | 'moon'
+    ): void {
+        // 基部の円形装飾
+        const gradient = ctx.createRadialGradient(baseX, baseY, 0, baseX, baseY, radius);
+        if (type === 'device') {
+            gradient.addColorStop(0, '#FF6347');
+            gradient.addColorStop(1, '#8B0000');
+        } else {
+            gradient.addColorStop(0, '#FFD700');
+            gradient.addColorStop(1, '#B8860B');
+        }
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(baseX, baseY, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.strokeStyle = type === 'device' ? '#4B0000' : '#8B6914';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
+    /**
+     * 月の装飾的な先端
+     */
+    private drawMoonOrnament(
+        ctx: CanvasRenderingContext2D,
+        tipX: number,
+        tipY: number,
+        radius: number,
+        moonData: MoonData
+    ): void {
+        // 装飾的な背景円
+        const bgGradient = ctx.createRadialGradient(tipX, tipY, 0, tipX, tipY, radius * 1.3);
+        bgGradient.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
+        bgGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+        
+        ctx.fillStyle = bgGradient;
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, radius * 1.3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 月相の描画
+        drawMoonPhaseSmall(ctx, tipX, tipY, radius, moonData);
+        
+        // 装飾的な縁取り
+        ctx.strokeStyle = '#B8860B';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(tipX, tipY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+
+    /**
+     * 中心点の描画（装飾的なアンティーク風）
      */
     private drawCenter(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const outerRadius = Math.max(10, compassRadius * 0.05); // 外側半径をさらに増加（4%→5%）
-        const innerRadius = Math.max(7, compassRadius * 0.032); // 内側半径をさらに増加（2.6%→3.2%）
+        const outerRadius = Math.max(12, compassRadius * 0.06); // より大きな外側半径
+        const middleRadius = Math.max(9, compassRadius * 0.045); // 中間半径
+        const innerRadius = Math.max(6, compassRadius * 0.03); // 内側半径
+        const coreRadius = Math.max(3, compassRadius * 0.015); // コア半径
         
-        ctx.fillStyle = '#8b4513';
+        // 外側装飾リング（真鍮風）
+        const outerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, outerRadius);
+        outerGradient.addColorStop(0, '#FFD700'); // ゴールド
+        outerGradient.addColorStop(0.7, '#DAA520'); // ゴールデンロッド
+        outerGradient.addColorStop(1, '#B8860B'); // ダークゴールデンロッド
+        
+        ctx.fillStyle = outerGradient;
         ctx.beginPath();
         ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
         ctx.fill();
         
-        ctx.fillStyle = '#cd853f';
+        // 装飾的な刻み線
+        ctx.strokeStyle = '#8B6914';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 12; i++) {
+            const angle = (i * 30) * Math.PI / 180;
+            const startR = outerRadius * 0.8;
+            const endR = outerRadius * 0.95;
+            
+            const x1 = centerX + Math.cos(angle) * startR;
+            const y1 = centerY + Math.sin(angle) * startR;
+            const x2 = centerX + Math.cos(angle) * endR;
+            const y2 = centerY + Math.sin(angle) * endR;
+            
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+        
+        // 中間リング（ブロンズ風）
+        const middleGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, middleRadius);
+        middleGradient.addColorStop(0, '#CD853F'); // ペルー
+        middleGradient.addColorStop(0.5, '#DEB887'); // バーリーウッド
+        middleGradient.addColorStop(1, '#A0522D'); // サドルブラウン
+        
+        ctx.fillStyle = middleGradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, middleRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 内側リング（暗い真鍮）
+        const innerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, innerRadius);
+        innerGradient.addColorStop(0, '#B8860B'); // ダークゴールデンロッド
+        innerGradient.addColorStop(1, '#8B6914'); // オリーブドラブ
+        
+        ctx.fillStyle = innerGradient;
         ctx.beginPath();
         ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // コア（最内部）
+        ctx.fillStyle = '#4B0000'; // ダークレッド
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 中央のジュエル風装飾
+        this.drawCentralJewel(ctx, centerX, centerY, coreRadius * 1.5);
+        
+        // 外枠の縁取り
+        ctx.strokeStyle = '#654321'; // ダークブラウン
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // 最上部のハイライト
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.beginPath();
+        ctx.arc(centerX - 2, centerY - 2, outerRadius * 0.4, 0, Math.PI * 2);
         ctx.fill();
     }
 
     /**
-     * 磁場可視化の描画
+     * 中央のジュエル風装飾の描画
+     */
+    private drawCentralJewel(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number): void {
+        // ベース（ダークレッド）
+        const baseGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+        baseGradient.addColorStop(0, '#8B0000');
+        baseGradient.addColorStop(0.7, '#4B0000');
+        baseGradient.addColorStop(1, '#2B0000');
+        
+        ctx.fillStyle = baseGradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // ジュエル効果
+        const jewelGradient = ctx.createRadialGradient(centerX - radius * 0.3, centerY - radius * 0.3, 0, centerX, centerY, radius);
+        jewelGradient.addColorStop(0, 'rgba(255, 100, 100, 0.8)');
+        jewelGradient.addColorStop(0.4, 'rgba(200, 50, 50, 0.6)');
+        jewelGradient.addColorStop(1, 'rgba(139, 0, 0, 0.9)');
+        
+        ctx.fillStyle = jewelGradient;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 輝き効果
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(centerX - radius * 0.4, centerY - radius * 0.4, radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 小さな輝き
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(centerX + radius * 0.2, centerY - radius * 0.3, radius * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    /**
+     * 磁場可視化の描画（神秘的なエフェクト）
      */
     private drawMagneticField(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
         if (this.compassState.magneticField > 0) {
             const intensity = this.compassState.magneticField;
-            const glowRadius = compassRadius + (compassRadius * 0.05); // グローエフェクトの半径をコンパス半径ベースに
+            const glowRadius = compassRadius + (compassRadius * 0.08);
             
-            const gradient = ctx.createRadialGradient(centerX, centerY, compassRadius, centerX, centerY, glowRadius);
-            gradient.addColorStop(0, `rgba(255, 215, 0, ${intensity * 0.3})`);
-            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            // 多層グロー効果
+            const layers = [
+                { radius: glowRadius, alpha: intensity * 0.2, color: '255, 215, 0' }, // ゴールド
+                { radius: glowRadius * 0.8, alpha: intensity * 0.3, color: '218, 165, 32' }, // ゴールデンロッド
+                { radius: glowRadius * 0.6, alpha: intensity * 0.4, color: '184, 134, 11' }, // ダークゴールデンロッド
+            ];
             
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, glowRadius, 0, Math.PI * 2);
-            ctx.fill();
+            layers.forEach(layer => {
+                const gradient = ctx.createRadialGradient(centerX, centerY, compassRadius * 0.7, centerX, centerY, layer.radius);
+                gradient.addColorStop(0, `rgba(${layer.color}, ${layer.alpha})`);
+                gradient.addColorStop(0.5, `rgba(${layer.color}, ${layer.alpha * 0.5})`);
+                gradient.addColorStop(1, `rgba(${layer.color}, 0)`);
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, layer.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
         }
         
-        // ノイズ粒子（サイズをコンパス半径ベースに）
-        const particleCount = Math.floor(this.compassState.magneticField * compassRadius * 0.1); // パーティクル数をさらに増加（8%→10%）
-        const particleSize = Math.max(1.5, compassRadius * 0.005); // パーティクルサイズをさらに増加（0.4%→0.5%）
+        // 神秘的なエネルギー粒子
+        const particleCount = Math.floor(this.compassState.magneticField * compassRadius * 0.12);
+        const time = Date.now() * 0.001; // アニメーション用時間
         
         for (let i = 0; i < particleCount; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const distance = compassRadius * 0.3 + Math.random() * compassRadius * 0.4;
+            const angleOffset = (i / particleCount) * Math.PI * 2;
+            const radiusVariation = Math.sin(time * 2 + i) * 0.1 + 0.9;
+            const distance = (compassRadius * 0.4 + Math.sin(time + i) * compassRadius * 0.2) * radiusVariation;
+            const angle = angleOffset + time * 0.5;
+            
             const x = centerX + Math.cos(angle) * distance;
             const y = centerY + Math.sin(angle) * distance;
             
-            ctx.fillStyle = `rgba(255, 215, 0, ${Math.random() * 0.5})`;
+            const particleSize = Math.max(1.5, compassRadius * 0.006) * (0.5 + Math.sin(time * 3 + i) * 0.5);
+            const alpha = 0.3 + Math.sin(time * 4 + i) * 0.4;
+            
+            // パーティクルのグラデーション
+            const particleGradient = ctx.createRadialGradient(x, y, 0, x, y, particleSize);
+            particleGradient.addColorStop(0, `rgba(255, 215, 0, ${alpha})`);
+            particleGradient.addColorStop(1, `rgba(255, 215, 0, 0)`);
+            
+            ctx.fillStyle = particleGradient;
             ctx.beginPath();
             ctx.arc(x, y, particleSize, 0, Math.PI * 2);
             ctx.fill();
@@ -740,30 +1528,59 @@ export class CompassManager {
     }
 
     /**
-     * 検出レベル表示
+     * 検出レベル表示（日本語）
      */
     private drawDetectionLevel(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const levelColors = {
-            'searching': '#4169e1',
-            'weak': '#32cd32',
-            'strong': '#ffd700',
-            'locked': '#ff4500'
+        const levelStyles = {
+            'searching': { 
+                color: '#4169E1', 
+                text: '探索中'
+            },
+            'weak': { 
+                color: '#32CD32', 
+                text: '微弱検出'
+            },
+            'strong': { 
+                color: '#FFD700', 
+                text: '強磁場'
+            },
+            'locked': { 
+                color: '#FF4500', 
+                text: '月磁場！'
+            }
         };
         
-        const levelNames = {
-            'searching': '探索中',
-            'weak': '微弱検出',
-            'strong': '強磁場',
-            'locked': '月磁場！'
-        };
+        const style = levelStyles[this.compassState.detectionLevel];
+        const fontSize = Math.max(16, compassRadius * 0.06);
+        const textOffset = compassRadius * 0.12;
         
-        const fontSize = Math.max(14, compassRadius * 0.055); // フォントサイズをさらに増加（4.5%→5.5%）
-        const textOffset = compassRadius * 0.1; // テキストオフセットをさらに増加（8%→10%）
+        // 背景装飾
+        if (this.compassState.detectionLevel === 'locked') {
+            const pulseRadius = compassRadius * (1.1 + Math.sin(Date.now() * 0.01) * 0.05);
+            const pulseGradient = ctx.createRadialGradient(centerX, centerY, compassRadius, centerX, centerY, pulseRadius);
+            pulseGradient.addColorStop(0, 'rgba(255, 69, 0, 0.1)');
+            pulseGradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
+            
+            ctx.fillStyle = pulseGradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
+            ctx.fill();
+        }
         
-        ctx.fillStyle = levelColors[this.compassState.detectionLevel];
-        ctx.font = `bold ${fontSize}px monospace`;
+        // メインテキストの影
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.font = `bold ${fontSize}px serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(levelNames[this.compassState.detectionLevel], centerX, centerY + compassRadius + textOffset);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(style.text, centerX + 2, centerY + compassRadius + textOffset + 2);
+        
+        // メインテキスト
+        ctx.fillStyle = style.color;
+        ctx.font = `bold ${fontSize}px serif`;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.strokeText(style.text, centerX, centerY + compassRadius + textOffset);
+        ctx.fillText(style.text, centerX, centerY + compassRadius + textOffset);
     }
 
     /**
