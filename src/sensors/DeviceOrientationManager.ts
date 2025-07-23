@@ -1,5 +1,6 @@
 import { StateManager } from '../state/StateManager';
 import { I18nManager } from '../i18n/I18nManager';
+import { GlobalTranslationUpdater } from '../i18n/GlobalTranslationUpdater';
 
 interface OrientationCorrection {
     isCalibrated: boolean;
@@ -13,6 +14,7 @@ export class DeviceOrientationManager {
     private static instance: DeviceOrientationManager;
     private stateManager: StateManager;
     private i18nManager: I18nManager;
+    private globalUpdater: GlobalTranslationUpdater;
     private deviceOrientationElement: HTMLElement | null;
     private permissionButton: HTMLButtonElement | null;
     private readonly STORAGE_KEY = 'tsuki-ga-kirei-orientation-correction';
@@ -37,11 +39,17 @@ export class DeviceOrientationManager {
     private constructor() {
         this.stateManager = StateManager.getInstance();
         this.i18nManager = I18nManager.getInstance();
+        this.globalUpdater = GlobalTranslationUpdater.getInstance();
         this.deviceOrientationElement = document.getElementById('device-orientation');
         this.permissionButton = document.getElementById('permission-button') as HTMLButtonElement;
         
         // localStorage から補正設定を読み込み
         this.loadOrientationCorrectionFromStorage();
+        
+        // GlobalTranslationUpdaterに翻訳更新処理を登録
+        this.globalUpdater.registerUpdater('device-orientation', () => {
+            this.updateOrientationDisplay();
+        });
     }
 
     public static getInstance(): DeviceOrientationManager {
@@ -410,5 +418,15 @@ export class DeviceOrientationManager {
     public clearStoredCorrection(): void {
         this.clearOrientationCorrectionFromStorage();
         console.log('保存された方位角補正設定をクリアしました');
+    }
+
+    public destroy(): void {
+        // GlobalTranslationUpdaterから登録解除
+        this.globalUpdater.unregisterUpdater('device-orientation');
+        
+        // イベントリスナーを削除
+        if (this.currentEventType) {
+            window.removeEventListener(this.currentEventType, this.handleOrientation.bind(this));
+        }
     }
 }
