@@ -1,4 +1,5 @@
 import { I18nManager } from '../i18n';
+import { GlobalTranslationUpdater } from '../i18n/GlobalTranslationUpdater';
 
 /**
  * DOM要素の翻訳を管理するクラス
@@ -6,9 +7,11 @@ import { I18nManager } from '../i18n';
 export class DOMTranslationManager {
     private static instance: DOMTranslationManager;
     private i18n: I18nManager;
+    private globalUpdater: GlobalTranslationUpdater;
 
     private constructor() {
         this.i18n = I18nManager.getInstance();
+        this.globalUpdater = GlobalTranslationUpdater.getInstance();
         this.setupSubscription();
     }
 
@@ -23,7 +26,8 @@ export class DOMTranslationManager {
      * 言語変更を監視して DOM を更新
      */
     private setupSubscription(): void {
-        this.i18n.subscribe(() => {
+        // 個別購読を削除し、グローバル更新システムに登録
+        this.globalUpdater.registerUpdater('dom-translation', () => {
             this.updateAllTranslations();
         });
     }
@@ -217,5 +221,12 @@ export class DOMTranslationManager {
     public initialize(): void {
         this.updateAllTranslations();
         console.log('🌍 DOM翻訳マネージャーを初期化しました');
+    }
+
+    /**
+     * リソースのクリーンアップ
+     */
+    public destroy(): void {
+        this.globalUpdater.unregisterUpdater('dom-translation');
     }
 }

@@ -2,6 +2,7 @@ import { MoonData, MoonTimes, calculateAngleDifference, calculateBlinkIntensity,
 import { getDirectionName } from '../direction';
 import { AccuracyDisplayManager } from '../accuracy/AccuracyDisplayManager';
 import { I18nManager } from '../i18n/I18nManager';
+import { GlobalTranslationUpdater } from '../i18n/GlobalTranslationUpdater';
 
 interface DeviceOrientation {
     alpha: number | null;
@@ -13,6 +14,7 @@ export class MoonDisplayManager {
     private static instance: MoonDisplayManager;
     private accuracyManager: AccuracyDisplayManager;
     private i18nManager: I18nManager;
+    private globalUpdater: GlobalTranslationUpdater;
     
     // UI要素
     private moonDirectionElement: HTMLElement | null;
@@ -33,6 +35,7 @@ export class MoonDisplayManager {
     private constructor() {
         this.accuracyManager = AccuracyDisplayManager.getInstance();
         this.i18nManager = I18nManager.getInstance();
+        this.globalUpdater = GlobalTranslationUpdater.getInstance();
         
         this.moonDirectionElement = document.getElementById('moon-direction');
         this.distanceElement = document.getElementById('distance');
@@ -45,8 +48,8 @@ export class MoonDisplayManager {
         this.mapLinkElement = document.getElementById('map-link') as HTMLAnchorElement;
         this.moonCanvas = document.getElementById('moon-canvas') as HTMLCanvasElement;
         
-        // 言語変更を購読してリアルタイム更新を有効にする
-        this.i18nManager.subscribe(() => {
+        // 個別購読を削除し、グローバル更新システムに登録
+        this.globalUpdater.registerUpdater('moon-display', () => {
             if (this.currentMoonData) {
                 this.updateMoonInfo(this.currentMoonData);
             }
@@ -244,5 +247,12 @@ export class MoonDisplayManager {
     public startMoonAnimation(): void {
         // 月の点滅効果を更新する定期処理は別途セットアップされる
         console.log('Moon animation started');
+    }
+
+    /**
+     * リソースのクリーンアップ
+     */
+    public destroy(): void {
+        this.globalUpdater.unregisterUpdater('moon-display');
     }
 }

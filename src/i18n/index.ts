@@ -1,6 +1,7 @@
 import { I18nManager, type SupportedLocale, type TranslationConfig } from './I18nManager';
+import { GlobalTranslationUpdater } from './GlobalTranslationUpdater';
 
-export { I18nManager, type SupportedLocale, type TranslationConfig };
+export { I18nManager, GlobalTranslationUpdater, type SupportedLocale, type TranslationConfig };
 
 /**
  * 翻訳システムの初期化（JSONベース）

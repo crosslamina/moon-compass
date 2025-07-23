@@ -3,6 +3,7 @@ import { CompassState } from './CompassManager';
 import { DOMManager } from '../ui/DOMManager';
 import { DialogManager } from '../ui/DialogManager';
 import { I18nManager } from '../i18n/I18nManager';
+import { GlobalTranslationUpdater } from '../i18n/GlobalTranslationUpdater';
 
 /**
  * 月探査ステータス表示管理クラス
@@ -12,6 +13,7 @@ export class MoonStatusDisplay {
     private domManager: DOMManager;
     private dialogManager: DialogManager;
     private i18nManager: I18nManager;
+    private globalUpdater: GlobalTranslationUpdater;
     private statusElement: HTMLElement | null = null;
     
     // 現在の状態を保存（言語切り替え時の再表示用）
@@ -22,10 +24,11 @@ export class MoonStatusDisplay {
         this.domManager = DOMManager.getInstance();
         this.dialogManager = DialogManager.getInstance();
         this.i18nManager = I18nManager.getInstance();
+        this.globalUpdater = GlobalTranslationUpdater.getInstance();
         this.createStatusElement();
         
-        // 言語変更を購読してリアルタイム更新を有効にする
-        this.i18nManager.subscribe(() => {
+        // 個別購読を削除し、グローバル更新システムに登録
+        this.globalUpdater.registerUpdater('moon-status', () => {
             if (this.currentCompassState && this.currentMoonTimes !== undefined) {
                 this.updateStatus(this.currentCompassState, this.currentMoonTimes);
             }
@@ -242,6 +245,7 @@ export class MoonStatusDisplay {
      * リソースのクリーンアップ
      */
     destroy(): void {
+        this.globalUpdater.unregisterUpdater('moon-status');
         if (this.statusElement) {
             this.statusElement.remove();
             this.statusElement = null;

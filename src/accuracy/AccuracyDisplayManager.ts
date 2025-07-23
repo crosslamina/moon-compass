@@ -1,5 +1,6 @@
 import { MoonData } from '../moon';
 import { I18nManager } from '../i18n';
+import { GlobalTranslationUpdater } from '../i18n/GlobalTranslationUpdater';
 
 interface DeviceOrientation {
     alpha: number | null;
@@ -10,6 +11,7 @@ interface DeviceOrientation {
 export class AccuracyDisplayManager {
     private static instance: AccuracyDisplayManager;
     private i18n: I18nManager;
+    private globalUpdater: GlobalTranslationUpdater;
     
     // UI要素
     private directionMatchDetailElement: HTMLElement | null;
@@ -21,11 +23,12 @@ export class AccuracyDisplayManager {
 
     private constructor() {
         this.i18n = I18nManager.getInstance();
+        this.globalUpdater = GlobalTranslationUpdater.getInstance();
         this.directionMatchDetailElement = document.getElementById('direction-match-detail');
         this.altitudeMatchDetailElement = document.getElementById('altitude-match-detail');
         
-        // 言語変更を購読してリアルタイム更新を有効にする
-        this.i18n.subscribe(() => {
+        // 個別購読を削除し、グローバル更新システムに登録
+        this.globalUpdater.registerUpdater('accuracy-display', () => {
             this.updateAccuracyLabels();
         });
     }
@@ -238,5 +241,12 @@ export class AccuracyDisplayManager {
             deviceElevation,
             moonElevation
         };
+    }
+
+    /**
+     * リソースのクリーンアップ
+     */
+    public destroy(): void {
+        this.globalUpdater.unregisterUpdater('accuracy-display');
     }
 }
