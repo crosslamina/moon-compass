@@ -38,6 +38,7 @@ export class DOMTranslationManager {
         this.updateCompassInfo();
         this.updateDialogHeaders();
         this.updateSettingCards();
+        this.updateInfoCards();
     }
 
     /**
@@ -109,28 +110,19 @@ export class DOMTranslationManager {
      * 設定カードの更新
      */
     private updateSettingCards(): void {
-        // 音量設定
-        const volumeTitle = document.querySelector('.setting-card .setting-title');
-        if (volumeTitle && volumeTitle.textContent?.includes('音量')) {
-            volumeTitle.textContent = '音量';
-        }
-
-        // 感度設定
-        const sensitivityTitle = document.querySelector('.setting-title');
-        if (sensitivityTitle && sensitivityTitle.textContent?.includes('感度')) {
-            sensitivityTitle.textContent = this.i18n.t('settings.sensitivity');
-        }
-
-        // 方位角補正
-        const orientationTitle = document.querySelector('.setting-title');
-        if (orientationTitle && orientationTitle.textContent?.includes('方位角補正')) {
-            orientationTitle.textContent = this.i18n.t('settings.orientationCorrection');
-        }
-
-        // 言語設定
-        const languageTitle = document.querySelectorAll('.setting-title');
-        languageTitle.forEach(title => {
-            if (title.textContent?.includes('言語設定')) {
+        // すべての設定タイトルを取得して、内容に応じて翻訳
+        const settingTitles = document.querySelectorAll('.setting-title');
+        settingTitles.forEach(title => {
+            const textContent = title.textContent;
+            if (textContent?.includes('音量')) {
+                title.textContent = this.i18n.t('settings.volume');
+            } else if (textContent?.includes('感度')) {
+                title.textContent = this.i18n.t('settings.sensitivity');
+            } else if (textContent?.includes('方位角補正')) {
+                title.textContent = this.i18n.t('settings.orientationCorrection');
+            } else if (textContent?.includes('表示設定')) {
+                title.textContent = this.i18n.t('settings.display');
+            } else if (textContent?.includes('言語設定')) {
                 title.textContent = this.i18n.t('settings.language');
             }
         });
@@ -162,6 +154,27 @@ export class DOMTranslationManager {
             const isOn = detectionDisplayStatus.textContent?.includes('ON');
             const status = isOn ? this.i18n.t('settings.status.on') : this.i18n.t('settings.status.off');
             detectionDisplayStatus.textContent = this.i18n.t('settings.detectionDisplayStatus', { status });
+        }
+    }
+
+    /**
+     * 情報ダイアログの翻訳更新
+     */
+    private updateInfoCards(): void {
+        // 情報ダイアログ内の情報カードタイトル
+        const infoTitles = document.querySelectorAll('.info-title');
+        infoTitles.forEach(title => {
+            if (title.textContent?.includes('月の状態')) {
+                title.textContent = this.i18n.t('info.moonState');
+            } else if (title.textContent?.includes('位置・センサー')) {
+                title.textContent = this.i18n.t('info.locationSensor');
+            }
+        });
+
+        // 地図リンクの翻訳
+        const mapLink = document.getElementById('map-link');
+        if (mapLink) {
+            mapLink.textContent = `🗺️ ${this.i18n.t('info.viewOnMap')}`;
         }
     }
 
