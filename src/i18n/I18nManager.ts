@@ -67,7 +67,7 @@ export class I18nManager {
      */
     public async loadTranslationsFromJSON(locale: SupportedLocale): Promise<void> {
         try {
-            const response = await fetch(`/src/i18n/locales/${locale}.json`);
+            const response = await fetch(`/locales/${locale}.json`);
             if (!response.ok) {
                 throw new Error(`Failed to load ${locale}.json: ${response.statusText}`);
             }
