@@ -13,12 +13,23 @@ export class MoonStatusDisplay {
     private dialogManager: DialogManager;
     private i18nManager: I18nManager;
     private statusElement: HTMLElement | null = null;
+    
+    // 現在の状態を保存（言語切り替え時の再表示用）
+    private currentCompassState: CompassState | null = null;
+    private currentMoonTimes: MoonTimes | null = null;
 
     constructor() {
         this.domManager = DOMManager.getInstance();
         this.dialogManager = DialogManager.getInstance();
         this.i18nManager = I18nManager.getInstance();
         this.createStatusElement();
+        
+        // 言語変更を購読してリアルタイム更新を有効にする
+        this.i18nManager.subscribe(() => {
+            if (this.currentCompassState && this.currentMoonTimes !== undefined) {
+                this.updateStatus(this.currentCompassState, this.currentMoonTimes);
+            }
+        });
     }
 
     /**
@@ -66,6 +77,10 @@ export class MoonStatusDisplay {
     ): void {
         if (!this.statusElement) return;
 
+        // 現在の状態を保存
+        this.currentCompassState = compassState;
+        this.currentMoonTimes = moonTimes;
+
         // デバッグ用：検出レベルの変化をログ出力
         console.log(`🎯 Detection Level: ${compassState.detectionLevel}, Magnetic Field: ${compassState.magneticField?.toFixed(3)}`);
 
@@ -87,22 +102,22 @@ export class MoonStatusDisplay {
         const levelStyles = {
             'searching': { 
                 color: '#4169E1', 
-                text: '探索中',
+                text: this.i18nManager.t('status.searching'),
                 icon: '🔍'
             },
             'weak': { 
                 color: '#32CD32', 
-                text: '微弱検出',
+                text: this.i18nManager.t('status.weakDetection'),
                 icon: '📡'
             },
             'strong': { 
                 color: '#FFD700', 
-                text: '強磁場',
+                text: this.i18nManager.t('status.strongField'),
                 icon: '⚡'
             },
             'locked': { 
                 color: '#FF4500', 
-                text: '月磁場！',
+                text: this.i18nManager.t('status.moonLocked'),
                 icon: '🎯'
             }
         };
@@ -123,7 +138,7 @@ export class MoonStatusDisplay {
      */
     private createMoonTimesHtml(moonTimes: MoonTimes | null): string {
         if (!moonTimes) {
-            return '<div class="moon-times no-data">月時刻データなし</div>';
+            return `<div class="moon-times no-data">${this.i18nManager.t('moon.noTimeData')}</div>`;
         }
 
         const now = new Date();
@@ -213,8 +228,8 @@ export class MoonStatusDisplay {
             html += `
                 <div class="moon-time special-notice">
                     <span class="time-icon">🌙</span>
-                    <span class="time-label">月の状態:</span>
-                    <span class="time-value">常に地平線下 または 常に地平線上</span>
+                    <span class="time-label">${this.i18nManager.t('moon.status')}:</span>
+                    <span class="time-value">${this.i18nManager.t('moon.alwaysBelowOrAboveHorizon')}</span>
                 </div>
             `;
         }

@@ -25,6 +25,10 @@ export class MoonDisplayManager {
     private moonSetElement: HTMLElement | null;
     private mapLinkElement: HTMLAnchorElement | null;
     private moonCanvas: HTMLCanvasElement | null;
+    
+    // 現在のデータを保存（言語切り替え時の再表示用）
+    private currentMoonData: MoonData | null = null;
+    private currentMoonTimes: MoonTimes | null = null;
 
     private constructor() {
         this.accuracyManager = AccuracyDisplayManager.getInstance();
@@ -40,6 +44,16 @@ export class MoonDisplayManager {
         this.moonSetElement = document.getElementById('moon-set');
         this.mapLinkElement = document.getElementById('map-link') as HTMLAnchorElement;
         this.moonCanvas = document.getElementById('moon-canvas') as HTMLCanvasElement;
+        
+        // 言語変更を購読してリアルタイム更新を有効にする
+        this.i18nManager.subscribe(() => {
+            if (this.currentMoonData) {
+                this.updateMoonInfo(this.currentMoonData);
+            }
+            if (this.currentMoonTimes) {
+                this.updateMoonTimes(this.currentMoonTimes);
+            }
+        });
     }
 
     public static getInstance(): MoonDisplayManager {
@@ -62,6 +76,10 @@ export class MoonDisplayManager {
         position: GeolocationPosition,
         deviceOrientation: DeviceOrientation
     ): void {
+        // 現在のデータを保存
+        this.currentMoonData = moonData;
+        this.currentMoonTimes = moonTimes;
+        
         this.updateMoonDirection(moonData, deviceOrientation);
         this.updateMoonInfo(moonData);
         this.updateMoonTimes(moonTimes);

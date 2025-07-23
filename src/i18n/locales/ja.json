@@ -24,7 +24,10 @@
     "rise": "月の出",
     "set": "月の入り",
     "currentTime": "現在時刻",
-    "state": "月の状態"
+    "state": "月の状態",
+    "status": "月の状態",
+    "noTimeData": "月時刻データなし",
+    "alwaysBelowOrAboveHorizon": "常に地平線下 または 常に地平線上"
   },
   "moonPhase": {
     "newMoon": "新月",
@@ -79,7 +82,11 @@
     "correctionReversed": "方位角東西反転補正: {{status}}",
     "correctionOffset": "方位角オフセット設定: {{offset}}°",
     "enabled": "有効",
-    "disabled": "無効"
+    "disabled": "無効",
+    "searching": "探索中",
+    "weakDetection": "微弱検出",
+    "strongField": "強磁場",
+    "moonLocked": "月磁場！"
   },
   "info": {
     "title": "詳細情報",

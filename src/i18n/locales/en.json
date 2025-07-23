@@ -24,7 +24,10 @@
     "rise": "Moonrise",
     "set": "Moonset",
     "currentTime": "Current Time",
-    "state": "Moon State"
+    "state": "Moon State",
+    "status": "Moon Status",
+    "noTimeData": "No moon time data",
+    "alwaysBelowOrAboveHorizon": "Always below or above horizon"
   },
   "moonPhase": {
     "newMoon": "New Moon",
@@ -79,7 +82,11 @@
     "correctionReversed": "East-West correction: {{status}}",
     "correctionOffset": "Orientation offset: {{offset}}°",
     "enabled": "Enabled",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "searching": "Searching",
+    "weakDetection": "Weak Detection",
+    "strongField": "Strong Field",
+    "moonLocked": "Moon Locked!"
   },
   "info": {
     "title": "Information",

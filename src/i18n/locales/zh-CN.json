@@ -24,7 +24,10 @@
     "rise": "月出",
     "set": "月落",
     "currentTime": "当前时间",
-    "state": "月亮状态"
+    "state": "月亮状态",
+    "status": "月亮状态",
+    "noTimeData": "无月亮时间数据",
+    "alwaysBelowOrAboveHorizon": "始终在地平线下或上"
   },
   "moonPhase": {
     "newMoon": "新月",
@@ -79,7 +82,11 @@
     "correctionReversed": "方位角东西反转校正: {{status}}",
     "correctionOffset": "方位角偏移设置: {{offset}}°",
     "enabled": "启用",
-    "disabled": "停用"
+    "disabled": "停用",
+    "searching": "搜索中",
+    "weakDetection": "微弱检测",
+    "strongField": "强磁场",
+    "moonLocked": "月球锁定！"
   },
   "info": {
     "title": "详细信息",

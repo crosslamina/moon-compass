@@ -14,11 +14,20 @@ export class AccuracyDisplayManager {
     // UI要素
     private directionMatchDetailElement: HTMLElement | null;
     private altitudeMatchDetailElement: HTMLElement | null;
+    
+    // 現在の精度値を保存（言語切り替え時の再表示用）
+    private currentDirectionMatchPercentage: number = 0;
+    private currentAltitudeMatchPercentage: number = 0;
 
     private constructor() {
         this.i18n = I18nManager.getInstance();
         this.directionMatchDetailElement = document.getElementById('direction-match-detail');
         this.altitudeMatchDetailElement = document.getElementById('altitude-match-detail');
+        
+        // 言語変更を購読してリアルタイム更新を有効にする
+        this.i18n.subscribe(() => {
+            this.updateAccuracyLabels();
+        });
     }
 
     public static getInstance(): AccuracyDisplayManager {
@@ -97,13 +106,12 @@ export class AccuracyDisplayManager {
             altitudeMatchPercentage = Math.max(0, (1 - elevationDiff / maxElevationDiff) * 100);
         }
         
+        // 現在の精度値を保存
+        this.currentDirectionMatchPercentage = directionMatchPercentage;
+        this.currentAltitudeMatchPercentage = altitudeMatchPercentage;
+        
         // 詳細情報ダイアログの方位一致度と高度一致度を更新
-        if (this.directionMatchDetailElement) {
-            this.directionMatchDetailElement.textContent = `${this.i18n.t('info.azimuthAccuracy')}: ${directionMatchPercentage.toFixed(1)}%`;
-        }
-        if (this.altitudeMatchDetailElement) {
-            this.altitudeMatchDetailElement.textContent = `${this.i18n.t('info.altitudeAccuracy')}: ${altitudeMatchPercentage.toFixed(1)}%`;
-        }
+        this.updateAccuracyLabels();
 
         // デバッグ情報
         console.log('Accuracy calculation:', {
@@ -114,6 +122,18 @@ export class AccuracyDisplayManager {
             deviceElevation: deviceElevation.toFixed(1) + '°',
             moonElevation: moonElevation.toFixed(1) + '°'
         });
+    }
+
+    /**
+     * 精度ラベルを現在の言語で更新する（言語切り替え時用）
+     */
+    private updateAccuracyLabels(): void {
+        if (this.directionMatchDetailElement) {
+            this.directionMatchDetailElement.textContent = `${this.i18n.t('info.azimuthAccuracy')}: ${this.currentDirectionMatchPercentage.toFixed(1)}%`;
+        }
+        if (this.altitudeMatchDetailElement) {
+            this.altitudeMatchDetailElement.textContent = `${this.i18n.t('info.altitudeAccuracy')}: ${this.currentAltitudeMatchPercentage.toFixed(1)}%`;
+        }
     }
 
     /**

@@ -24,7 +24,10 @@
     "rise": "월출",
     "set": "월몰",
     "currentTime": "현재 시간",
-    "state": "달의 상태"
+    "state": "달의 상태",
+    "status": "달의 상태",
+    "noTimeData": "달 시간 데이터 없음",
+    "alwaysBelowOrAboveHorizon": "항상 지평선 아래 또는 위"
   },
   "moonPhase": {
     "newMoon": "신월",
@@ -79,7 +82,11 @@
     "correctionReversed": "방위각 동서 반전 보정: {{status}}",
     "correctionOffset": "방위각 오프셋 설정: {{offset}}°",
     "enabled": "활성화",
-    "disabled": "비활성화"
+    "disabled": "비활성화",
+    "searching": "검색 중",
+    "weakDetection": "약한 감지",
+    "strongField": "강한 자기장",
+    "moonLocked": "달 잠금!"
   },
   "info": {
     "title": "상세 정보",

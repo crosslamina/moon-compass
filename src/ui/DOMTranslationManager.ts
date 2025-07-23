@@ -110,22 +110,41 @@ export class DOMTranslationManager {
      * 設定カードの更新
      */
     private updateSettingCards(): void {
-        // すべての設定タイトルを取得して、内容に応じて翻訳
+        // IDまたはクラスベースで設定タイトルを更新
+        const volumeTitle = document.querySelector('[data-setting="volume"] .setting-title, .setting-title[data-key="volume"]');
+        if (volumeTitle) {
+            volumeTitle.textContent = this.i18n.t('settings.volume');
+        }
+
+        const sensitivityTitle = document.querySelector('[data-setting="sensitivity"] .setting-title, .setting-title[data-key="sensitivity"]');
+        if (sensitivityTitle) {
+            sensitivityTitle.textContent = this.i18n.t('settings.sensitivity');
+        }
+
+        const orientationTitle = document.querySelector('[data-setting="orientation"] .setting-title, .setting-title[data-key="orientation"]');
+        if (orientationTitle) {
+            orientationTitle.textContent = this.i18n.t('settings.orientationCorrection');
+        }
+
+        const displayTitle = document.querySelector('[data-setting="display"] .setting-title, .setting-title[data-key="display"]');
+        if (displayTitle) {
+            displayTitle.textContent = this.i18n.t('settings.display');
+        }
+
+        const languageTitle = document.querySelector('[data-setting="language"] .setting-title, .setting-title[data-key="language"]');
+        if (languageTitle) {
+            languageTitle.textContent = this.i18n.t('settings.language');
+        }
+
+        // フォールバック: data属性がない場合は順序ベースで更新
         const settingTitles = document.querySelectorAll('.setting-title');
-        settingTitles.forEach(title => {
-            const textContent = title.textContent;
-            if (textContent?.includes('音量')) {
-                title.textContent = this.i18n.t('settings.volume');
-            } else if (textContent?.includes('感度')) {
-                title.textContent = this.i18n.t('settings.sensitivity');
-            } else if (textContent?.includes('方位角補正')) {
-                title.textContent = this.i18n.t('settings.orientationCorrection');
-            } else if (textContent?.includes('表示設定')) {
-                title.textContent = this.i18n.t('settings.display');
-            } else if (textContent?.includes('言語設定')) {
-                title.textContent = this.i18n.t('settings.language');
-            }
-        });
+        if (settingTitles.length >= 5) {
+            settingTitles[0].textContent = this.i18n.t('settings.volume');
+            settingTitles[1].textContent = this.i18n.t('settings.sensitivity');
+            settingTitles[2].textContent = this.i18n.t('settings.orientationCorrection');
+            settingTitles[3].textContent = this.i18n.t('settings.display');
+            settingTitles[4].textContent = this.i18n.t('settings.language');
+        }
 
         // ボタンテキスト
         const toggleReverseBtn = document.getElementById('toggle-reverse-btn');
@@ -151,7 +170,13 @@ export class DOMTranslationManager {
         // 検出レベル表示ステータス
         const detectionDisplayStatus = document.getElementById('detection-display-status');
         if (detectionDisplayStatus) {
-            const isOn = detectionDisplayStatus.textContent?.includes('ON');
+            // data属性やクラスで状態を確認する方法に変更
+            const statusElement = detectionDisplayStatus.closest('[data-status]');
+            const isOn = statusElement?.getAttribute('data-status') === 'on' || 
+                        detectionDisplayStatus.classList.contains('status-on') ||
+                        detectionDisplayStatus.textContent?.includes('ON') || // フォールバック
+                        detectionDisplayStatus.textContent?.includes('オン');
+            
             const status = isOn ? this.i18n.t('settings.status.on') : this.i18n.t('settings.status.off');
             detectionDisplayStatus.textContent = this.i18n.t('settings.detectionDisplayStatus', { status });
         }
@@ -161,15 +186,23 @@ export class DOMTranslationManager {
      * 情報ダイアログの翻訳更新
      */
     private updateInfoCards(): void {
-        // 情報ダイアログ内の情報カードタイトル
+        // IDまたはクラスベースで情報カードタイトルを更新
+        const moonStateTitle = document.querySelector('[data-info="moon-state"] .info-title, .info-title[data-key="moon-state"]');
+        if (moonStateTitle) {
+            moonStateTitle.textContent = this.i18n.t('info.moonState');
+        }
+
+        const locationSensorTitle = document.querySelector('[data-info="location-sensor"] .info-title, .info-title[data-key="location-sensor"]');
+        if (locationSensorTitle) {
+            locationSensorTitle.textContent = this.i18n.t('info.locationSensor');
+        }
+
+        // フォールバック: data属性がない場合は順序ベースで更新
         const infoTitles = document.querySelectorAll('.info-title');
-        infoTitles.forEach(title => {
-            if (title.textContent?.includes('月の状態')) {
-                title.textContent = this.i18n.t('info.moonState');
-            } else if (title.textContent?.includes('位置・センサー')) {
-                title.textContent = this.i18n.t('info.locationSensor');
-            }
-        });
+        if (infoTitles.length >= 2) {
+            infoTitles[0].textContent = this.i18n.t('info.moonState');
+            infoTitles[1].textContent = this.i18n.t('info.locationSensor');
+        }
 
         // 地図リンクの翻訳
         const mapLink = document.getElementById('map-link');

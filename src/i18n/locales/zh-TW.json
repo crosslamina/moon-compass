@@ -23,6 +23,33 @@
     "illumination": "照明率",
     "rise": "月出",
     "set": "月落",
+    "currentTime": "當前時間",
+    "state": "月亮狀態",
+    "status": "月亮狀態",
+    "noTimeData": "無月亮時間數據",
+    "alwaysBelowOrAboveHorizon": "始終在地平線下或上"
+  },
+    "locationPermission": "允許位置權限",
+    "info": "詳細資訊",
+    "settings": "設定",
+    "close": "關閉"
+  },
+  "compass": {
+    "userDirection": "您的方向",
+    "moonPosition": "月亮位置",
+    "needle": {
+      "red": "紅針",
+      "gold": "金針"
+    }
+  },
+  "moon": {
+    "direction": "方向",
+    "distance": "距離",
+    "altitude": "高度",
+    "phase": "月相",
+    "illumination": "照明率",
+    "rise": "月出",
+    "set": "月落",
     "currentTime": "目前時間",
     "state": "月亮狀態"
   },
@@ -79,7 +106,11 @@
     "correctionReversed": "方位角東西反轉校正: {{status}}",
     "correctionOffset": "方位角偏移設定: {{offset}}°",
     "enabled": "啟用",
-    "disabled": "停用"
+    "disabled": "停用",
+    "searching": "搜尋中",
+    "weakDetection": "微弱檢測",
+    "strongField": "強磁場",
+    "moonLocked": "月球鎖定！"
   },
   "info": {
     "title": "詳細資訊",
