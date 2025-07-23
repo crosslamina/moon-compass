@@ -33,6 +33,8 @@ const accuracyManager = AccuracyDisplayManager.getInstance();
 const moonDisplayManager = MoonDisplayManager.getInstance();
 const domTranslationManager = DOMTranslationManager.getInstance();
 const i18nManager = I18nManager.getInstance();
+// HTML言語属性の初期化
+i18nManager.initialize();
 let compassManager: CompassManager | null = null;
 let moonStatusDisplay: MoonStatusDisplay | null = null;
 

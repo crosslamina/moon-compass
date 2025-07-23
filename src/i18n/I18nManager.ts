@@ -31,6 +31,19 @@ export class I18nManager {
     }
 
     /**
+     * I18nManagerを初期化（HTML lang属性の設定含む）
+     */
+    public initialize(): void {
+        // HTML要素のlang属性を現在のロケールに設定
+        const htmlElement = document.documentElement;
+        if (htmlElement) {
+            htmlElement.lang = this.currentLocale;
+        }
+        
+        console.log(`🌍 I18nManager initialized with locale: ${this.currentLocale}`);
+    }
+
+    /**
      * ネストされたオブジェクトをフラットなキーバリューペアに変換
      */
     private flattenTranslations(obj: NestedTranslations, prefix = ''): Record<string, string> {
@@ -117,6 +130,13 @@ export class I18nManager {
         if (this.currentLocale !== locale) {
             this.currentLocale = locale;
             this.saveUserPreference();
+            
+            // HTML要素のlang属性も更新
+            const htmlElement = document.documentElement;
+            if (htmlElement) {
+                htmlElement.lang = locale;
+            }
+            
             this.notifyObservers();
         }
     }
