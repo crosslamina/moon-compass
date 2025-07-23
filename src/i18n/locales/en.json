@@ -90,10 +90,13 @@
     "title": "Information",
     "moonState": "Moon State",
     "locationSensor": "Location & Sensors",
-    "deviceOrientation": "Azimuth: {{azimuth}}° | Tilt: {{tilt}}°",
-    "coordinates": "Coordinates",
+    "sensorData": "Sensor Data",
+    "deviceOrientation": "Device Orientation: {{azimuth}}° | Tilt: {{tilt}}°",
+    "trackingAccuracy": "Tracking Accuracy",
     "azimuthAccuracy": "Azimuth Accuracy",
     "altitudeAccuracy": "Altitude Accuracy",
+    "locationData": "Location Data",
+    "coordinates": "Coordinates",
     "viewOnMap": "View on Map"
   },
   "error": {

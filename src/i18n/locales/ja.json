@@ -90,10 +90,13 @@
     "title": "詳細情報",
     "moonState": "月の状態",
     "locationSensor": "位置・センサー",
-    "deviceOrientation": "方位: {{azimuth}}° | 傾き: {{tilt}}°",
-    "coordinates": "座標",
+    "sensorData": "センサーデータ",
+    "deviceOrientation": "デバイス方位: {{azimuth}}° | 傾き: {{tilt}}°",
+    "trackingAccuracy": "追跡精度",
     "azimuthAccuracy": "方位精度",
     "altitudeAccuracy": "高度精度",
+    "locationData": "位置情報",
+    "coordinates": "座標",
     "viewOnMap": "地図で確認"
   },
   "error": {

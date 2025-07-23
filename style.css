@@ -997,10 +997,34 @@ body {
     gap: 12px;
 }
 
-.moon-group {
+/* 新しいセンサー情報レイアウト */
+.info-content.sensor-info-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.moon-group, .sensor-group {
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+
+/* センサーグループタイトル */
+.sensor-group-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: rgba(255, 215, 0, 0.8);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* 追跡精度グループ - 2カラム */
+.tracking-accuracy-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
 }
 
 /* 基本属性グループ - 2カラム */
@@ -1079,16 +1103,49 @@ body {
     background: rgba(155, 89, 182, 0.15);
 }
 
+/* センサーデータグループ - 緑がかった色調 */
+.info-item.sensor-data {
+    border-left-color: rgba(46, 204, 113, 0.4);
+    background: rgba(46, 204, 113, 0.08);
+}
+
+.info-item.sensor-data:hover {
+    border-left-color: #2ecc71;
+    background: rgba(46, 204, 113, 0.15);
+}
+
+/* 追跡精度グループ - オレンジがかった色調 */
+.info-item.tracking-accuracy {
+    border-left-color: rgba(230, 126, 34, 0.4);
+    background: rgba(230, 126, 34, 0.08);
+}
+
+.info-item.tracking-accuracy:hover {
+    border-left-color: #e67e22;
+    background: rgba(230, 126, 34, 0.15);
+}
+
+/* 位置情報グループ - 青がかった色調 */
+.info-item.location-data {
+    border-left-color: rgba(52, 152, 219, 0.4);
+    background: rgba(52, 152, 219, 0.08);
+}
+
+.info-item.location-data:hover {
+    border-left-color: #3498db;
+    background: rgba(52, 152, 219, 0.15);
+}
+
 /* グループ間の視覚的区切り */
-.moon-group {
+.moon-group, .sensor-group {
     position: relative;
 }
 
-.moon-group:not(:first-child) {
+.moon-group:not(:first-child), .sensor-group:not(:first-child) {
     margin-top: 8px;
 }
 
-.moon-group:not(:first-child)::before {
+.moon-group:not(:first-child)::before, .sensor-group:not(:first-child)::before {
     content: '';
     position: absolute;
     top: -4px;
@@ -1101,13 +1158,55 @@ body {
 /* レスポンシブ対応 */
 @media (max-width: 480px) {
     .moon-basic-group,
-    .moon-time-group {
+    .moon-time-group,
+    .tracking-accuracy-items {
         grid-template-columns: 1fr;
     }
     
     .moon-position-group {
         grid-template-columns: 1fr 1fr;
     }
+    
+/* レスポンシブ対応 */
+@media (max-width: 480px) {
+    .moon-basic-group,
+    .moon-time-group,
+    .tracking-accuracy-items {
+        grid-template-columns: 1fr;
+    }
+    
+    .moon-position-group {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    /* 小さな画面では座標テキストを短縮 */
+    .coordinates-with-map {
+        gap: 4px;
+    }
+    
+    .map-link-inline {
+        padding: 2px 4px;
+        min-width: 32px;
+        height: 18px;
+        font-size: 9px;
+    }
+    
+    .map-icon {
+        font-size: 9px;
+    }
+    
+    .map-text {
+        font-size: 8px;
+    }
+}
+
+/* 中サイズ画面での追跡精度調整 */
+@media (max-width: 600px) and (min-width: 481px) {
+    .tracking-accuracy-items .info-item {
+        font-size: 12px;
+        padding: 5px 8px;
+    }
+}
 }
 
 .map-link {
@@ -1130,6 +1229,51 @@ body {
     box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
     text-decoration: none;
     color: white;
+}
+
+/* インライン地図リンク用のスタイル */
+.coordinates-with-map {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.map-link-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 3px 6px;
+    min-width: 40px;
+    height: 22px;
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.map-link-inline:hover {
+    background: rgba(255, 255, 255, 0.22);
+    color: rgba(255, 255, 255, 1);
+    border-color: rgba(255, 255, 255, 0.4);
+    text-decoration: none;
+}
+
+.map-icon {
+    font-size: 10px;
+    line-height: 1;
+}
+
+.map-text {
+    font-size: 10px;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 /* 詳細情報の特定要素スタイル - シンプルな色使い */

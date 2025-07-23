@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="https://itellyo.logos-ies.co.jp/logomark.png" />
+    <meta name="google-site-verification" content="DRjcTmhtpTzbRrZ4-wIy0SJ1_AsEUXc5glTGdGQDCLo" />
+    <meta name="google-site-verification" content="7PhcUYTAgMbuxzApmVniTavGXV23KOjaCk-6TAm6VOA" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="あいてるよ is a tool that integrates with Google Calendar to help you find your available time slots and facilitate smooth schedule coordination." />
+    <meta property="og:url" content="https://itellyo.logos-ies.co.jp/" />
+    <meta property="og:title" content="Itellyo あいてるよ" />
+    <meta property="og:description" content="あいてるよ is a tool that integrates with Google Calendar to help you find your available time slots and facilitate smooth schedule coordination." />
+    <meta property="og:image" content="https://itellyo.logos-ies.co.jp/logomark.png" />
+    <meta property="og:type" content="website" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>月見コンパス</title>
@@ -140,13 +151,30 @@
                         <span class="info-icon">📍</span>
                         <span class="info-title">位置・センサー</span>
                     </div>
-                    <div class="info-content">
-                        <div class="info-item" id="device-orientation"></div>
-                        <div class="info-item" id="direction-match-detail"></div>
-                        <div class="info-item" id="altitude-match-detail"></div>
-                        <div class="info-item" id="geo-info"></div>
-                        <div class="info-item">
-                            <a id="map-link" href="#" target="_blank" class="map-link">🗺️ 地図で確認</a>
+                    <div class="info-content sensor-info-layout">
+                        <!-- センサーデータグループ -->
+                        <div class="sensor-group sensor-data-group">
+                            <div class="sensor-group-title">センサーデータ</div>
+                            <div class="info-item sensor-data" id="device-orientation"></div>
+                        </div>
+                        <!-- 追跡精度グループ -->
+                        <div class="sensor-group tracking-accuracy-group">
+                            <div class="sensor-group-title">追跡精度</div>
+                            <div class="tracking-accuracy-items">
+                                <div class="info-item tracking-accuracy" id="direction-match-detail"></div>
+                                <div class="info-item tracking-accuracy" id="altitude-match-detail"></div>
+                            </div>
+                        </div>
+                        <!-- 位置情報グループ -->
+                        <div class="sensor-group location-data-group">
+                            <div class="sensor-group-title">位置情報</div>
+                            <div class="info-item location-data coordinates-with-map" id="geo-info-container">
+                                <span id="geo-info"></span>
+                                <a id="map-link" href="#" target="_blank" class="map-link-inline">
+                                    <span class="map-icon">🗺️</span>
+                                    <span class="map-text">地図</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

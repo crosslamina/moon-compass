@@ -90,10 +90,13 @@
     "title": "상세 정보",
     "moonState": "달의 상태",
     "locationSensor": "위치・센서",
-    "deviceOrientation": "방위: {{azimuth}}° | 기울기: {{tilt}}°",
-    "coordinates": "좌표",
+    "sensorData": "센서 데이터",
+    "deviceOrientation": "기기 방향: {{azimuth}}° | 기울기: {{tilt}}°",
+    "trackingAccuracy": "추적 정확도",
     "azimuthAccuracy": "방위 정확도",
     "altitudeAccuracy": "고도 정확도",
+    "locationData": "위치 정보",
+    "coordinates": "좌표",
     "viewOnMap": "지도에서 확인"
   },
   "error": {

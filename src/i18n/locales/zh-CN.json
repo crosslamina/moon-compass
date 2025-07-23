@@ -90,10 +90,13 @@
     "title": "详细信息",
     "moonState": "月亮状态",
     "locationSensor": "位置・传感器",
-    "deviceOrientation": "方位: {{azimuth}}° | 倾斜: {{tilt}}°",
-    "coordinates": "坐标",
+    "sensorData": "传感器数据",
+    "deviceOrientation": "设备方位: {{azimuth}}° | 倾斜: {{tilt}}°",
+    "trackingAccuracy": "跟踪精度",
     "azimuthAccuracy": "方位精度",
     "altitudeAccuracy": "高度精度",
+    "locationData": "位置信息",
+    "coordinates": "坐标",
     "viewOnMap": "在地图上查看"
   },
   "error": {

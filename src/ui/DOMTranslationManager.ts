@@ -191,10 +191,35 @@ export class DOMTranslationManager {
             infoTitles[1].textContent = this.i18n.t('info.locationSensor');
         }
 
-        // 地図リンクの翻訳
+        // センサーグループタイトルの翻訳
+        this.updateSensorGroupTitles();
+
+        // 地図リンクの翻訳（アイコンとテキストラベルの両方を表示）
         const mapLink = document.getElementById('map-link');
         if (mapLink) {
-            mapLink.textContent = `🗺️ ${this.i18n.t('info.viewOnMap')}`;
+            const mapText = mapLink.querySelector('.map-text');
+            if (mapText) {
+                mapText.textContent = this.i18n.t('info.viewOnMap');
+            }
+            // title属性とaria-labelでアクセシビリティ対応
+            mapLink.setAttribute('title', this.i18n.t('info.viewOnMap'));
+            mapLink.setAttribute('aria-label', this.i18n.t('info.viewOnMap'));
+        }
+    }
+
+    /**
+     * センサーグループタイトルの翻訳更新
+     */
+    private updateSensorGroupTitles(): void {
+        const sensorGroupTitles = document.querySelectorAll('.sensor-group-title');
+        
+        if (sensorGroupTitles.length >= 3) {
+            // センサーデータ
+            sensorGroupTitles[0].textContent = this.i18n.t('info.sensorData');
+            // 追跡精度
+            sensorGroupTitles[1].textContent = this.i18n.t('info.trackingAccuracy');
+            // 位置情報
+            sensorGroupTitles[2].textContent = this.i18n.t('info.locationData');
         }
     }
 
