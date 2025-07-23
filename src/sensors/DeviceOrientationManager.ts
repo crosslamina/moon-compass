@@ -1,4 +1,5 @@
 import { StateManager } from '../state/StateManager';
+import { I18nManager } from '../i18n/I18nManager';
 
 interface OrientationCorrection {
     isCalibrated: boolean;
@@ -11,6 +12,7 @@ interface OrientationCorrection {
 export class DeviceOrientationManager {
     private static instance: DeviceOrientationManager;
     private stateManager: StateManager;
+    private i18nManager: I18nManager;
     private deviceOrientationElement: HTMLElement | null;
     private permissionButton: HTMLButtonElement | null;
     private readonly STORAGE_KEY = 'tsuki-ga-kirei-orientation-correction';
@@ -34,6 +36,7 @@ export class DeviceOrientationManager {
 
     private constructor() {
         this.stateManager = StateManager.getInstance();
+        this.i18nManager = I18nManager.getInstance();
         this.deviceOrientationElement = document.getElementById('device-orientation');
         this.permissionButton = document.getElementById('permission-button') as HTMLButtonElement;
         
@@ -58,7 +61,7 @@ export class DeviceOrientationManager {
         
         if (!window.DeviceOrientationEvent) {
             console.error('DeviceOrientationEvent がサポートされていません');
-            this.updateOrientationDisplay('センサー未対応');
+            this.updateOrientationDisplay(this.i18nManager.t('error.sensorNotSupported'));
             return;
         }
 
@@ -77,7 +80,7 @@ export class DeviceOrientationManager {
                 this.setupSensorListener('deviceorientationabsolute');
             } else {
                 console.error('❌ deviceorientationabsolute が利用できません');
-                this.updateOrientationDisplay('絶対方位センサー未対応');
+                this.updateOrientationDisplay(this.i18nManager.t('error.sensorNotSupported'));
                 return;
             }
         }
@@ -129,11 +132,11 @@ export class DeviceOrientationManager {
                             this.permissionButton!.style.display = 'none';
                         } else {
                             console.error('iOS権限が拒否されました');
-                            this.updateOrientationDisplay('センサー許可拒否');
+                            this.updateOrientationDisplay(this.i18nManager.t('error.permissionRequired'));
                         }
                     } catch (error) {
                         console.error('Device orientation permission error:', error);
-                        this.updateOrientationDisplay('センサーエラー');
+                        this.updateOrientationDisplay(this.i18nManager.t('error.sensorNotSupported'));
                     }
                 };
             }
@@ -295,7 +298,10 @@ export class DeviceOrientationManager {
         const filteredBeta = this.deviceOrientation.beta;
 
         this.deviceOrientationElement.textContent = 
-            `方位: ${correctedAlpha?.toFixed(1) ?? 'N/A'}° | 傾き: ${filteredBeta?.toFixed(1) ?? 'N/A'}°`;
+            this.i18nManager.t('info.deviceOrientation', {
+                azimuth: correctedAlpha?.toFixed(1) ?? this.i18nManager.t('label.noData'),
+                tilt: filteredBeta?.toFixed(1) ?? this.i18nManager.t('label.noData')
+            });
     }
 
     private dispatchOrientationUpdate(): void {
