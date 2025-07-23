@@ -1,4 +1,5 @@
 import { MoonData } from '../moon';
+import { I18nManager } from '../i18n';
 
 interface DeviceOrientation {
     alpha: number | null;
@@ -8,12 +9,14 @@ interface DeviceOrientation {
 
 export class AccuracyDisplayManager {
     private static instance: AccuracyDisplayManager;
+    private i18n: I18nManager;
     
     // UI要素
     private directionMatchDetailElement: HTMLElement | null;
     private altitudeMatchDetailElement: HTMLElement | null;
 
     private constructor() {
+        this.i18n = I18nManager.getInstance();
         this.directionMatchDetailElement = document.getElementById('direction-match-detail');
         this.altitudeMatchDetailElement = document.getElementById('altitude-match-detail');
     }
@@ -96,10 +99,10 @@ export class AccuracyDisplayManager {
         
         // 詳細情報ダイアログの方位一致度と高度一致度を更新
         if (this.directionMatchDetailElement) {
-            this.directionMatchDetailElement.textContent = `方位精度: ${directionMatchPercentage.toFixed(1)}%`;
+            this.directionMatchDetailElement.textContent = `${this.i18n.t('info.azimuthAccuracy')}: ${directionMatchPercentage.toFixed(1)}%`;
         }
         if (this.altitudeMatchDetailElement) {
-            this.altitudeMatchDetailElement.textContent = `高度精度: ${altitudeMatchPercentage.toFixed(1)}%`;
+            this.altitudeMatchDetailElement.textContent = `${this.i18n.t('info.altitudeAccuracy')}: ${altitudeMatchPercentage.toFixed(1)}%`;
         }
 
         // デバッグ情報

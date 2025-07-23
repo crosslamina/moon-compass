@@ -42,6 +42,7 @@
     "today": "오늘",
     "none": "없음",
     "remaining": "{{hours}}:{{minutes}} 남음",
+    "after": "후",
     "alwaysBelow": "항상 지평선 아래",
     "alwaysAbove": "항상 지평선 위",
     "specialStatus": "항상 지평선 아래 또는 위"
@@ -58,6 +59,7 @@
   "settings": {
     "title": "설정",
     "sensitivity": "감도 설정",
+    "volume": "볼륨",
     "orientationCorrection": "방위각 보정",
     "display": "표시 설정",
     "language": "언어 설정",
@@ -81,10 +83,13 @@
   },
   "info": {
     "title": "상세 정보",
-    "moonState": "달의 상태・시각",
+    "moonState": "달의 상태",
     "locationSensor": "위치・센서",
     "deviceOrientation": "방위: {{azimuth}}° | 기울기: {{tilt}}°",
-    "coordinates": "좌표"
+    "coordinates": "좌표",
+    "azimuthAccuracy": "방위 정확도",
+    "altitudeAccuracy": "고도 정확도",
+    "viewOnMap": "지도에서 확인"
   },
   "error": {
     "sensorNotSupported": "센서가 지원되지 않습니다",

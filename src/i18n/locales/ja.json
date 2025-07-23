@@ -42,6 +42,7 @@
     "today": "本日",
     "none": "なし",
     "remaining": "あと{{hours}}:{{minutes}}",
+    "after": "あと",
     "alwaysBelow": "常に地平線下",
     "alwaysAbove": "常に地平線上",
     "specialStatus": "常に地平線下 または 常に地平線上"
@@ -58,6 +59,7 @@
   "settings": {
     "title": "設定",
     "sensitivity": "感度設定",
+    "volume": "音量",
     "orientationCorrection": "方位角補正",
     "display": "表示設定",
     "language": "言語設定",
@@ -81,10 +83,13 @@
   },
   "info": {
     "title": "詳細情報",
-    "moonState": "月の状態・時刻",
+    "moonState": "月の状態",
     "locationSensor": "位置・センサー",
     "deviceOrientation": "方位: {{azimuth}}° | 傾き: {{tilt}}°",
-    "coordinates": "座標"
+    "coordinates": "座標",
+    "azimuthAccuracy": "方位精度",
+    "altitudeAccuracy": "高度精度",
+    "viewOnMap": "地図で確認"
   },
   "error": {
     "sensorNotSupported": "センサーがサポートされていません",

@@ -42,6 +42,7 @@
     "today": "Today",
     "none": "None",
     "remaining": "{{hours}}:{{minutes}} left",
+    "after": "in",
     "alwaysBelow": "Always below horizon",
     "alwaysAbove": "Always above horizon",
     "specialStatus": "Always below or above horizon"
@@ -58,6 +59,7 @@
   "settings": {
     "title": "Settings",
     "sensitivity": "Sensitivity",
+    "volume": "Volume",
     "orientationCorrection": "Orientation Correction",
     "display": "Display",
     "language": "Language",
@@ -81,10 +83,13 @@
   },
   "info": {
     "title": "Information",
-    "moonState": "Moon State & Times",
+    "moonState": "Moon State",
     "locationSensor": "Location & Sensors",
     "deviceOrientation": "Azimuth: {{azimuth}}° | Tilt: {{tilt}}°",
-    "coordinates": "Coordinates"
+    "coordinates": "Coordinates",
+    "azimuthAccuracy": "Azimuth Accuracy",
+    "altitudeAccuracy": "Altitude Accuracy",
+    "viewOnMap": "View on Map"
   },
   "error": {
     "sensorNotSupported": "Sensors not supported",

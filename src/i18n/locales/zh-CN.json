@@ -42,6 +42,7 @@
     "today": "今日",
     "none": "无",
     "remaining": "还有{{hours}}:{{minutes}}",
+    "after": "还有",
     "alwaysBelow": "始终在地平线下",
     "alwaysAbove": "始终在地平线上",
     "specialStatus": "始终在地平线下或地平线上"
@@ -58,6 +59,7 @@
   "settings": {
     "title": "设置",
     "sensitivity": "灵敏度设置",
+    "volume": "音量",
     "orientationCorrection": "方位角校正",
     "display": "显示设置",
     "language": "语言设置",
@@ -81,10 +83,13 @@
   },
   "info": {
     "title": "详细信息",
-    "moonState": "月亮状态・时刻",
+    "moonState": "月亮状态",
     "locationSensor": "位置・传感器",
     "deviceOrientation": "方位: {{azimuth}}° | 倾斜: {{tilt}}°",
-    "coordinates": "坐标"
+    "coordinates": "坐标",
+    "azimuthAccuracy": "方位精度",
+    "altitudeAccuracy": "高度精度",
+    "viewOnMap": "在地图上查看"
   },
   "error": {
     "sensorNotSupported": "不支持传感器",
