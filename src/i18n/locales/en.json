@@ -110,7 +110,9 @@
     "south": "South",
     "southwest": "Southwest",
     "west": "West",
-    "northwest": "Northwest"
+    "northwest": "Northwest",
+    "left": "Left",
+    "right": "Right"
   },
   "label": {
     "noData": "No data",

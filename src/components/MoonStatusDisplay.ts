@@ -2,6 +2,7 @@ import { MoonTimes } from '../moon';
 import { CompassState } from './CompassManager';
 import { DOMManager } from '../ui/DOMManager';
 import { DialogManager } from '../ui/DialogManager';
+import { I18nManager } from '../i18n/I18nManager';
 
 /**
  * 月探査ステータス表示管理クラス
@@ -10,11 +11,13 @@ import { DialogManager } from '../ui/DialogManager';
 export class MoonStatusDisplay {
     private domManager: DOMManager;
     private dialogManager: DialogManager;
+    private i18nManager: I18nManager;
     private statusElement: HTMLElement | null = null;
 
     constructor() {
         this.domManager = DOMManager.getInstance();
         this.dialogManager = DialogManager.getInstance();
+        this.i18nManager = I18nManager.getInstance();
         this.createStatusElement();
     }
 
@@ -142,16 +145,16 @@ export class MoonStatusDisplay {
                 html += `
                     <div class="moon-time moon-rise future">
                         <span class="time-icon">🌅</span>
-                        <span class="time-label">月の出:</span>
+                        <span class="time-label">${this.i18nManager.t('moon.rise')}:</span>
                         <span class="time-value">${riseTime}</span>
-                        <span class="time-countdown">(あと${hours}:${minutes.toString().padStart(2, '0')})</span>
+                        <span class="time-countdown">(${this.i18nManager.t('time.remaining', { hours: hours.toString(), minutes: minutes.toString().padStart(2, '0') })})</span>
                     </div>
                 `;
             } else {
                 html += `
                     <div class="moon-time moon-rise past">
                         <span class="time-icon">🌅</span>
-                        <span class="time-label">月の出:</span>
+                        <span class="time-label">${this.i18nManager.t('moon.rise')}:</span>
                         <span class="time-value">${riseTime}</span>
                     </div>
                 `;
@@ -160,8 +163,8 @@ export class MoonStatusDisplay {
             html += `
                 <div class="moon-time moon-rise no-event">
                     <span class="time-icon">🌅</span>
-                    <span class="time-label">月の出:</span>
-                    <span class="time-value no-data">本日なし</span>
+                    <span class="time-label">${this.i18nManager.t('moon.rise')}:</span>
+                    <span class="time-value no-data">${this.i18nManager.t('time.none')}</span>
                 </div>
             `;
         }
@@ -181,16 +184,16 @@ export class MoonStatusDisplay {
                 html += `
                     <div class="moon-time moon-set future">
                         <span class="time-icon">🌇</span>
-                        <span class="time-label">月の入り:</span>
+                        <span class="time-label">${this.i18nManager.t('moon.set')}:</span>
                         <span class="time-value">${setTime}</span>
-                        <span class="time-countdown">(あと${hours}:${minutes.toString().padStart(2, '0')})</span>
+                        <span class="time-countdown">(${this.i18nManager.t('time.remaining', { hours: hours.toString(), minutes: minutes.toString().padStart(2, '0') })})</span>
                     </div>
                 `;
             } else {
                 html += `
                     <div class="moon-time moon-set past">
                         <span class="time-icon">🌇</span>
-                        <span class="time-label">月の入り:</span>
+                        <span class="time-label">${this.i18nManager.t('moon.set')}:</span>
                         <span class="time-value">${setTime}</span>
                     </div>
                 `;
@@ -199,8 +202,8 @@ export class MoonStatusDisplay {
             html += `
                 <div class="moon-time moon-set no-event">
                     <span class="time-icon">🌇</span>
-                    <span class="time-label">月の入り:</span>
-                    <span class="time-value no-data">本日なし</span>
+                    <span class="time-label">${this.i18nManager.t('moon.set')}:</span>
+                    <span class="time-value no-data">${this.i18nManager.t('time.none')}</span>
                 </div>
             `;
         }

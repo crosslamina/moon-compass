@@ -110,7 +110,9 @@
     "south": "南",
     "southwest": "南西",
     "west": "西",
-    "northwest": "北西"
+    "northwest": "北西",
+    "left": "左",
+    "right": "右"
   },
   "label": {
     "noData": "データなし",

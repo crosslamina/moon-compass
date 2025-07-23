@@ -1,6 +1,7 @@
 import { MoonData, MoonTimes, calculateAngleDifference, calculateBlinkIntensity, drawMoonPhase } from '../moon';
 import { getDirectionName } from '../direction';
 import { AccuracyDisplayManager } from '../accuracy/AccuracyDisplayManager';
+import { I18nManager } from '../i18n/I18nManager';
 
 interface DeviceOrientation {
     alpha: number | null;
@@ -11,6 +12,7 @@ interface DeviceOrientation {
 export class MoonDisplayManager {
     private static instance: MoonDisplayManager;
     private accuracyManager: AccuracyDisplayManager;
+    private i18nManager: I18nManager;
     
     // UI要素
     private moonDirectionElement: HTMLElement | null;
@@ -26,6 +28,7 @@ export class MoonDisplayManager {
 
     private constructor() {
         this.accuracyManager = AccuracyDisplayManager.getInstance();
+        this.i18nManager = I18nManager.getInstance();
         
         this.moonDirectionElement = document.getElementById('moon-direction');
         this.distanceElement = document.getElementById('distance');
@@ -47,7 +50,7 @@ export class MoonDisplayManager {
     }
 
     public initialize(): void {
-        console.log('🌙 MoonDisplayManagerを初期化しました');
+        console.log('🌙 MoonDisplayManager initialized');
     }
 
     /**
@@ -82,7 +85,7 @@ export class MoonDisplayManager {
             while (azimuthDiff < -180) azimuthDiff += 360;
             
             const absDiff = Math.abs(azimuthDiff);
-            const direction = azimuthDiff > 0 ? '左' : '右';
+            const direction = azimuthDiff > 0 ? this.i18nManager.t('direction.left') : this.i18nManager.t('direction.right');
             
             this.moonDirectionElement.textContent = `${directionName} ${moonData.azimuth.toFixed(1)}°`;
             
@@ -102,23 +105,23 @@ export class MoonDisplayManager {
 
     private updateMoonInfo(moonData: MoonData): void {
         if (this.distanceElement) {
-            this.distanceElement.textContent = `距離: ${moonData.distance.toFixed(0)} km`;
+            this.distanceElement.textContent = `${this.i18nManager.t('moon.distance')}: ${moonData.distance.toFixed(0)} ${this.i18nManager.t('unit.km')}`;
         }
         
         if (this.currentTimeElement) {
-            this.currentTimeElement.textContent = `現在時刻: ${new Date().toLocaleTimeString()}`;
+            this.currentTimeElement.textContent = `${this.i18nManager.t('moon.currentTime')}: ${new Date().toLocaleTimeString()}`;
         }
         
         if (this.moonPhaseElement) {
-            this.moonPhaseElement.textContent = `月齢: ${this.getPhaseName(moonData.phase)} (${(moonData.phase * 29.53).toFixed(1)})`;
+            this.moonPhaseElement.textContent = `${this.i18nManager.t('moon.phase')}: ${this.getPhaseName(moonData.phase)} (${(moonData.phase * 29.53).toFixed(1)})`;
         }
         
         if (this.illuminationElement) {
-            this.illuminationElement.textContent = `照明率: ${(moonData.illumination * 100).toFixed(1)}%`;
+            this.illuminationElement.textContent = `${this.i18nManager.t('moon.illumination')}: ${(moonData.illumination * 100).toFixed(1)}${this.i18nManager.t('unit.percent')}`;
         }
         
         if (this.altitudeElement) {
-            this.altitudeElement.textContent = `高度: ${moonData.altitude.toFixed(2)}°`;
+            this.altitudeElement.textContent = `${this.i18nManager.t('moon.altitude')}: ${moonData.altitude.toFixed(2)}${this.i18nManager.t('unit.degree')}`;
         }
     }
 
@@ -132,12 +135,12 @@ export class MoonDisplayManager {
                     const diffMs = moonTimes.rise.getTime() - now.getTime();
                     const hours = Math.floor(diffMs / (1000 * 60 * 60));
                     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                    this.moonRiseElement.textContent = `月の出: ${riseTime} (あと${hours}:${minutes})`;
+                    this.moonRiseElement.textContent = `${this.i18nManager.t('moon.rise')}: ${riseTime} (${this.i18nManager.t('time.remaining', { hours: hours.toString().padStart(2, '0'), minutes: minutes.toString().padStart(2, '0') })})`;
                 } else {
-                    this.moonRiseElement.textContent = `月の出: ${riseTime}`;
+                    this.moonRiseElement.textContent = `${this.i18nManager.t('moon.rise')}: ${riseTime}`;
                 }
             } else {
-                this.moonRiseElement.textContent = `月の出: N/A`;
+                this.moonRiseElement.textContent = `${this.i18nManager.t('moon.rise')}: ${this.i18nManager.t('label.noData')}`;
             }
         }
         
@@ -148,12 +151,12 @@ export class MoonDisplayManager {
                     const diffMs = moonTimes.set.getTime() - now.getTime();
                     const hours = Math.floor(diffMs / (1000 * 60 * 60));
                     const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                    this.moonSetElement.textContent = `月の入り: ${setTime} (あと${hours}:${minutes})`;
+                    this.moonSetElement.textContent = `${this.i18nManager.t('moon.set')}: ${setTime} (${this.i18nManager.t('time.remaining', { hours: hours.toString().padStart(2, '0'), minutes: minutes.toString().padStart(2, '0') })})`;
                 } else {
-                    this.moonSetElement.textContent = `月の入り: ${setTime}`;
+                    this.moonSetElement.textContent = `${this.i18nManager.t('moon.set')}: ${setTime}`;
                 }
             } else {
-                this.moonSetElement.textContent = `月の入り: N/A`;
+                this.moonSetElement.textContent = `${this.i18nManager.t('moon.set')}: ${this.i18nManager.t('label.noData')}`;
             }
         }
     }
@@ -196,14 +199,14 @@ export class MoonDisplayManager {
     }
 
     private getPhaseName(phase: number): string {
-        if (phase < 0.03 || phase > 0.97) return '新月';
-        if (phase < 0.22) return '三日月';
-        if (phase < 0.28) return '上弦の月';
-        if (phase < 0.47) return '十三夜月';
-        if (phase < 0.53) return '満月';
-        if (phase < 0.72) return '十六夜月';
-        if (phase < 0.78) return '下弦の月';
-        if (phase < 0.97) return '有明月';
+        if (phase < 0.03 || phase > 0.97) return this.i18nManager.t('moonPhase.newMoon');
+        if (phase < 0.22) return this.i18nManager.t('moonPhase.crescentMoon');
+        if (phase < 0.28) return this.i18nManager.t('moonPhase.firstQuarter');
+        if (phase < 0.47) return this.i18nManager.t('moonPhase.firstQuarterPast');
+        if (phase < 0.53) return this.i18nManager.t('moonPhase.fullMoon');
+        if (phase < 0.72) return this.i18nManager.t('moonPhase.lastQuarterApproaching');
+        if (phase < 0.78) return this.i18nManager.t('moonPhase.lastQuarter');
+        if (phase < 0.97) return this.i18nManager.t('moonPhase.waningMoon');
         return '';
     }
 

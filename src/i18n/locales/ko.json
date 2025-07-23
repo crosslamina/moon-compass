@@ -110,7 +110,9 @@
     "south": "남",
     "southwest": "남서",
     "west": "서",
-    "northwest": "북서"
+    "northwest": "북서",
+    "left": "왼쪽",
+    "right": "오른쪽"
   },
   "label": {
     "noData": "데이터 없음",

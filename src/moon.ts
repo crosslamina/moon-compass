@@ -1,4 +1,5 @@
 import * as SunCalc from 'suncalc';
+import { I18nManager } from './i18n/I18nManager';
 
 // 定数定義
 const RADIANS_TO_DEGREES = 180 / Math.PI;
@@ -173,11 +174,12 @@ export function drawMoonPhase(canvas: HTMLCanvasElement, moonData: MoonData, bli
     ctx.globalAlpha = 1;
 
     // 照明率、位相、月相名の情報表示
+    const i18n = I18nManager.getInstance();
     ctx.fillStyle = '#ecf0f1';
     ctx.font = '12px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(`照明率: ${(illumination * 100).toFixed(1)}%`, centerX, canvas.height - 40);
-    ctx.fillText(`位相: ${phase.toFixed(3)}`, centerX, canvas.height - 25);
+    ctx.fillText(`${i18n.t('moon.illumination')}: ${(illumination * 100).toFixed(1)}${i18n.t('unit.percent')}`, centerX, canvas.height - 40);
+    ctx.fillText(`${i18n.t('moon.phase')}: ${phase.toFixed(3)}`, centerX, canvas.height - 25);
     
     // 月相名を表示
     const phaseName = getPhaseName(phase, illumination);
