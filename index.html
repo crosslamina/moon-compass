@@ -114,14 +114,23 @@
                         <span class="info-icon">🌙</span>
                         <span class="info-title">月の状態</span>
                     </div>
-                    <div class="info-content two-column">
-                        <div class="info-item" id="moon-direction"></div>
-                        <div class="info-item" id="distance"></div>
-                        <div class="info-item" id="altitude"></div>
-                        <div class="info-item" id="moon-phase"></div>
-                        <div class="info-item" id="illumination"></div>
-                        <div class="info-item" id="moon-rise"></div>
-                        <div class="info-item" id="moon-set"></div>
+                    <div class="info-content moon-info-layout">
+                        <!-- 月の基本属性グループ -->
+                        <div class="moon-group moon-basic-group">
+                            <div class="info-item moon-basic" id="moon-phase"></div>
+                            <div class="info-item moon-basic" id="illumination"></div>
+                        </div>
+                        <!-- 月の空間位置グループ -->
+                        <div class="moon-group moon-position-group">
+                            <div class="info-item moon-position" id="moon-direction"></div>
+                            <div class="info-item moon-position" id="altitude"></div>
+                            <div class="info-item moon-position" id="distance"></div>
+                        </div>
+                        <!-- 月の時間情報グループ -->
+                        <div class="moon-group moon-time-group">
+                            <div class="info-item moon-time" id="moon-rise"></div>
+                            <div class="info-item moon-time" id="moon-set"></div>
+                        </div>
                     </div>
                 </div>
                 

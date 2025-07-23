@@ -990,6 +990,40 @@ body {
     gap: 8px;
 }
 
+/* 新しい月の情報レイアウト */
+.info-content.moon-info-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.moon-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* 基本属性グループ - 2カラム */
+.moon-basic-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+/* 空間位置グループ - 3カラム */
+.moon-position-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+/* 時間情報グループ - 2カラム（月の出・月の入りを同じ行に） */
+.moon-time-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
 .info-item {
     padding: 6px 10px;
     background: rgba(255, 255, 255, 0.08);
@@ -998,6 +1032,7 @@ body {
     color: #ecf0f1;
     font-size: 13px;
     line-height: 1.3;
+    text-align: left;
     transition: all 0.3s ease;
 }
 
@@ -1009,6 +1044,70 @@ body {
 
 .info-item:empty {
     display: none;
+}
+
+/* 月の基本属性グループ - 温かみのある色調 */
+.info-item.moon-basic {
+    border-left-color: rgba(255, 159, 28, 0.4);
+    background: rgba(255, 159, 28, 0.08);
+}
+
+.info-item.moon-basic:hover {
+    border-left-color: #ff9f1c;
+    background: rgba(255, 159, 28, 0.15);
+}
+
+/* 月の空間位置グループ - クールな色調 */
+.info-item.moon-position {
+    border-left-color: rgba(52, 152, 219, 0.4);
+    background: rgba(52, 152, 219, 0.08);
+}
+
+.info-item.moon-position:hover {
+    border-left-color: #3498db;
+    background: rgba(52, 152, 219, 0.15);
+}
+
+/* 月の時間情報グループ - 紫がかった色調 */
+.info-item.moon-time {
+    border-left-color: rgba(155, 89, 182, 0.4);
+    background: rgba(155, 89, 182, 0.08);
+}
+
+.info-item.moon-time:hover {
+    border-left-color: #9b59b6;
+    background: rgba(155, 89, 182, 0.15);
+}
+
+/* グループ間の視覚的区切り */
+.moon-group {
+    position: relative;
+}
+
+.moon-group:not(:first-child) {
+    margin-top: 8px;
+}
+
+.moon-group:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 480px) {
+    .moon-basic-group,
+    .moon-time-group {
+        grid-template-columns: 1fr;
+    }
+    
+    .moon-position-group {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 .map-link {
