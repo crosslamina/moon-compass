@@ -1,0 +1,115 @@
+{
+  "ui": {
+    "title": "賞月指南針",
+    "permissionRequest": "允許感測器權限",
+    "locationPermission": "允許位置權限",
+    "info": "詳細資訊",
+    "settings": "設定",
+    "close": "關閉"
+  },
+  "compass": {
+    "userDirection": "您的方向",
+    "moonPosition": "月亮位置",
+    "needle": {
+      "red": "紅針",
+      "gold": "金針"
+    }
+  },
+  "moon": {
+    "direction": "方向",
+    "distance": "距離",
+    "altitude": "高度",
+    "phase": "月相",
+    "illumination": "照明率",
+    "rise": "月出",
+    "set": "月落",
+    "currentTime": "目前時間",
+    "state": "月亮狀態"
+  },
+  "moonPhase": {
+    "newMoon": "新月",
+    "crescentMoon": "眉月",
+    "firstQuarterApproaching": "上弦前",
+    "firstQuarter": "上弦月",
+    "firstQuarterPast": "上弦後",
+    "fullMoonApproaching": "滿月前",
+    "fullMoon": "滿月",
+    "lastQuarterApproaching": "下弦前",
+    "lastQuarter": "下弦月",
+    "waningMoon": "殘月"
+  },
+  "time": {
+    "today": "今日",
+    "none": "無",
+    "remaining": "還有{{hours}}:{{minutes}}",
+    "alwaysBelow": "總是在地平線下",
+    "alwaysAbove": "總是在地平線上",
+    "specialStatus": "總是在地平線下或上"
+  },
+  "location": {
+    "detecting": "正在取得位置資訊...",
+    "denied": "位置資訊取得被拒絕",
+    "unavailable": "位置資訊不可用",
+    "timeout": "位置資訊取得逾時",
+    "error": "位置資訊取得發生錯誤",
+    "unsupported": "此瀏覽器不支援位置資訊",
+    "permissionDenied": "位置資訊權限被拒絕"
+  },
+  "settings": {
+    "title": "設定",
+    "sensitivity": "敏感度設定",
+    "orientationCorrection": "方位角校正",
+    "display": "顯示設定",
+    "language": "語言設定",
+    "eastWestReverse": "東西反轉校正",
+    "resetCorrection": "重設校正",
+    "detectionDisplay": "檢測等級顯示",
+    "detectionDisplayStatus": "檢測等級顯示: {{status}}",
+    "status": {
+      "on": "ON",
+      "off": "OFF"
+    }
+  },
+  "status": {
+    "correctionEnabled": "已啟用東西反轉校正",
+    "correctionDisabled": "已停用東西反轉校正",
+    "correctionReset": "已重設校正",
+    "correctionReversed": "方位角東西反轉校正: {{status}}",
+    "correctionOffset": "方位角偏移設定: {{offset}}°",
+    "enabled": "啟用",
+    "disabled": "停用"
+  },
+  "info": {
+    "title": "詳細資訊",
+    "moonState": "月亮狀態・時刻",
+    "locationSensor": "位置・感測器",
+    "deviceOrientation": "方位: {{azimuth}}° | 傾斜: {{tilt}}°",
+    "coordinates": "坐標"
+  },
+  "error": {
+    "sensorNotSupported": "不支援感測器",
+    "permissionRequired": "需要權限",
+    "loadFailed": "載入失敗"
+  },
+  "unit": {
+    "degree": "°",
+    "km": "km",
+    "percent": "%",
+    "days": "日"
+  },
+  "direction": {
+    "north": "北",
+    "northeast": "東北",
+    "east": "東",
+    "southeast": "東南",
+    "south": "南",
+    "southwest": "西南",
+    "west": "西",
+    "northwest": "西北"
+  },
+  "label": {
+    "noData": "無資料",
+    "loading": "載入中...",
+    "unknown": "未知"
+  }
+}

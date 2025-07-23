@@ -1,3 +1,5 @@
+import { I18nManager } from '../i18n';
+
 export class DialogManager {
     private static instance: DialogManager;
     
@@ -13,8 +15,10 @@ export class DialogManager {
     private detectionDisplayEnabled: boolean = false;
     private toggleDetectionDisplayButton: HTMLButtonElement | null;
     private detectionDisplayStatus: HTMLElement | null;
+    private i18n: I18nManager;
 
     private constructor() {
+        this.i18n = I18nManager.getInstance();
         this.infoButton = document.getElementById('info-button') as HTMLButtonElement;
         this.infoDialog = document.getElementById('info-dialog');
         this.closeDialogButton = document.getElementById('close-dialog') as HTMLButtonElement;
@@ -28,6 +32,11 @@ export class DialogManager {
         
         this.setupEventListeners();
         this.loadSettings();
+        
+        // 言語変更を監視
+        this.i18n.subscribe(() => {
+            this.updateDetectionDisplayStatus();
+        });
     }
 
     public static getInstance(): DialogManager {
@@ -217,8 +226,10 @@ export class DialogManager {
      */
     private updateDetectionDisplayStatus(): void {
         if (this.detectionDisplayStatus) {
-            const statusText = this.detectionDisplayEnabled ? 'ON' : 'OFF';
-            this.detectionDisplayStatus.textContent = `検出レベル表示: ${statusText}`;
+            const status = this.detectionDisplayEnabled ? 
+                this.i18n.t('settings.status.on') : 
+                this.i18n.t('settings.status.off');
+            this.detectionDisplayStatus.textContent = this.i18n.t('settings.detectionDisplayStatus', { status });
         }
 
         if (this.toggleDetectionDisplayButton) {

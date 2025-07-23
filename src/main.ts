@@ -1,4 +1,4 @@
-import { getMoonData, getMoonTimes, MoonData, MoonTimes, calculateAngleDifference, resetBlinkTimer } from './moon';
+import { getMoonData, getMoonTimes, MoonData, calculateAngleDifference, resetBlinkTimer } from './moon';
 import { CompassManager } from './components/CompassManager';
 import { MoonStatusDisplay } from './components/MoonStatusDisplay';
 import { DialogManager } from './ui/DialogManager';
@@ -7,6 +7,7 @@ import { LocationManager } from './location/LocationManager';
 import { DeviceOrientationManager } from './sensors/DeviceOrientationManager';
 import { AccuracyDisplayManager } from './accuracy/AccuracyDisplayManager';
 import { MoonDisplayManager } from './display/MoonDisplayManager';
+import { DOMTranslationManager } from './ui/DOMTranslationManager';
 import { initializeI18n } from './i18n';
 import { LanguageSelector } from './components/LanguageSelector';
 
@@ -29,6 +30,7 @@ const locationManager = LocationManager.getInstance();
 const orientationManager = DeviceOrientationManager.getInstance();
 const accuracyManager = AccuracyDisplayManager.getInstance();
 const moonDisplayManager = MoonDisplayManager.getInstance();
+const domTranslationManager = DOMTranslationManager.getInstance();
 let compassManager: CompassManager | null = null;
 let moonStatusDisplay: MoonStatusDisplay | null = null;
 
@@ -94,11 +96,14 @@ async function initializeApp() {
         console.log('🚀 アプリケーションを初期化中...');
         
         // 多言語化システムの初期化
-        const i18n = initializeI18n();
+        await initializeI18n();
         console.log('🌍 多言語化システムを初期化しました');
         
+        // DOM翻訳マネージャーの初期化
+        domTranslationManager.initialize();
+        
         // 言語選択UIの初期化
-        const languageSelector = LanguageSelector.getInstance();
+        LanguageSelector.getInstance();
         
         // マネージャーの初期化
         dialogManager.initialize();
@@ -129,7 +134,6 @@ async function initializeApp() {
 
 let currentPosition: GeolocationPosition | null = null;
 let currentMoonData: MoonData | null = null;
-let currentMoonTimes: MoonTimes | null = null;
 
 // イベントリスナーの設定
 function setupEventListeners() {
@@ -193,9 +197,8 @@ function updateDisplay() {
     const moonData = getMoonData(latitude, longitude);
     const moonTimes = getMoonTimes(latitude, longitude);
     
-    // 現在の月データと月時刻を保存
+    // 現在の月データを保存
     currentMoonData = moonData;
-    currentMoonTimes = moonTimes;
     
     // StateManagerに月データを設定
     stateManager.set('moonData', moonData);

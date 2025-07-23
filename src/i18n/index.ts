@@ -1,20 +1,20 @@
 import { I18nManager, type SupportedLocale, type TranslationConfig } from './I18nManager';
-import { jaTranslations } from './locales/ja';
-import { enTranslations } from './locales/en';
-import { zhCNTranslations } from './locales/zh-CN';
 
 export { I18nManager, type SupportedLocale, type TranslationConfig };
 
 /**
- * 翻訳システムの初期化
+ * 翻訳システムの初期化（JSONベース）
  */
-export function initializeI18n(): I18nManager {
+export async function initializeI18n(): Promise<I18nManager> {
     const i18n = I18nManager.getInstance();
     
-    // 翻訳データを登録
-    i18n.registerTranslations('ja', jaTranslations);
-    i18n.registerTranslations('en', enTranslations);
-    i18n.registerTranslations('zh-CN', zhCNTranslations);
+    // 利用可能な言語のリスト
+    const availableLocales: SupportedLocale[] = ['ja', 'en', 'zh-CN', 'zh-TW', 'ko'];
+    
+    // 各言語のJSONファイルを読み込み
+    await Promise.all(
+        availableLocales.map(locale => i18n.loadTranslationsFromJSON(locale))
+    );
     
     return i18n;
 }

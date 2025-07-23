@@ -8,6 +8,10 @@ export interface TranslationConfig {
     fallbackLocale: SupportedLocale;
 }
 
+interface NestedTranslations {
+    [key: string]: string | NestedTranslations;
+}
+
 export class I18nManager {
     private static instance: I18nManager;
     private currentLocale: SupportedLocale = 'ja';
@@ -27,7 +31,46 @@ export class I18nManager {
     }
 
     /**
-     * 翻訳データを登録
+     * ネストされたオブジェクトをフラットなキーバリューペアに変換
+     */
+    private flattenTranslations(obj: NestedTranslations, prefix = ''): Record<string, string> {
+        const flattened: Record<string, string> = {};
+        
+        for (const [key, value] of Object.entries(obj)) {
+            const fullKey = prefix ? `${prefix}.${key}` : key;
+            
+            if (typeof value === 'string') {
+                flattened[fullKey] = value;
+            } else if (typeof value === 'object' && value !== null) {
+                Object.assign(flattened, this.flattenTranslations(value, fullKey));
+            }
+        }
+        
+        return flattened;
+    }
+
+    /**
+     * JSONファイルから翻訳データを読み込み
+     */
+    public async loadTranslationsFromJSON(locale: SupportedLocale): Promise<void> {
+        try {
+            const response = await fetch(`/src/i18n/locales/${locale}.json`);
+            if (!response.ok) {
+                throw new Error(`Failed to load ${locale}.json: ${response.statusText}`);
+            }
+            
+            const nestedTranslations: NestedTranslations = await response.json();
+            const flatTranslations = this.flattenTranslations(nestedTranslations);
+            
+            this.translations.set(locale, flatTranslations);
+            console.log(`✅ Loaded translations for ${locale}`);
+        } catch (error) {
+            console.error(`❌ Failed to load translations for ${locale}:`, error);
+        }
+    }
+
+    /**
+     * 翻訳データを登録（レガシー対応）
      */
     public registerTranslations(locale: SupportedLocale, translations: Record<string, string>): void {
         this.translations.set(locale, { ...this.translations.get(locale), ...translations });

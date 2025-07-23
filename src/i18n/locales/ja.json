@@ -1,0 +1,115 @@
+{
+  "ui": {
+    "title": "月見コンパス",
+    "permissionRequest": "センサー権限を許可",
+    "locationPermission": "位置情報の許可",
+    "info": "詳細情報",
+    "settings": "設定",
+    "close": "閉じる"
+  },
+  "compass": {
+    "userDirection": "あなたの方向",
+    "moonPosition": "月の位置",
+    "needle": {
+      "red": "赤針",
+      "gold": "金針"
+    }
+  },
+  "moon": {
+    "direction": "方向",
+    "distance": "距離",
+    "altitude": "高度",
+    "phase": "月齢",
+    "illumination": "照明率",
+    "rise": "月の出",
+    "set": "月の入り",
+    "currentTime": "現在時刻",
+    "state": "月の状態"
+  },
+  "moonPhase": {
+    "newMoon": "新月",
+    "crescentMoon": "三日月",
+    "firstQuarterApproaching": "上弦前",
+    "firstQuarter": "上弦の月",
+    "firstQuarterPast": "上弦後",
+    "fullMoonApproaching": "満月前",
+    "fullMoon": "満月",
+    "lastQuarterApproaching": "下弦前",
+    "lastQuarter": "下弦の月",
+    "waningMoon": "有明月"
+  },
+  "time": {
+    "today": "本日",
+    "none": "なし",
+    "remaining": "あと{{hours}}:{{minutes}}",
+    "alwaysBelow": "常に地平線下",
+    "alwaysAbove": "常に地平線上",
+    "specialStatus": "常に地平線下 または 常に地平線上"
+  },
+  "location": {
+    "detecting": "位置情報を取得中...",
+    "denied": "位置情報の取得が拒否されました",
+    "unavailable": "位置情報が利用できません",
+    "timeout": "位置情報の取得がタイムアウトしました",
+    "error": "位置情報の取得でエラーが発生しました",
+    "unsupported": "このブラウザは位置情報に対応していません",
+    "permissionDenied": "位置情報の権限が拒否されています"
+  },
+  "settings": {
+    "title": "設定",
+    "sensitivity": "感度設定",
+    "orientationCorrection": "方位角補正",
+    "display": "表示設定",
+    "language": "言語設定",
+    "eastWestReverse": "東西反転補正",
+    "resetCorrection": "補正リセット",
+    "detectionDisplay": "検出レベル表示",
+    "detectionDisplayStatus": "検出レベル表示: {{status}}",
+    "status": {
+      "on": "ON",
+      "off": "OFF"
+    }
+  },
+  "status": {
+    "correctionEnabled": "東西反転補正を有効にしました",
+    "correctionDisabled": "東西反転補正を無効にしました",
+    "correctionReset": "補正をリセットしました",
+    "correctionReversed": "方位角東西反転補正: {{status}}",
+    "correctionOffset": "方位角オフセット設定: {{offset}}°",
+    "enabled": "有効",
+    "disabled": "無効"
+  },
+  "info": {
+    "title": "詳細情報",
+    "moonState": "月の状態・時刻",
+    "locationSensor": "位置・センサー",
+    "deviceOrientation": "方位: {{azimuth}}° | 傾き: {{tilt}}°",
+    "coordinates": "座標"
+  },
+  "error": {
+    "sensorNotSupported": "センサーがサポートされていません",
+    "permissionRequired": "権限が必要です",
+    "loadFailed": "読み込みに失敗しました"
+  },
+  "unit": {
+    "degree": "°",
+    "km": "km",
+    "percent": "%",
+    "days": "日"
+  },
+  "direction": {
+    "north": "北",
+    "northeast": "北東",
+    "east": "東",
+    "southeast": "南東",
+    "south": "南",
+    "southwest": "南西",
+    "west": "西",
+    "northwest": "北西"
+  },
+  "label": {
+    "noData": "データなし",
+    "loading": "読み込み中...",
+    "unknown": "不明"
+  }
+}
