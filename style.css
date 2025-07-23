@@ -22,7 +22,6 @@ body {
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 600px;
     gap: 15px;
     flex-grow: 1;
     justify-content: center;
@@ -640,9 +639,8 @@ body {
     background: #000000;
     display: block;
     margin: 0 auto;
-    max-width: min(400px, 70vw);
-    max-height: min(400px, 50vh);
-    width: auto;
+    aspect-ratio: 1 / 1;
+    width: min(350px, 60vw, 45vh);
     height: auto;
 }
 
@@ -1068,7 +1066,7 @@ body {
     }
     
     #compass-canvas {
-        max-height: min(300px, 40vh);
+        width: min(300px, 70vw, 40vh);
     }
     
     .button-group {
@@ -1091,7 +1089,7 @@ body {
     }
     
     #compass-canvas {
-        max-width: 80vw;
+        width: min(80vw, 50vh);
     }
     
     .dialog-content {
@@ -1102,5 +1100,61 @@ body {
         width: 40px;
         height: 40px;
         font-size: 1.1em;
+    }
+}
+
+/* 言語選択スタイル */
+.language-selector {
+    background: rgba(52, 73, 94, 0.9);
+    color: #ecf0f1;
+    border: 1px solid rgba(149, 165, 166, 0.3);
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 200px;
+}
+
+.language-selector:hover {
+    background: rgba(52, 73, 94, 1);
+    border-color: rgba(149, 165, 166, 0.5);
+}
+
+.language-selector:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+}
+
+.language-selector option {
+    background: #34495e;
+    color: #ecf0f1;
+    padding: 5px;
+}
+
+/* 設定カードでの言語選択 */
+.setting-card .language-selector {
+    margin-top: 10px;
+}
+
+/* 大きな画面でのコンパスサイズ制限 */
+@media (min-width: 700px) {
+    #compass-canvas {
+        width: min(320px, 45vw, 40vh);
+    }
+}
+
+@media (min-width: 1000px) {
+    #compass-canvas {
+        width: min(300px, 30vw, 35vh);
+    }
+}
+
+@media (min-width: 1200px) {
+    #compass-canvas {
+        width: min(280px, 25vw, 30vh);
     }
 }

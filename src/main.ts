@@ -7,6 +7,8 @@ import { LocationManager } from './location/LocationManager';
 import { DeviceOrientationManager } from './sensors/DeviceOrientationManager';
 import { AccuracyDisplayManager } from './accuracy/AccuracyDisplayManager';
 import { MoonDisplayManager } from './display/MoonDisplayManager';
+import { initializeI18n } from './i18n';
+import { LanguageSelector } from './components/LanguageSelector';
 
 // 磁気コンパス関連の要素
 const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasElement;
@@ -90,6 +92,13 @@ function initializeMoonStatusDisplay() {
 async function initializeApp() {
     try {
         console.log('🚀 アプリケーションを初期化中...');
+        
+        // 多言語化システムの初期化
+        const i18n = initializeI18n();
+        console.log('🌍 多言語化システムを初期化しました');
+        
+        // 言語選択UIの初期化
+        const languageSelector = LanguageSelector.getInstance();
         
         // マネージャーの初期化
         dialogManager.initialize();
