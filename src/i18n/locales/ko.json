@@ -68,8 +68,6 @@
     "language": "언어 설정",
     "eastWestReverse": "동서 반전 보정",
     "resetCorrection": "보정 재설정",
-    "detectionDisplay": "검출 레벨 표시",
-    "detectionDisplayStatus": "검출 레벨 표시: {{status}}",
     "status": {
       "on": "ON",
       "off": "OFF"

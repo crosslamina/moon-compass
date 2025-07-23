@@ -68,8 +68,6 @@
     "language": "言語設定",
     "eastWestReverse": "東西反転補正",
     "resetCorrection": "補正リセット",
-    "detectionDisplay": "検出レベル表示",
-    "detectionDisplayStatus": "検出レベル表示: {{status}}",
     "status": {
       "on": "ON",
       "off": "OFF"

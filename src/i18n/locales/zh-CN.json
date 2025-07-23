@@ -68,8 +68,6 @@
     "language": "语言设置",
     "eastWestReverse": "东西反转校正",
     "resetCorrection": "重置校正",
-    "detectionDisplay": "检测级别显示",
-    "detectionDisplayStatus": "检测级别显示: {{status}}",
     "status": {
       "on": "开",
       "off": "关"

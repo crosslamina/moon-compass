@@ -160,30 +160,13 @@ export class DOMTranslationManager {
         if (resetCorrectionBtn) {
             resetCorrectionBtn.textContent = this.i18n.t('settings.resetCorrection');
         }
-
-        const toggleDetectionDisplayBtn = document.getElementById('toggle-detection-display-btn');
-        if (toggleDetectionDisplayBtn) {
-            toggleDetectionDisplayBtn.textContent = this.i18n.t('settings.detectionDisplay');
-        }
     }
 
     /**
      * ラベルテキストの更新
      */
     private updateLabels(): void {
-        // 検出レベル表示ステータス
-        const detectionDisplayStatus = document.getElementById('detection-display-status');
-        if (detectionDisplayStatus) {
-            // data属性やクラスで状態を確認する方法に変更
-            const statusElement = detectionDisplayStatus.closest('[data-status]');
-            const isOn = statusElement?.getAttribute('data-status') === 'on' || 
-                        detectionDisplayStatus.classList.contains('status-on') ||
-                        detectionDisplayStatus.textContent?.includes('ON') || // フォールバック
-                        detectionDisplayStatus.textContent?.includes('オン');
-            
-            const status = isOn ? this.i18n.t('settings.status.on') : this.i18n.t('settings.status.off');
-            detectionDisplayStatus.textContent = this.i18n.t('settings.detectionDisplayStatus', { status });
-        }
+        // 将来的なラベル更新処理用
     }
 
     /**

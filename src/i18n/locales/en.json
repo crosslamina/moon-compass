@@ -68,8 +68,6 @@
     "language": "Language",
     "eastWestReverse": "East-West Reverse",
     "resetCorrection": "Reset Correction",
-    "detectionDisplay": "Detection Level Display",
-    "detectionDisplayStatus": "Detection Level: {{status}}",
     "status": {
       "on": "ON",
       "off": "OFF"

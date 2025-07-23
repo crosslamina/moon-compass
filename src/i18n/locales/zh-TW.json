@@ -68,8 +68,6 @@
     "language": "語言設定",
     "eastWestReverse": "東西反轉校正",
     "resetCorrection": "重設校正",
-    "detectionDisplay": "檢測等級顯示",
-    "detectionDisplayStatus": "檢測等級顯示: {{status}}",
     "status": {
       "on": "ON",
       "off": "OFF"

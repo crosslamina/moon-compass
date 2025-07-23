@@ -1,7 +1,6 @@
 import { MoonTimes } from '../moon';
 import { CompassState } from './CompassManager';
 import { DOMManager } from '../ui/DOMManager';
-import { DialogManager } from '../ui/DialogManager';
 import { I18nManager } from '../i18n/I18nManager';
 import { GlobalTranslationUpdater } from '../i18n/GlobalTranslationUpdater';
 
@@ -11,7 +10,6 @@ import { GlobalTranslationUpdater } from '../i18n/GlobalTranslationUpdater';
  */
 export class MoonStatusDisplay {
     private domManager: DOMManager;
-    private dialogManager: DialogManager;
     private i18nManager: I18nManager;
     private globalUpdater: GlobalTranslationUpdater;
     private statusElement: HTMLElement | null = null;
@@ -22,7 +20,6 @@ export class MoonStatusDisplay {
 
     constructor() {
         this.domManager = DOMManager.getInstance();
-        this.dialogManager = DialogManager.getInstance();
         this.i18nManager = I18nManager.getInstance();
         this.globalUpdater = GlobalTranslationUpdater.getInstance();
         this.createStatusElement();
@@ -49,11 +46,6 @@ export class MoonStatusDisplay {
         this.statusElement = document.createElement('div');
         this.statusElement.id = 'moon-status-display';
         this.statusElement.className = 'moon-status-display';
-        
-        // 検出レベル表示の設定を反映
-        if (this.dialogManager.isDetectionDisplayEnabled()) {
-            this.statusElement.classList.add('detailed');
-        }
         
         // 挿入ポイントに挿入（ボタンの前）
         const insertionPoint = document.getElementById('status-insertion-point');
@@ -84,54 +76,11 @@ export class MoonStatusDisplay {
         this.currentCompassState = compassState;
         this.currentMoonTimes = moonTimes;
 
-        // デバッグ用：検出レベルの変化をログ出力
-        console.log(`🎯 Detection Level: ${compassState.detectionLevel}, Magnetic Field: ${compassState.magneticField?.toFixed(3)}`);
-
-        const detectionLevelHtml = this.createDetectionLevelHtml(compassState);
         const moonTimesHtml = this.createMoonTimesHtml(moonTimes);
 
         this.statusElement.innerHTML = `
             <div class="status-container">
-                ${detectionLevelHtml}
                 ${moonTimesHtml}
-            </div>
-        `;
-    }
-
-    /**
-     * 検出レベル表示のHTMLを生成
-     */
-    private createDetectionLevelHtml(compassState: CompassState): string {
-        const levelStyles = {
-            'searching': { 
-                color: '#4169E1', 
-                text: this.i18nManager.t('status.searching'),
-                icon: '🔍'
-            },
-            'weak': { 
-                color: '#32CD32', 
-                text: this.i18nManager.t('status.weakDetection'),
-                icon: '📡'
-            },
-            'strong': { 
-                color: '#FFD700', 
-                text: this.i18nManager.t('status.strongField'),
-                icon: '⚡'
-            },
-            'locked': { 
-                color: '#FF4500', 
-                text: this.i18nManager.t('status.moonLocked'),
-                icon: '🎯'
-            }
-        };
-
-        const style = levelStyles[compassState.detectionLevel];
-        const pulseClass = compassState.detectionLevel === 'locked' ? 'pulse' : '';
-
-        return `
-            <div class="detection-level ${pulseClass}" style="color: ${style.color}">
-                <span class="detection-icon">${style.icon}</span>
-                <span class="detection-text">${style.text}</span>
             </div>
         `;
     }
