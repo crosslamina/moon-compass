@@ -1165,16 +1165,7 @@ export class CompassManager {
             console.log('コンパス半径:', compassRadius.toFixed(1), 'px');
         }
         
-        // デバイス針（装飾的なクラシック針）
-        if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
-            const deviceElevation = deviceOrientation.beta;
-            const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
-            const deviceNeedleAngle = (deviceOrientation.alpha - 90) * Math.PI / 180;
-            
-            this.drawClassicNeedle(ctx, centerX, centerY, deviceNeedleAngle, deviceNeedleLength, 'device', compassRadius);
-        }
-        
-        // 月針（より装飾的な月針）
+        // 月針（より装飾的な月針）- 先に描画（下層）
         if (moonData) {
             const moonNeedleLength = this.calculateNeedleLength(moonData.altitude, compassRadius);
             const moonNeedleAngle = (moonData.azimuth - 90) * Math.PI / 180;
@@ -1189,6 +1180,15 @@ export class CompassManager {
                 
                 this.drawMoonOrnament(ctx, tipX, tipY, tipRadius, moonData);
             }
+        }
+        
+        // デバイス針（装飾的なクラシック針）- 後に描画（上層）
+        if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
+            const deviceElevation = deviceOrientation.beta;
+            const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
+            const deviceNeedleAngle = (deviceOrientation.alpha - 90) * Math.PI / 180;
+            
+            this.drawClassicNeedle(ctx, centerX, centerY, deviceNeedleAngle, deviceNeedleLength, 'device', compassRadius);
         }
     }
 
