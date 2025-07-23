@@ -10,6 +10,7 @@ import { MoonDisplayManager } from './display/MoonDisplayManager';
 import { DOMTranslationManager } from './ui/DOMTranslationManager';
 import { initializeI18n } from './i18n';
 import { LanguageSelector } from './components/LanguageSelector';
+import { I18nManager } from './i18n/I18nManager';
 
 // 磁気コンパス関連の要素
 const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasElement;
@@ -31,6 +32,7 @@ const orientationManager = DeviceOrientationManager.getInstance();
 const accuracyManager = AccuracyDisplayManager.getInstance();
 const moonDisplayManager = MoonDisplayManager.getInstance();
 const domTranslationManager = DOMTranslationManager.getInstance();
+const i18nManager = I18nManager.getInstance();
 let compassManager: CompassManager | null = null;
 let moonStatusDisplay: MoonStatusDisplay | null = null;
 
@@ -104,6 +106,11 @@ async function initializeApp() {
         
         // 言語選択UIの初期化
         LanguageSelector.getInstance();
+        
+        // 言語変更時のサブスクリプション（補正ステータスも更新）
+        i18nManager.subscribe(() => {
+            updateCorrectionStatus();
+        });
         
         // マネージャーの初期化
         dialogManager.initialize();
@@ -336,29 +343,29 @@ function updateCorrectionStatus() {
     const statusParts: string[] = [];
     
     if (correctionStatus.isReversed) {
-        statusParts.push('🔄 東西反転補正: 有効');
+        statusParts.push(`🔄 ${i18nManager.t('status.correctionReversed', { status: i18nManager.t('status.enabled') })}`);
     }
     
     if (correctionStatus.isCalibrated) {
-        statusParts.push(`📐 オフセット: ${correctionStatus.offsetAngle.toFixed(1)}°`);
+        statusParts.push(`📐 ${i18nManager.t('status.correctionOffset', { offset: correctionStatus.offsetAngle.toFixed(1) })}`);
     }
     
     if (statusParts.length === 0) {
-        correctionStatusElement.textContent = '補正なし（通常モード）';
+        correctionStatusElement.textContent = i18nManager.t('label.noData');
         correctionStatusElement.style.color = '#95a5a6';
     } else {
         correctionStatusElement.textContent = statusParts.join(' | ');
         correctionStatusElement.style.color = '#2ecc71';
     }
     
-    // ボタンの状態を更新
+    // ボタンの状態を更新（翻訳対応）
     if (toggleReverseBtn) {
         if (correctionStatus.isReversed) {
             toggleReverseBtn.classList.add('active');
-            toggleReverseBtn.textContent = '東西反転補正: ON';
+            toggleReverseBtn.textContent = `${i18nManager.t('settings.eastWestReverse')}: ${i18nManager.t('settings.status.on')}`;
         } else {
             toggleReverseBtn.classList.remove('active');
-            toggleReverseBtn.textContent = '東西反転補正: OFF';
+            toggleReverseBtn.textContent = `${i18nManager.t('settings.eastWestReverse')}: ${i18nManager.t('settings.status.off')}`;
         }
     }
 }
@@ -370,10 +377,10 @@ function toggleOrientationReverseUI() {
     const result = orientationManager.toggleOrientationReverse();
     updateCorrectionStatus();
     
-    // フィードバックメッセージ
+    // フィードバックメッセージ（翻訳対応）
     const message = result ? 
-        '✅ 東西反転補正を有効にしました' : 
-        '❌ 東西反転補正を無効にしました';
+        i18nManager.t('status.correctionEnabled') : 
+        i18nManager.t('status.correctionDisabled');
     
     console.log(message);
     
@@ -397,7 +404,7 @@ function resetOrientationCorrectionUI() {
     orientationManager.resetOrientationCorrection();
     updateCorrectionStatus();
     
-    const message = '🔄 補正をリセットしました';
+    const message = i18nManager.t('status.correctionReset');
     console.log(message);
     
     // 一時的にステータスにメッセージを表示
