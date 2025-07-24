@@ -1,17 +1,40 @@
 import { StateManager } from '../state/StateManager';
+import { I18nManager } from '../i18n/I18nManager';
+import { GlobalTranslationUpdater } from '../i18n/GlobalTranslationUpdater';
 
 export class LocationManager {
     private static instance: LocationManager;
     private stateManager: StateManager;
+    private i18n: I18nManager;
+    private globalUpdater: GlobalTranslationUpdater;
     private locationStatusElement: HTMLElement | null;
     private locationPermissionButton: HTMLButtonElement | null;
     private currentPosition: GeolocationPosition | null = null;
+    private currentStatusKey: string | null = null;
+    private currentStatusType: 'loading' | 'error' | 'success' | null = null;
 
     private constructor() {
         this.stateManager = StateManager.getInstance();
+        this.i18n = I18nManager.getInstance();
+        this.globalUpdater = GlobalTranslationUpdater.getInstance();
         this.locationStatusElement = document.getElementById('location-status');
         this.locationPermissionButton = document.getElementById('location-permission-button') as HTMLButtonElement;
         this.setupEventListeners();
+        this.setupTranslationUpdates();
+    }
+
+    private setupTranslationUpdates(): void {
+        // 言語変更時にステータスメッセージを更新
+        this.globalUpdater.registerUpdater('location-manager', () => {
+            if (import.meta.env.DEV) {
+                console.log('🌍 LocationManager: 言語変更を検出、ステータス更新中...');
+            }
+            this.updateCurrentStatus();
+        });
+        
+        if (import.meta.env.DEV) {
+            console.log('✅ LocationManager: 翻訳更新システムに登録しました');
+        }
     }
 
     public static getInstance(): LocationManager {
@@ -38,7 +61,7 @@ export class LocationManager {
 
     private async setupGeolocation(): Promise<void> {
         if (!('geolocation' in navigator)) {
-            this.showLocationStatus('❌ このブラウザは位置情報に対応していません', 'error');
+            this.showLocationStatus('location.unsupported', 'error');
             return;
         }
 
@@ -48,7 +71,7 @@ export class LocationManager {
                 const permission = await navigator.permissions.query({ name: 'geolocation' });
                 
                 if (permission.state === 'denied') {
-                    this.showLocationStatus('❌ 位置情報の権限が拒否されています', 'error');
+                    this.showLocationStatus('location.permissionDenied', 'error');
                     this.showPermissionButton();
                     return;
                 }
@@ -62,7 +85,7 @@ export class LocationManager {
     }
 
     private requestLocation(): void {
-        this.showLocationStatus('🔍 位置情報を取得中...', 'loading');
+        this.showLocationStatus('location.detecting', 'loading');
 
         const options: PositionOptions = {
             enableHighAccuracy: true,
@@ -108,31 +131,45 @@ export class LocationManager {
     private handlePositionError(error: GeolocationPositionError): void {
         console.error('Geolocation error:', error);
         
-        let errorMessage = '';
+        let errorKey = '';
         switch (error.code) {
             case error.PERMISSION_DENIED:
-                errorMessage = '❌ 位置情報の取得が拒否されました';
+                errorKey = 'location.denied';
                 this.showPermissionButton();
                 break;
             case error.POSITION_UNAVAILABLE:
-                errorMessage = '⚠️ 位置情報が利用できません';
+                errorKey = 'location.unavailable';
                 break;
             case error.TIMEOUT:
-                errorMessage = '⏱️ 位置情報の取得がタイムアウトしました';
+                errorKey = 'location.timeout';
                 break;
             default:
-                errorMessage = '❌ 位置情報の取得でエラーが発生しました';
+                errorKey = 'location.error';
                 break;
         }
         
-        this.showLocationStatus(errorMessage, 'error');
+        this.showLocationStatus(errorKey, 'error');
     }
 
-    private showLocationStatus(message: string, type: 'loading' | 'error' | 'success'): void {
+    private showLocationStatus(translationKey: string, type: 'loading' | 'error' | 'success'): void {
         if (!this.locationStatusElement) return;
         
-        this.locationStatusElement.textContent = message;
+        // 現在のステータス状態を保存
+        this.currentStatusKey = translationKey;
+        this.currentStatusType = type;
+        
+        // 翻訳されたメッセージを表示
+        const translatedMessage = this.i18n.t(translationKey);
+        this.locationStatusElement.textContent = translatedMessage;
         this.locationStatusElement.style.display = 'block';
+        
+        if (import.meta.env.DEV) {
+            console.log('📍 LocationManager: ステータス表示', {
+                key: translationKey,
+                type: type,
+                message: translatedMessage
+            });
+        }
         
         const styles = {
             loading: {
@@ -158,11 +195,38 @@ export class LocationManager {
         this.locationStatusElement.style.border = style.border;
     }
 
+    private updateCurrentStatus(): void {
+        // 現在表示中のステータスがある場合、翻訳を更新
+        if (this.currentStatusKey && this.currentStatusType && this.locationStatusElement) {
+            const translatedMessage = this.i18n.t(this.currentStatusKey);
+            this.locationStatusElement.textContent = translatedMessage;
+            
+            if (import.meta.env.DEV) {
+                console.log('🔄 LocationManager: ステータスメッセージを更新しました', {
+                    key: this.currentStatusKey,
+                    type: this.currentStatusType,
+                    message: translatedMessage
+                });
+            }
+        } else {
+            if (import.meta.env.DEV) {
+                console.log('🔄 LocationManager: 更新するステータスがありません', {
+                    hasKey: !!this.currentStatusKey,
+                    hasType: !!this.currentStatusType,
+                    hasElement: !!this.locationStatusElement
+                });
+            }
+        }
+    }
+
     private hideLocationStatus(): void {
         if (this.locationStatusElement) {
             this.locationStatusElement.textContent = '';
             this.locationStatusElement.style.display = 'none';
         }
+        // ステータス状態をクリア
+        this.currentStatusKey = null;
+        this.currentStatusType = null;
     }
 
     private showPermissionButton(): void {
@@ -194,5 +258,11 @@ export class LocationManager {
             latitude: this.currentPosition.coords.latitude,
             longitude: this.currentPosition.coords.longitude
         };
+    }
+
+    public destroy(): void {
+        // 翻訳更新の購読を解除
+        this.globalUpdater.unregisterUpdater('location-manager');
+        console.log('🧹 LocationManagerをクリーンアップしました');
     }
 }
