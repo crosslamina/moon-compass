@@ -529,7 +529,7 @@ export class CompassManager {
      * 針の長さ計算（コンパス半径ベース）
      */
     private calculateNeedleLength(altitude: number, compassRadius: number): number {
-        const maxLength = compassRadius; // 最大長100%（高度90°）
+        const maxLength = compassRadius * 0.98; // 最大長98%（高度90°）
         const minLength = compassRadius * 0.2; // 最小長20%（高度-90°）
         
         const clampedAltitude = Math.max(-90, Math.min(90, altitude));
@@ -1158,7 +1158,7 @@ export class CompassManager {
      * 地平線の描画（装飾的）
      */
     private drawHorizonLine(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const horizonRadius = compassRadius * 0.6;
+        const horizonRadius = compassRadius * 0.59;
         const dashLength = compassRadius * 0.03;
         const lineWidth = Math.max(2, compassRadius * 0.006);
         
