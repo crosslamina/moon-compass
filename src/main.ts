@@ -166,6 +166,18 @@ function setupEventListeners() {
         resetCorrectionBtn.onclick = () => resetOrientationCorrectionUI();
     }
     
+    const compassModeToggleButton = document.getElementById('compass-mode-toggle');
+    if (compassModeToggleButton) {
+        compassModeToggleButton.addEventListener('click', () => {
+            const currentMode = stateManager.get('ui').compassMode;
+            const newMode = currentMode === 'compass' ? 'user' : 'compass';
+            stateManager.update('ui', ui => ({ ...ui, compassMode: newMode }));
+
+            // ボタンのテキストを更新（オプション）
+            compassModeToggleButton.textContent = newMode === 'compass' ? 'ユーザー中心' : 'コンパス中心';
+        });
+    }
+
     // ウィンドウリサイズ時にCanvasサイズを調整（デバウンス付き）
     let resizeTimeout: number | null = null;
     window.addEventListener('resize', () => {

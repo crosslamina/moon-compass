@@ -568,15 +568,25 @@ export class CompassManager {
         ctx.fillStyle = backgroundGradient;
         ctx.fillRect(0, 0, width, height);
 
+        const compassMode = this.stateManager.get('ui').compassMode;
+        const moonData = this.currentMoonData || this.stateManager.get('moonData');
         const deviceOrientation = this.stateManager.get('deviceOrientation');
         
         ctx.save();
-        if (deviceOrientation && deviceOrientation.alpha !== null) {
-            const rotationAngle = -deviceOrientation.alpha * Math.PI / 180;
-            ctx.translate(centerX, centerY);
-            ctx.rotate(rotationAngle);
-            ctx.translate(-centerX, -centerY);
+
+        let rotationAngle = 0;
+        if (compassMode === 'compass') {
+            if (moonData) {
+                rotationAngle = -moonData.azimuth * Math.PI / 180;
+            }
+        } else { // user mode
+            if (deviceOrientation && deviceOrientation.alpha !== null) {
+                rotationAngle = -deviceOrientation.alpha * Math.PI / 180;
+            }
         }
+        ctx.translate(centerX, centerY);
+        ctx.rotate(rotationAngle);
+        ctx.translate(-centerX, -centerY);
 
         this.drawCompassRing(ctx, centerX, centerY, compassRadius);
         this.drawDirectionMarks(ctx, centerX, centerY, compassRadius);
@@ -1172,39 +1182,55 @@ export class CompassManager {
     private drawNeedles(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
         const deviceOrientation = this.stateManager.get('deviceOrientation');
         const moonData = this.currentMoonData || this.stateManager.get('moonData');
+        const compassMode = this.stateManager.get('ui').compassMode;
         
         if (import.meta.env.DEV) {
             console.log('Drawing needles - deviceOrientation:', deviceOrientation, 'moonData:', moonData);
             console.log('コンパス半径:', compassRadius.toFixed(1), 'px');
         }
         
-        // 月針（より装飾的な月針）- 先に描画（下層）
-        if (moonData && deviceOrientation && deviceOrientation.alpha !== null) {
-            const moonNeedleLength = this.calculateNeedleLength(moonData.altitude, compassRadius);
-            // 月の向きとユーザーの向きの差分を計算
-            const relativeAngle = moonData.azimuth - deviceOrientation.alpha;
-            const moonNeedleAngle = (relativeAngle - 90) * Math.PI / 180;
-            
-            this.drawClassicNeedle(ctx, centerX, centerY, moonNeedleAngle, moonNeedleLength, 'moon', compassRadius);
-            
-            // 月の先端装飾
-            if (moonNeedleLength > compassRadius * 0.1) {
-                const tipX = centerX + Math.cos(moonNeedleAngle) * moonNeedleLength;
-                const tipY = centerY + Math.sin(moonNeedleAngle) * moonNeedleLength;
-                const tipRadius = Math.max(compassRadius * 0.08, compassRadius * 0.1);
-                
-                this.drawMoonOrnament(ctx, tipX, tipY, tipRadius, moonData);
+        if (compassMode === 'compass') {
+            // 月針（固定）
+            if (moonData) {
+                const moonNeedleLength = this.calculateNeedleLength(moonData.altitude, compassRadius);
+                const moonNeedleAngle = -90 * Math.PI / 180;
+                this.drawClassicNeedle(ctx, centerX, centerY, moonNeedleAngle, moonNeedleLength, 'moon', compassRadius);
+                if (moonNeedleLength > compassRadius * 0.1) {
+                    const tipX = centerX + Math.cos(moonNeedleAngle) * moonNeedleLength;
+                    const tipY = centerY + Math.sin(moonNeedleAngle) * moonNeedleLength;
+                    const tipRadius = Math.max(compassRadius * 0.08, compassRadius * 0.1);
+                    this.drawMoonOrnament(ctx, tipX, tipY, tipRadius, moonData);
+                }
             }
-        }
-        
-        // デバイス針（装飾的なクラシック針）- 後に描画（上層）
-        if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
-            const deviceElevation = deviceOrientation.beta;
-            const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
-            // ユーザーの針を常に上向き（-90度）に固定
-            const deviceNeedleAngle = -90 * Math.PI / 180;
-            
-            this.drawClassicNeedle(ctx, centerX, centerY, deviceNeedleAngle, deviceNeedleLength, 'device', compassRadius);
+            // ユーザー針（相対）
+            if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null && moonData) {
+                const deviceElevation = deviceOrientation.beta;
+                const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
+                const relativeAngle = deviceOrientation.alpha - moonData.azimuth;
+                const deviceNeedleAngle = (relativeAngle - 90) * Math.PI / 180;
+                this.drawClassicNeedle(ctx, centerX, centerY, deviceNeedleAngle, deviceNeedleLength, 'device', compassRadius);
+            }
+        } else { // user mode
+            // 月針（相対）
+            if (moonData && deviceOrientation && deviceOrientation.alpha !== null) {
+                const moonNeedleLength = this.calculateNeedleLength(moonData.altitude, compassRadius);
+                const relativeAngle = moonData.azimuth - deviceOrientation.alpha;
+                const moonNeedleAngle = (relativeAngle - 90) * Math.PI / 180;
+                this.drawClassicNeedle(ctx, centerX, centerY, moonNeedleAngle, moonNeedleLength, 'moon', compassRadius);
+                if (moonNeedleLength > compassRadius * 0.1) {
+                    const tipX = centerX + Math.cos(moonNeedleAngle) * moonNeedleLength;
+                    const tipY = centerY + Math.sin(moonNeedleAngle) * moonNeedleLength;
+                    const tipRadius = Math.max(compassRadius * 0.08, compassRadius * 0.1);
+                    this.drawMoonOrnament(ctx, tipX, tipY, tipRadius, moonData);
+                }
+            }
+            // ユーザー針（固定）
+            if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
+                const deviceElevation = deviceOrientation.beta;
+                const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
+                const deviceNeedleAngle = -90 * Math.PI / 180;
+                this.drawClassicNeedle(ctx, centerX, centerY, deviceNeedleAngle, deviceNeedleLength, 'device', compassRadius);
+            }
         }
     }
 
