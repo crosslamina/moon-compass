@@ -125,6 +125,11 @@ export class DOMTranslationManager {
             sensitivityTitle.textContent = this.i18n.t('settings.sensitivity');
         }
 
+        const compassModeTitle = document.querySelector('[data-setting="compass-mode"] .setting-title, .setting-title[data-key="compass-mode"]');
+        if (compassModeTitle) {
+            compassModeTitle.textContent = this.i18n.t('settings.compassMode');
+        }
+
         const orientationTitle = document.querySelector('[data-setting="orientation"] .setting-title, .setting-title[data-key="orientation"]');
         if (orientationTitle) {
             orientationTitle.textContent = this.i18n.t('settings.orientationCorrection');
@@ -142,11 +147,11 @@ export class DOMTranslationManager {
 
         // フォールバック: data属性がない場合は順序ベースで更新
         const settingTitles = document.querySelectorAll('.setting-title');
-        if (settingTitles.length >= 5) {
+        if (settingTitles.length >= 6) {
             settingTitles[0].textContent = this.i18n.t('settings.volume');
             settingTitles[1].textContent = this.i18n.t('settings.sensitivity');
-            settingTitles[2].textContent = this.i18n.t('settings.orientationCorrection');
-            settingTitles[3].textContent = this.i18n.t('settings.display');
+            settingTitles[2].textContent = this.i18n.t('settings.compassMode');
+            settingTitles[3].textContent = this.i18n.t('settings.orientationCorrection');
             settingTitles[4].textContent = this.i18n.t('settings.language');
         }
 

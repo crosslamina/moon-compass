@@ -112,6 +112,7 @@ async function initializeApp() {
         // 言語変更時のサブスクリプション（補正ステータスも更新）
         i18nManager.subscribe(() => {
             updateCorrectionStatus();
+            updateCompassModeButtonText();
         });
         
         // マネージャーの初期化
@@ -134,6 +135,10 @@ async function initializeApp() {
         
         // 点滅タイマーを初期化
         resetBlinkTimer();
+        
+        // 初期UI状態を設定
+        updateCorrectionStatus();
+        updateCompassModeButtonText();
         
         console.log('✅ アプリケーションの初期化が完了しました');
     } catch (error) {
@@ -171,10 +176,12 @@ function setupEventListeners() {
         compassModeToggleButton.addEventListener('click', () => {
             const currentMode = stateManager.get('ui').compassMode;
             const newMode = currentMode === 'compass' ? 'user' : 'compass';
+            console.log(`🔄 コンパスモード変更: ${currentMode} → ${newMode}`);
+            
             stateManager.update('ui', ui => ({ ...ui, compassMode: newMode }));
 
-            // ボタンのテキストを更新（オプション）
-            compassModeToggleButton.textContent = newMode === 'compass' ? 'ユーザー中心' : 'コンパス中心';
+            // ボタンのテキストを更新（翻訳対応）
+            updateCompassModeButtonText();
         });
     }
 
@@ -193,6 +200,11 @@ function setupEventListeners() {
     // 画面の向き変更時にもCanvasサイズを調整
     window.addEventListener('orientationchange', () => {
         setTimeout(resizeCanvas, 300); // 向き変更後の遅延を増加
+    });
+
+    // 設定ダイアログが開いた時にコンパスモードボタンのテキストを更新
+    window.addEventListener('settingsDialogOpened', () => {
+        updateCompassModeButtonText();
     });
 }
 
@@ -348,6 +360,24 @@ async function initializeSonar() {
 }
 
 /**
+ * コンパスモードボタンのテキストを更新
+ */
+function updateCompassModeButtonText() {
+    const compassModeToggleButton = document.getElementById('compass-mode-toggle');
+    if (compassModeToggleButton) {
+        const currentMode = stateManager.get('ui').compassMode;
+        const targetText = currentMode === 'compass' ? 
+            i18nManager.t('compass.mode.moonFixed') : 
+            i18nManager.t('compass.mode.userFixed');
+        
+        console.log(`🔄 コンパスモードボタン更新: mode=${currentMode}, text="${targetText}"`);
+        compassModeToggleButton.textContent = targetText;
+    } else {
+        console.warn('⚠️ コンパスモードボタンが見つかりません');
+    }
+}
+
+/**
  * 補正状態の表示を更新
  */
 function updateCorrectionStatus() {
@@ -465,11 +495,12 @@ if (import.meta.env.DEV) {
     console.log('📱 deviceorientationabsoluteセンサー（絶対センサー）を使用中');
 }
 
-// 初期状態の表示
-updateCorrectionStatus();
-
 // アプリケーション初期化
-initializeApp();
+initializeApp().then(() => {
+    // 初期化完了後に初期状態の表示を設定
+    updateCorrectionStatus();
+    updateCompassModeButtonText();
+});
 
 console.log('=== 方位角キャリブレーション機能 ===');
 console.log('東西が逆の場合: toggleOrientationReverse()');

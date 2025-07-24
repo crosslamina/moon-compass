@@ -13,6 +13,10 @@
     "needle": {
       "red": "빨간 바늘",
       "gold": "금색 바늘"
+    },
+    "mode": {
+      "userFixed": "사용자 고정",
+      "moonFixed": "달 고정"
     }
   },
   "moon": {
@@ -63,6 +67,7 @@
     "title": "설정",
     "sensitivity": "감도 설정",
     "volume": "볼륨",
+    "compassMode": "나침반 모드",
     "orientationCorrection": "방위각 보정",
     "display": "표시 설정",
     "language": "언어 설정",

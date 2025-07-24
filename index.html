@@ -82,10 +82,10 @@
             </div>
             <div class="dialog-body">
                 <!-- 音量設定カード -->
-                <div class="setting-card">
+                <div class="setting-card" data-setting="volume">
                     <div class="setting-header">
                         <span class="setting-icon">🔊</span>
-                        <span class="setting-title">音量</span>
+                        <span class="setting-title" data-key="volume">音量</span>
                     </div>
                     <div class="setting-control">
                         <input type="range" id="compass-volume-slider" min="0" max="100" value="45" class="modern-slider">
@@ -94,10 +94,10 @@
                 </div>
                 
                 <!-- 感度設定カード -->
-                <div class="setting-card">
+                <div class="setting-card" data-setting="sensitivity">
                     <div class="setting-header">
                         <span class="setting-icon">📡</span>
-                        <span class="setting-title">感度</span>
+                        <span class="setting-title" data-key="sensitivity">感度</span>
                     </div>
                     <div class="setting-control">
                         <input type="range" id="sensitivity-slider" min="1" max="10" value="5" class="modern-slider">
@@ -106,10 +106,10 @@
                 </div>
                 
                 <!-- コンパスモード設定カード -->
-                <div class="setting-card">
+                <div class="setting-card" data-setting="compass-mode">
                     <div class="setting-header">
                         <span class="setting-icon">🔄</span>
-                        <span class="setting-title">コンパスモード</span>
+                        <span class="setting-title" data-key="compass-mode">コンパスモード</span>
                     </div>
                     <div class="setting-control">
                         <button id="compass-mode-toggle" class="modern-btn">モード切替</button>
@@ -117,10 +117,10 @@
                 </div>
 
                 <!-- 方位角補正設定カード -->
-                <div class="setting-card">
+                <div class="setting-card" data-setting="orientation">
                     <div class="setting-header">
                         <span class="setting-icon">🧭</span>
-                        <span class="setting-title">方位角補正</span>
+                        <span class="setting-title" data-key="orientation">方位角補正</span>
                     </div>
                     <div class="setting-control">
                         <div class="button-group-vertical">
@@ -132,10 +132,10 @@
                 </div>
                 
                 <!-- 言語設定カード -->
-                <div class="setting-card">
+                <div class="setting-card" data-setting="language">
                     <div class="setting-header">
                         <span class="setting-icon">🌍</span>
-                        <span class="setting-title">言語設定</span>
+                        <span class="setting-title" data-key="language">言語設定</span>
                     </div>
                     <div class="setting-control">
                         <select id="language-selector" class="language-selector">

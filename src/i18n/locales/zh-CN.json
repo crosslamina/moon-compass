@@ -13,6 +13,10 @@
     "needle": {
       "red": "红针",
       "gold": "金针"
+    },
+    "mode": {
+      "userFixed": "用户固定",
+      "moonFixed": "月亮固定"
     }
   },
   "moon": {
@@ -63,6 +67,7 @@
     "title": "设置",
     "sensitivity": "灵敏度设置",
     "volume": "音量",
+    "compassMode": "指南针模式",
     "orientationCorrection": "方位角校正",
     "display": "显示设置",
     "language": "语言设置",

@@ -13,6 +13,10 @@
     "needle": {
       "red": "Red Needle",
       "gold": "Gold Needle"
+    },
+    "mode": {
+      "userFixed": "User Fixed",
+      "moonFixed": "Moon Fixed"
     }
   },
   "moon": {
@@ -63,6 +67,7 @@
     "title": "Settings",
     "sensitivity": "Sensitivity",
     "volume": "Volume",
+    "compassMode": "Compass Mode",
     "orientationCorrection": "Orientation Correction",
     "display": "Display",
     "language": "Language",
