@@ -552,9 +552,9 @@ export class CompassManager {
         const height = this.canvas.height;
         const centerX = width / 2;
         const centerY = height / 2;
-        const compassRadius = Math.min(width, height) * 0.48;
+        const compassRadius = Math.min(width, height) * 0.42; // 月がキャンバスからはみ出さないよう調整
         
-        // 最外層装飾の半径を計算（キャンバスサイズに近づける）
+        // 最外層装飾の半径を計算
         const outerOffset = compassRadius * 0.02;
         const outerDecorationRadius = compassRadius + outerOffset;
         
@@ -727,7 +727,7 @@ export class CompassManager {
      * 天体装飾の描画（星座風装飾）
      */
     private drawCelestialOrnaments(ctx: CanvasRenderingContext2D, centerX: number, centerY: number, compassRadius: number): void {
-        const ornamentRadius = compassRadius * 1.08;
+        const ornamentRadius = compassRadius * 1.04;
         const starSize = compassRadius * 0.015;
         
         // 4つの主要方位に星の装飾
