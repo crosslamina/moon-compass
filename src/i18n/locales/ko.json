@@ -16,7 +16,8 @@
     },
     "mode": {
       "userFixed": "사용자 고정",
-      "moonFixed": "달 고정"
+      "moonFixed": "달 고정",
+      "compassFixed": "나침반 고정"
     }
   },
   "moon": {

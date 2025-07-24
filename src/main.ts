@@ -175,7 +175,15 @@ function setupEventListeners() {
     if (compassModeToggleButton) {
         compassModeToggleButton.addEventListener('click', () => {
             const currentMode = stateManager.get('ui').compassMode;
-            const newMode = currentMode === 'compass' ? 'user' : 'compass';
+            // 3つのモードを循環: moon → user → compass → moon
+            let newMode: 'moon' | 'user' | 'compass';
+            if (currentMode === 'moon') {
+                newMode = 'user';
+            } else if (currentMode === 'user') {
+                newMode = 'compass';
+            } else { // currentMode === 'compass'
+                newMode = 'moon';
+            }
             console.log(`🔄 コンパスモード変更: ${currentMode} → ${newMode}`);
             
             stateManager.update('ui', ui => ({ ...ui, compassMode: newMode }));
@@ -366,9 +374,15 @@ function updateCompassModeButtonText() {
     const compassModeToggleButton = document.getElementById('compass-mode-toggle');
     if (compassModeToggleButton) {
         const currentMode = stateManager.get('ui').compassMode;
-        const targetText = currentMode === 'compass' ? 
-            i18nManager.t('compass.mode.moonFixed') : 
-            i18nManager.t('compass.mode.userFixed');
+        let targetText: string;
+        
+        if (currentMode === 'moon') {
+            targetText = i18nManager.t('compass.mode.moonFixed');
+        } else if (currentMode === 'user') {
+            targetText = i18nManager.t('compass.mode.userFixed');
+        } else { // currentMode === 'compass'
+            targetText = i18nManager.t('compass.mode.compassFixed');
+        }
         
         console.log(`🔄 コンパスモードボタン更新: mode=${currentMode}, text="${targetText}"`);
         compassModeToggleButton.textContent = targetText;

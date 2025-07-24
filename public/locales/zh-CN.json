@@ -16,7 +16,8 @@
     },
     "mode": {
       "userFixed": "用户固定",
-      "moonFixed": "月亮固定"
+      "moonFixed": "月亮固定",
+      "compassFixed": "指南针固定"
     }
   },
   "moon": {

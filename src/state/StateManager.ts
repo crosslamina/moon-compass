@@ -35,7 +35,7 @@ export interface AppState {
         isSettingsDialogOpen: boolean;
         isMuted: boolean;
         volume: number;
-        compassMode: 'compass' | 'user';
+        compassMode: 'moon' | 'user' | 'compass';
     };
     
     // 方位補正
@@ -99,7 +99,7 @@ export class StateManager {
                 isSettingsDialogOpen: false,
                 isMuted: false,
                 volume: 0.45,
-                compassMode: 'compass'
+                compassMode: 'moon'
             },
             orientation: {
                 isReversed: false,

@@ -16,7 +16,8 @@
     },
     "mode": {
       "userFixed": "User Fixed",
-      "moonFixed": "Moon Fixed"
+      "moonFixed": "Moon Fixed",
+      "compassFixed": "Compass Fixed"
     }
   },
   "moon": {
