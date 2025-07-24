@@ -567,10 +567,23 @@ export class CompassManager {
         
         ctx.fillStyle = backgroundGradient;
         ctx.fillRect(0, 0, width, height);
+
+        const moonData = this.currentMoonData || this.stateManager.get('moonData');
         
+        ctx.save();
+        if (moonData) {
+            const rotationAngle = -moonData.azimuth * Math.PI / 180;
+            ctx.translate(centerX, centerY);
+            ctx.rotate(rotationAngle);
+            ctx.translate(-centerX, -centerY);
+        }
+
         this.drawCompassRing(ctx, centerX, centerY, compassRadius);
         this.drawDirectionMarks(ctx, centerX, centerY, compassRadius);
         this.drawHorizonLine(ctx, centerX, centerY, compassRadius);
+
+        ctx.restore();
+
         this.drawNeedles(ctx, centerX, centerY, compassRadius);
         this.drawCenter(ctx, centerX, centerY, compassRadius);
         this.drawMagneticField(ctx, centerX, centerY, compassRadius);
@@ -1168,7 +1181,8 @@ export class CompassManager {
         // 月針（より装飾的な月針）- 先に描画（下層）
         if (moonData) {
             const moonNeedleLength = this.calculateNeedleLength(moonData.altitude, compassRadius);
-            const moonNeedleAngle = (moonData.azimuth - 90) * Math.PI / 180;
+            // 月の針を常に上向き（-90度）に固定
+            const moonNeedleAngle = -90 * Math.PI / 180;
             
             this.drawClassicNeedle(ctx, centerX, centerY, moonNeedleAngle, moonNeedleLength, 'moon', compassRadius);
             
@@ -1183,10 +1197,12 @@ export class CompassManager {
         }
         
         // デバイス針（装飾的なクラシック針）- 後に描画（上層）
-        if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null) {
+        if (deviceOrientation && deviceOrientation.alpha !== null && deviceOrientation.beta !== null && moonData) {
             const deviceElevation = deviceOrientation.beta;
             const deviceNeedleLength = this.calculateNeedleLength(deviceElevation, compassRadius);
-            const deviceNeedleAngle = (deviceOrientation.alpha - 90) * Math.PI / 180;
+            // デバイスの向きと月の向きの差分を計算
+            const relativeAngle = deviceOrientation.alpha - moonData.azimuth;
+            const deviceNeedleAngle = (relativeAngle - 90) * Math.PI / 180;
             
             this.drawClassicNeedle(ctx, centerX, centerY, deviceNeedleAngle, deviceNeedleLength, 'device', compassRadius);
         }
