@@ -1,0 +1,130 @@
+{
+  "ui": {
+    "title": "Moon Compass",
+    "permissionRequest": "Allow Sensor Permission",
+    "locationPermission": "Allow Location Permission",
+    "info": "Information",
+    "settings": "Settings",
+    "close": "Close"
+  },
+  "compass": {
+    "userDirection": "Your Direction",
+    "moonPosition": "Moon Position",
+    "needle": {
+      "red": "Red Needle",
+      "gold": "Gold Needle"
+    }
+  },
+  "moon": {
+    "direction": "Direction",
+    "distance": "Distance",
+    "altitude": "Altitude",
+    "phase": "Moon Phase",
+    "illumination": "Illumination",
+    "rise": "Moonrise",
+    "set": "Moonset",
+    "currentTime": "Current Time",
+    "state": "Moon State",
+    "status": "Moon Status",
+    "noTimeData": "No moon time data",
+    "alwaysBelowOrAboveHorizon": "Always below or above horizon"
+  },
+  "moonPhase": {
+    "newMoon": "New Moon",
+    "crescentMoon": "Crescent Moon",
+    "firstQuarterApproaching": "Waxing Crescent",
+    "firstQuarter": "First Quarter",
+    "firstQuarterPast": "Waxing Gibbous",
+    "fullMoonApproaching": "Waxing Gibbous",
+    "fullMoon": "Full Moon",
+    "lastQuarterApproaching": "Waning Gibbous",
+    "lastQuarter": "Last Quarter",
+    "waningMoon": "Waning Crescent"
+  },
+  "time": {
+    "today": "Today",
+    "none": "None",
+    "remaining": "{{hours}}:{{minutes}} left",
+    "after": "in",
+    "alwaysBelow": "Always below horizon",
+    "alwaysAbove": "Always above horizon",
+    "specialStatus": "Always below or above horizon"
+  },
+  "location": {
+    "detecting": "Detecting location...",
+    "denied": "Location access denied",
+    "unavailable": "Location unavailable",
+    "timeout": "Location timeout",
+    "error": "Location error",
+    "unsupported": "Browser not supported",
+    "permissionDenied": "Location permission denied"
+  },
+  "settings": {
+    "title": "Settings",
+    "sensitivity": "Sensitivity",
+    "volume": "Volume",
+    "orientationCorrection": "Orientation Correction",
+    "display": "Display",
+    "language": "Language",
+    "eastWestReverse": "East-West Reverse",
+    "resetCorrection": "Reset Correction",
+    "status": {
+      "on": "ON",
+      "off": "OFF"
+    }
+  },
+  "status": {
+    "correctionEnabled": "East-West correction enabled",
+    "correctionDisabled": "East-West correction disabled",
+    "correctionReset": "Correction reset",
+    "correctionReversed": "East-West correction: {{status}}",
+    "correctionOffset": "Orientation offset: {{offset}}°",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "searching": "Searching",
+    "weakDetection": "Weak Detection",
+    "strongField": "Strong Field",
+    "moonLocked": "Moon Locked!"
+  },
+  "info": {
+    "title": "Information",
+    "moonState": "Moon State",
+    "locationSensor": "Location & Sensors",
+    "sensorData": "Sensor Data",
+    "deviceOrientation": "Device Orientation: {{azimuth}}° | Tilt: {{tilt}}°",
+    "trackingAccuracy": "Tracking Accuracy",
+    "azimuthAccuracy": "Azimuth Accuracy",
+    "altitudeAccuracy": "Altitude Accuracy",
+    "locationData": "Location Data",
+    "coordinates": "Coordinates",
+    "viewOnMap": "View on Map"
+  },
+  "error": {
+    "sensorNotSupported": "Sensors not supported",
+    "permissionRequired": "Permission required",
+    "loadFailed": "Load failed"
+  },
+  "unit": {
+    "degree": "°",
+    "km": "km",
+    "percent": "%",
+    "days": "days"
+  },
+  "direction": {
+    "north": "North",
+    "northeast": "Northeast",
+    "east": "East",
+    "southeast": "Southeast",
+    "south": "South",
+    "southwest": "Southwest",
+    "west": "West",
+    "northwest": "Northwest",
+    "left": "Left",
+    "right": "Right"
+  },
+  "label": {
+    "noData": "No data",
+    "loading": "Loading...",
+    "unknown": "Unknown"
+  }
+}

@@ -1,108 +1,213 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" id="html-root">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>月が綺麗ですね</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>月見コンパス - 賞月指南針</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/logomark.png">
+    <link rel="apple-touch-icon" href="/logomark.png">
+    
+    <!-- PWA Support -->
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="月見コンパス">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="月の位置を正確に示すコンパスアプリ。デバイスのセンサーを使って月の方向と高度を表示し、月観測をサポートします。">
+    <meta name="keywords" content="月,コンパス,月見,天体観測,方位,センサー,moon,compass,賞月,指南針">
+    <meta name="author" content="Tsuki-ga-Kirei">
+    
+    <!-- Alternate Languages -->
+    <link rel="alternate" hreflang="ja" href="https://tsuki-ga-kirei.app/">
+    <link rel="alternate" hreflang="en" href="https://tsuki-ga-kirei.app/en">
+    <link rel="alternate" hreflang="zh-CN" href="https://tsuki-ga-kirei.app/zh-cn">
+    <link rel="alternate" hreflang="zh-TW" href="https://tsuki-ga-kirei.app/zh-tw">
+    <link rel="alternate" hreflang="ko" href="https://tsuki-ga-kirei.app/ko">
+    
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="月見コンパス - 賞月指南針">
+    <meta property="og:description" content="月の位置を正確に示すコンパスアプリ。デバイスのセンサーを使って月の方向と高度を表示し、月観測をサポートします。">
+    <meta property="og:image" content="/logomark.png">
+    <meta property="og:url" content="https://tsuki-ga-kirei.app/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ja_JP">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="月見コンパス - 賞月指南針">
+    <meta name="twitter:description" content="月の位置を正確に示すコンパスアプリ">
+    <meta name="twitter:image" content="/logomark.png">
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="container">
-        <h1>月が綺麗ですね</h1>
-        <div id="moon-display-container">
-            <canvas id="moon-canvas" width="200" height="200"></canvas>
-        </div>
-        <div id="moon-detector">
-            <h2>🌙 月探知機</h2>
-            <button id="location-permission-button" style="display: none;">位置情報の許可</button>
-            <button id="permission-button" style="display: none;">センサー権限を許可</button>
-            <div id="location-status"></div>
-            <div id="detector-status" class="detector-inactive">月を探しています...</div>
-            
-            <!-- 方位角補正コントロール -->
-            <div id="orientation-controls">
-                <div class="controls-label">方位角補正</div>
-                <div class="control-buttons">
-                    <button id="toggle-reverse-btn" class="control-btn">東西反転補正</button>
-                    <button id="reset-correction-btn" class="control-btn">補正リセット</button>
-                </div>
-                <div id="correction-status"></div>
-            </div>
-            
-            <!-- 直感的な方向指示器 -->
-            <div id="direction-compass">
-                <div class="compass-label">コンパス（青針：デバイスの向き、🌙：月の位置）</div>
-                <div id="compass-circle">
-                    <div id="compass-needle"></div>
-                    <div id="moon-target"></div>
-                    <div class="compass-marker north">N</div>
-                    <div class="compass-marker east">E</div>
-                    <div class="compass-marker south">S</div>
-                    <div class="compass-marker west">W</div>
-                </div>
-            </div>
-            
-            <!-- 高度インジケーター -->
-            <div id="altitude-indicator">
-                <div class="altitude-label">高度</div>
-                <div id="altitude-gauge">
-                    <div id="device-altitude-marker"></div>
-                    <div id="moon-altitude-marker"></div>
-                    <div class="altitude-scale">
-                        <span>-90°</span>
-                        <span>-45°</span>
-                        <span>0°</span>
-                        <span>45°</span>
-                        <span>90°</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="detector-instructions">
-                <p>🧭 コンパス: 赤い針が北を指します。オレンジの月マークの方向にデバイスを向けてください</p>
-                <p>📐 高度: 青いマーカー（デバイス）を緑のマーカー（月）に合わせてください</p>
+    <!-- メインコンテンツコンテナ -->
+    <div class="main-container">
+        <!-- 権限関連のボタン -->
+        <button id="location-permission-button" style="display: none;">位置情報の許可</button>
+        <button id="permission-button" style="display: none;">センサー権限を許可</button>
+        <div id="location-status"></div>
+        
+        <!-- メインコンパス -->
+        <canvas id="compass-canvas"></canvas>
+        
+        <!-- コンパス情報（凡例） -->
+        <div id="compass-info">
+            <div class="needle-legend">
+                <span style="color: #dc143c;">●</span> 赤針: あなたの方向
+                <br><span style="color: #ffd700;">●</span> 金針: 月の位置
             </div>
         </div>
         
-        <!-- 情報ボタン -->
-        <button id="info-button" class="info-btn">ℹ️ 詳細情報</button>
+        <!-- MoonStatusDisplayの挿入ポイント（ここに動的に挿入される） -->
+        <div id="status-insertion-point"></div>
         
-        <!-- 詳細情報ダイアログ -->
-        <div id="info-dialog" class="dialog-overlay" style="display: none;">
-            <div class="dialog-content">
-                <div class="dialog-header">
-                    <h3>月の詳細情報</h3>
-                    <button id="close-dialog" class="close-btn">×</button>
+        <!-- 設定と情報ボタン（最後に配置） -->
+        <div class="button-group">
+            <button id="settings-button" class="info-btn">⚙️</button>
+            <button id="info-button" class="info-btn">ℹ️</button>
+        </div>
+    </div>
+    
+    <!-- 設定ダイアログ -->
+    <div id="settings-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h3>⚙️ 設定</h3>
+                <button id="close-settings-dialog" class="close-btn">×</button>
+            </div>
+            <div class="dialog-body">
+                <!-- 音量設定カード -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">🔊</span>
+                        <span class="setting-title">音量</span>
+                    </div>
+                    <div class="setting-control">
+                        <input type="range" id="compass-volume-slider" min="0" max="100" value="45" class="modern-slider">
+                        <button id="compass-mute-button" class="mute-btn">🔊</button>
+                    </div>
                 </div>
-                <div class="dialog-body">
-                    <!-- 月の情報 -->
-                    <div class="info-section">
-                        <h4>🌙 月の情報</h4>
-                        <div id="moon-direction"></div>
-                        <div id="distance"></div>
-                        <p id="altitude"></p>
-                        <p id="moon-phase"></p>
-                        <p id="illumination"></p>
-                        <p id="moon-rise"></p>
-                        <p id="moon-set"></p>
+                
+                <!-- 感度設定カード -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">📡</span>
+                        <span class="setting-title">感度</span>
                     </div>
-                    
-                    <!-- 現在時刻と現在位置 -->
-                    <div class="info-section">
-                        <h4>📍 現在時刻・位置</h4>
-                        <div id="current-time"></div>
-                        <div id="geo-info"></div>
-                        <p><a id="map-link" href="#" target="_blank">Show my location on map</a></p>
+                    <div class="setting-control">
+                        <input type="range" id="sensitivity-slider" min="1" max="10" value="5" class="modern-slider">
+                        <span class="sensitivity-value">5</span>
                     </div>
-                    
-                    <!-- デバイスの方位情報 -->
-                    <div class="info-section">
-                        <h4>📱 デバイス方位情報</h4>
-                        <div id="device-orientation"></div>
+                </div>
+                
+                <!-- 方位角補正設定カード -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">🧭</span>
+                        <span class="setting-title">方位角補正</span>
+                    </div>
+                    <div class="setting-control">
+                        <div class="button-group-vertical">
+                            <button id="toggle-reverse-btn" class="modern-btn">東西反転補正</button>
+                            <button id="reset-correction-btn" class="modern-btn secondary">補正リセット</button>
+                        </div>
+                        <div id="correction-status" class="status-text"></div>
+                    </div>
+                </div>
+                
+                <!-- 言語設定カード -->
+                <div class="setting-card">
+                    <div class="setting-header">
+                        <span class="setting-icon">🌍</span>
+                        <span class="setting-title">言語設定</span>
+                    </div>
+                    <div class="setting-control">
+                        <select id="language-selector" class="language-selector">
+                            <option value="ja">日本語</option>
+                            <option value="en">English</option>
+                            <option value="zh-CN">简体中文</option>
+                        </select>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+    
+    <!-- 詳細情報ダイアログ -->
+    <div id="info-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h3>🌙 詳細情報</h3>
+                <button id="close-dialog" class="close-btn">×</button>
+            </div>
+            <div class="dialog-body">
+                <!-- 月の情報カード -->
+                <div class="info-card">
+                    <div class="info-header">
+                        <span class="info-icon">🌙</span>
+                        <span class="info-title">月の状態</span>
+                    </div>
+                    <div class="info-content moon-info-layout">
+                        <!-- 月の基本属性グループ -->
+                        <div class="moon-group moon-basic-group">
+                            <div class="info-item moon-basic" id="moon-phase"></div>
+                            <div class="info-item moon-basic" id="illumination"></div>
+                        </div>
+                        <!-- 月の空間位置グループ -->
+                        <div class="moon-group moon-position-group">
+                            <div class="info-item moon-position" id="moon-direction"></div>
+                            <div class="info-item moon-position" id="altitude"></div>
+                            <div class="info-item moon-position" id="distance"></div>
+                        </div>
+                        <!-- 月の時間情報グループ -->
+                        <div class="moon-group moon-time-group">
+                            <div class="info-item moon-time" id="moon-rise"></div>
+                            <div class="info-item moon-time" id="moon-set"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 位置・デバイス情報カード -->
+                <div class="info-card">
+                    <div class="info-header">
+                        <span class="info-icon">📍</span>
+                        <span class="info-title">位置・センサー</span>
+                    </div>
+                    <div class="info-content sensor-info-layout">
+                        <!-- センサーデータグループ -->
+                        <div class="sensor-group sensor-data-group">
+                            <div class="sensor-group-title">センサーデータ</div>
+                            <div class="info-item sensor-data" id="device-orientation"></div>
+                        </div>
+                        <!-- 追跡精度グループ -->
+                        <div class="sensor-group tracking-accuracy-group">
+                            <div class="sensor-group-title">追跡精度</div>
+                            <div class="tracking-accuracy-items">
+                                <div class="info-item tracking-accuracy" id="direction-match-detail"></div>
+                                <div class="info-item tracking-accuracy" id="altitude-match-detail"></div>
+                            </div>
+                        </div>
+                        <!-- 位置情報グループ -->
+                        <div class="sensor-group location-data-group">
+                            <div class="sensor-group-title">位置情報</div>
+                            <div class="info-item location-data coordinates-with-map" id="geo-info-container">
+                                <span id="geo-info"></span>
+                                <a id="map-link" href="#" target="_blank" class="map-link-inline">
+                                    <span class="map-icon">🗺️</span>
+                                    <span class="map-text">地図</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
     </div>
     <script type="module" src="/src/main.ts"></script>
 </body>

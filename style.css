@@ -1,83 +1,41 @@
 body {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
     min-height: 100vh;
+    max-height: 100vh;
     margin: 0;
-    background: linear-gradient(to bottom, #1a1a2e, #16213e, #0f3460);
+    padding: 20px;
+    background: #000000;
     font-family: 'Arial', sans-serif;
     color: #ecf0f1;
-}
-
-#container {
     text-align: center;
-    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-#moon-display-container {
-    margin: 20px 0;
+/* メインコンテンツコンテナ - ビューポート内に収まるように調整 */
+.main-container {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-}
-
-#moon-canvas {
-    border: 2px solid #bdc3c7;
-    border-radius: 50%;
-    box-shadow: 0 0 20px rgba(52, 73, 94, 0.8);
-    background: radial-gradient(circle, #2c3e50, #1a1a2e);
-}
-
-h1 {
-    color: #f39c12;
-    text-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
-    margin-bottom: 30px;
-}
-
-#moon-direction {
-    font-size: 2em;
-    margin-bottom: 20px;
-    color: #3498db;
-}
-
-#distance,
-#moon-phase,
-#illumination,
-#altitude,
-#moon-rise,
-#moon-set {
-    font-size: 1.2em;
-    margin: 10px 0;
-    padding: 5px;
-    background: rgba(52, 73, 94, 0.3);
-    border-radius: 5px;
-}
-
-#map-link {
-    font-size: 1.5em;
-    margin-top: 10px;
-    color: #e74c3c;
-    text-decoration: none;
-}
-
-#map-link:hover {
-    color: #c0392b;
-    text-shadow: 0 0 5px rgba(231, 76, 60, 0.7);
+    width: 100%;
+    gap: 15px;
+    flex-grow: 1;
+    justify-content: center;
+    min-height: 0;
 }
 
 #moon-detector {
-    margin: 20px 0;
-    padding: 20px;
-    border: 2px solid #3498db;
-    border-radius: 10px;
-    background: rgba(52, 73, 94, 0.3);
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
 }
 
-#moon-detector h2 {
-    margin: 0 0 15px 0;
-    color: #3498db;
-    font-size: 1.5em;
-}
 
 #permission-button,
 #location-permission-button {
@@ -112,15 +70,6 @@ h1 {
     font-size: 0.9em;
 }
 
-#detector-status {
-    font-size: 1.3em;
-    font-weight: bold;
-    padding: 10px;
-    border-radius: 5px;
-    margin: 10px 0;
-    transition: all 0.3s ease;
-}
-
 .detector-inactive {
     background: rgba(231, 76, 60, 0.3);
     color: #e74c3c;
@@ -144,178 +93,6 @@ h1 {
     0% { opacity: 1; }
     50% { opacity: 0.7; }
     100% { opacity: 1; }
-}
-
-#direction-indicator {
-    display: flex;
-    justify-content: space-between;
-    margin: 15px 0;
-}
-
-/* 直感的な方向コンパス */
-#direction-compass {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 20px 0;
-}
-
-.compass-label {
-    font-size: 12px;
-    color: #7f8c8d;
-    margin-bottom: 10px;
-    text-align: center;
-}
-
-#compass-circle {
-    position: relative;
-    width: 150px;
-    height: 150px;
-    border: 3px solid #3498db;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(52, 152, 219, 0.1), rgba(52, 152, 219, 0.05));
-    margin: 0 auto;
-}
-
-#compass-needle {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 4px;
-    height: 60px;
-    background: linear-gradient(to top, #3498db, #2980b9);
-    transform-origin: center bottom;
-    transform: translate(-50%, -100%) rotate(0deg);
-    border-radius: 2px;
-    transition: transform 0.3s ease;
-    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
-}
-
-#moon-target {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
-    background: #f39c12;
-    border-radius: 50%;
-    transform-origin: center center;
-    transform: translate(-50%, -50%);
-    transition: transform 0.3s ease;
-    box-shadow: 0 0 15px rgba(243, 156, 18, 0.7);
-}
-
-#moon-target::before {
-    content: '🌙';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 12px;
-}
-
-.compass-marker {
-    position: absolute;
-    color: #bdc3c7;
-    font-weight: bold;
-    font-size: 14px;
-}
-
-.compass-marker.north { top: -5px; left: 50%; transform: translateX(-50%); }
-.compass-marker.east { right: -10px; top: 50%; transform: translateY(-50%); }
-.compass-marker.south { bottom: -5px; left: 50%; transform: translateX(-50%); }
-.compass-marker.west { left: -10px; top: 50%; transform: translateY(-50%); }
-
-/* 高度インジケーター */
-#altitude-indicator {
-    margin: 20px 0;
-    text-align: center;
-}
-
-.altitude-label {
-    color: #3498db;
-    font-weight: bold;
-    margin-bottom: 10px;
-}
-
-#altitude-gauge {
-    position: relative;
-    width: 200px;
-    height: 30px;
-    background: linear-gradient(to right, #34495e, #2c3e50);
-    border-radius: 15px;
-    margin: 0 auto;
-    border: 2px solid #3498db;
-}
-
-#device-altitude-marker {
-    position: absolute;
-    top: -5px;
-    width: 8px;
-    height: 40px;
-    background: #3498db;
-    border-radius: 4px;
-    transition: left 0.3s ease;
-    box-shadow: 0 0 10px rgba(52, 152, 219, 0.7);
-}
-
-#device-altitude-marker::before {
-    content: '📱';
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 12px;
-}
-
-#moon-altitude-marker {
-    position: absolute;
-    top: -5px;
-    width: 8px;
-    height: 40px;
-    background: #2ecc71;
-    border-radius: 4px;
-    transition: left 0.3s ease;
-    box-shadow: 0 0 10px rgba(46, 204, 113, 0.7);
-}
-
-#moon-altitude-marker::before {
-    content: '🌙';
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 12px;
-}
-
-.altitude-scale {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    font-size: 12px;
-    color: #bdc3c7;
-    position: relative;
-}
-
-.altitude-scale::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: -35px;
-    width: 2px;
-    height: 40px;
-    background: #95a5a6;
-    transform: translateX(-50%);
-}
-
-.altitude-scale::after {
-    content: '地平線';
-    position: absolute;
-    left: 50%;
-    top: -20px;
-    transform: translateX(-50%);
-    font-size: 10px;
-    color: #95a5a6;
 }
 
 #detector-instructions {
@@ -360,24 +137,38 @@ h1 {
     }
 }
 
-/* 情報ボタンのスタイル */
+/* 情報ボタンのスタイル - 控えめなデザイン */
 .info-btn {
-    background: #3498db;
-    color: white;
-    border: none;
+    background: rgba(44, 62, 80, 0.8);
+    color: rgba(236, 240, 241, 0.9);
+    border: 1px solid rgba(149, 165, 166, 0.3);
     padding: 12px 20px;
-    border-radius: 25px;
+    border-radius: 8px;
     font-size: 1.1em;
     cursor: pointer;
-    margin: 20px 0;
+    margin: 10px 0;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    outline: none;
 }
 
 .info-btn:hover {
-    background: #2980b9;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+    background: rgba(52, 73, 94, 0.9);
+    color: #ecf0f1;
+    border-color: rgba(149, 165, 166, 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.info-btn:focus {
+    border-color: rgba(52, 152, 219, 0.6);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.info-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 /* ダイアログのスタイル */
@@ -402,12 +193,14 @@ h1 {
     border-radius: 15px;
     width: 90%;
     max-width: 500px;
-    max-height: 80vh;
+    max-height: 85vh;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     border: 1px solid #34495e;
     transform: scale(0.9);
     transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .dialog-overlay[style*="flex"] .dialog-content {
@@ -446,9 +239,10 @@ h1 {
 
 .dialog-body {
     padding: 20px;
-    max-height: 60vh;
+    max-height: calc(85vh - 120px);
     overflow-y: auto;
     color: #ecf0f1;
+    flex-grow: 1;
 }
 
 /* 情報セクションのスタイル */
@@ -575,6 +369,214 @@ h1 {
     transform: translateY(-1px);
 }
 
+/* 月ステータス表示コンポーネント - ミニマル版 */
+.moon-status-display {
+    margin: 12px auto 8px auto;
+    max-width: 600px;
+    padding: 0 20px;
+}
+
+.status-container {
+    background: rgba(44, 62, 80, 0.92);
+    border-radius: 12px;
+    padding: 18px;
+    border: 1px solid rgba(52, 73, 94, 0.7);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.35);
+    transition: all 0.3s ease;
+}
+
+.status-container:hover {
+    background: rgba(52, 73, 94, 0.95);
+    border-color: rgba(255, 215, 0, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* 検出レベル表示 - デフォルトでは非表示 */
+.detection-level {
+    text-align: center;
+    padding: 15px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    margin-bottom: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    display: none; /* デフォルトで非表示 */
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+/* 詳細モード時は表示 */
+.moon-status-display.detailed .detection-level {
+    display: flex;
+}
+
+.detection-level.pulse {
+    animation: statusPulse 1s ease-in-out infinite;
+}
+
+/* 月時刻表示は常に表示 */
+.moon-times {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ミニマル版では月時刻のスタイルをよりシンプルに */
+.moon-status-display:not(.detailed) .moon-times {
+    gap: 8px;
+}
+
+.moon-status-display:not(.detailed) .moon-time {
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.moon-status-display:not(.detailed) .time-icon {
+    font-size: 1em;
+}
+
+@keyframes statusPulse {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(255, 69, 0, 0.3);
+    }
+    50% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(255, 69, 0, 0.6);
+    }
+}
+
+.detection-icon {
+    font-size: 1.3em;
+}
+
+.detection-text {
+    text-shadow: 0 0 10px currentColor;
+}
+
+/* 月時刻表示セクション */
+.moon-times {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.moon-time {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.moon-time:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateX(5px);
+}
+
+.moon-time.future {
+    border-left-color: #ffd700;
+}
+
+.moon-time.past {
+    border-left-color: #666;
+    opacity: 0.7;
+}
+
+.moon-time.future .time-value,
+.moon-time.future .time-countdown {
+    color: #ffd700;
+    font-weight: bold;
+}
+
+.moon-time.past .time-value {
+    color: #888;
+}
+
+.moon-time.no-event {
+    border-left-color: #666;
+    opacity: 0.6;
+}
+
+.moon-time.no-event .time-value.no-data {
+    color: #e74c3c;
+    font-style: italic;
+    font-weight: normal;
+}
+
+.moon-time.special-notice {
+    border-left-color: #f39c12;
+    background: rgba(243, 156, 18, 0.1);
+}
+
+.moon-time.special-notice .time-value {
+    color: #f39c12;
+    font-size: 0.9em;
+    font-weight: normal;
+}
+
+.time-icon {
+    font-size: 1.2em;
+    min-width: 24px;
+}
+
+.time-label {
+    color: #ecf0f1;
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.time-value {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.time-countdown {
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.no-data {
+    text-align: center;
+    color: #e74c3c;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 600px) {
+    .moon-status-display {
+        margin: 15px auto;
+        padding: 0 15px;
+    }
+    
+    .status-container {
+        padding: 15px;
+    }
+    
+    .detection-level {
+        font-size: 1em;
+        padding: 12px;
+    }
+    
+    .moon-time {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .time-label {
+        min-width: auto;
+    }
+}
+
 .control-btn:active {
     transform: translateY(0);
 }
@@ -589,4 +591,813 @@ h1 {
     color: #ecf0f1;
     min-height: 20px;
     margin-top: 5px;
+}
+
+/* 検知状態に応じたスタイル */
+.detector-locked {
+    background: rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+    animation: pulse-white 0.5s ease-in-out infinite alternate;
+}
+
+.detector-found {
+    background: rgba(46, 204, 113, 0.3) !important;
+    color: #2ecc71 !important;
+    border-color: #2ecc71 !important;
+    animation: pulse-green 0.8s ease-in-out infinite alternate;
+}
+
+.detector-close {
+    background: rgba(241, 196, 15, 0.3) !important;
+    color: #f1c40f !important;
+    border-color: #f1c40f !important;
+    animation: pulse-yellow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-white {
+    from { box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+    to { box-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
+}
+
+@keyframes pulse-green {
+    from { box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); }
+    to { box-shadow: 0 0 20px rgba(46, 204, 113, 0.8); }
+}
+
+@keyframes pulse-yellow {
+    from { box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+    to { box-shadow: 0 0 20px rgba(241, 196, 15, 0.8); }
+}
+
+
+
+#compass-canvas {
+    border: none;
+    border-radius: 50%;
+    box-shadow: none;
+    background: #000000;
+    display: block;
+    margin: 0 auto;
+    aspect-ratio: 1 / 1;
+    width: min(350px, 60vw, 45vh);
+    height: auto;
+}
+
+#compass-info {
+    margin: 12px auto 8px auto;
+    font-family: 'Arial', sans-serif;
+    color: #ecf0f1;
+    font-size: 13px;
+    max-width: 300px;
+}
+
+.needle-legend {
+    margin: 0;
+    padding: 10px 14px;
+    background: rgba(44, 62, 80, 0.85);
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #ecf0f1;
+    border: 1px solid rgba(52, 73, 94, 0.6);
+    backdrop-filter: blur(8px);
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    transition: all 0.3s ease;
+}
+
+.needle-legend:hover {
+    background: rgba(52, 73, 94, 0.9);
+    border-color: rgba(52, 152, 219, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+}
+
+/* ステータス挿入ポイント */
+#status-insertion-point {
+    /* 非表示のマーカー要素 */
+    display: none;
+}
+
+#compass-controls {
+    margin-top: 15px;
+}
+
+.compass-control {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    color: #cd853f;
+}
+
+.compass-control label {
+    min-width: 120px;
+    margin-right: 10px;
+}
+
+.compass-control input[type="range"] {
+    flex: 1;
+    margin-right: 10px;
+    accent-color: #8b4513;
+}
+
+#compass-mute-button {
+    background: none;
+    border: 2px solid #8b4513;
+    color: #cd853f;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+#compass-mute-button:hover {
+    background: rgba(139, 69, 19, 0.2);
+    box-shadow: 0 0 10px rgba(139, 69, 19, 0.3);
+}
+
+#compass-mute-button.muted {
+    background: rgba(170, 0, 0, 0.3);
+    border-color: #AA0000;
+    color: #FF0000;
+}
+
+/* ボタングループのスタイル - 最下部に配置 */
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 25px 0 15px 0;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 100;
+}
+
+.button-group .info-btn {
+    margin: 0;
+    width: 48px;
+    height: 48px;
+    min-width: unset;
+    max-width: unset;
+    border-radius: 12px;
+    padding: 0;
+    font-size: 1.3em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(44, 62, 80, 0.7);
+    border: 1px solid rgba(149, 165, 166, 0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    outline: none;
+}
+
+.button-group .info-btn:hover {
+    background: rgba(52, 73, 94, 0.85);
+    border-color: rgba(149, 165, 166, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+.button-group .info-btn:focus {
+    border-color: rgba(52, 152, 219, 0.6);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.button-group .info-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 設定ダイアログ内の要素調整 - モダンなカード形式 */
+.setting-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.setting-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 215, 0, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.setting-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
+}
+
+.setting-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.setting-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ecf0f1;
+}
+
+.setting-control {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modern-slider {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    outline: none;
+    transition: all 0.3s ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.modern-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #ffd700;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.modern-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.6);
+}
+
+.modern-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #ffd700;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.button-group-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.modern-btn {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: none;
+    letter-spacing: 0.5px;
+}
+
+.modern-btn:hover {
+    background: linear-gradient(135deg, #ffed4e, #fff176);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.modern-btn.secondary {
+    background: linear-gradient(135deg, #6c757d, #868e96);
+    color: white;
+}
+
+.modern-btn.secondary:hover {
+    background: linear-gradient(135deg, #5a6268, #6c757d);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+.modern-btn.active {
+    background: linear-gradient(135deg, #28a745, #34ce57);
+    color: white;
+    box-shadow: 0 4px 16px rgba(40, 167, 69, 0.4);
+}
+
+.mute-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 215, 0, 0.6);
+    color: #ffd700;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    align-self: flex-start;
+}
+
+.mute-btn:hover {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: #ffd700;
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.4);
+}
+
+.mute-btn.muted {
+    background: rgba(220, 20, 60, 0.2);
+    border-color: #dc143c;
+    color: #dc143c;
+}
+
+.sensitivity-value {
+    display: inline-block;
+    min-width: 20px;
+    padding: 4px 8px;
+    background: rgba(255, 215, 0, 0.2);
+    color: #ffd700;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.status-text {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    min-height: 20px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border-left: 3px solid #ffd700;
+}
+
+/* 詳細情報ダイアログ内の要素調整 - コンパクトなカード形式 */
+.info-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.info-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 215, 0, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+.info-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.info-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ecf0f1;
+}
+
+.info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.info-content.two-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+/* 新しい月の情報レイアウト */
+.info-content.moon-info-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 新しいセンサー情報レイアウト */
+.info-content.sensor-info-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.moon-group, .sensor-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* センサーグループタイトル */
+.sensor-group-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: rgba(255, 215, 0, 0.8);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* 追跡精度グループ - 2カラム */
+.tracking-accuracy-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+/* 基本属性グループ - 2カラム */
+.moon-basic-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+/* 空間位置グループ - 3カラム */
+.moon-position-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+}
+
+/* 時間情報グループ - 2カラム（月の出・月の入りを同じ行に） */
+.moon-time-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.info-item {
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    border-left: 2px solid rgba(255, 215, 0, 0.3);
+    color: #ecf0f1;
+    font-size: 13px;
+    line-height: 1.3;
+    text-align: left;
+    transition: all 0.3s ease;
+}
+
+.info-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-left-color: #ffd700;
+    transform: translateX(2px);
+}
+
+.info-item:empty {
+    display: none;
+}
+
+/* 月の基本属性グループ - 温かみのある色調 */
+.info-item.moon-basic {
+    border-left-color: rgba(255, 159, 28, 0.4);
+    background: rgba(255, 159, 28, 0.08);
+}
+
+.info-item.moon-basic:hover {
+    border-left-color: #ff9f1c;
+    background: rgba(255, 159, 28, 0.15);
+}
+
+/* 月の空間位置グループ - クールな色調 */
+.info-item.moon-position {
+    border-left-color: rgba(52, 152, 219, 0.4);
+    background: rgba(52, 152, 219, 0.08);
+}
+
+.info-item.moon-position:hover {
+    border-left-color: #3498db;
+    background: rgba(52, 152, 219, 0.15);
+}
+
+/* 月の時間情報グループ - 紫がかった色調 */
+.info-item.moon-time {
+    border-left-color: rgba(155, 89, 182, 0.4);
+    background: rgba(155, 89, 182, 0.08);
+}
+
+.info-item.moon-time:hover {
+    border-left-color: #9b59b6;
+    background: rgba(155, 89, 182, 0.15);
+}
+
+/* センサーデータグループ - 緑がかった色調 */
+.info-item.sensor-data {
+    border-left-color: rgba(46, 204, 113, 0.4);
+    background: rgba(46, 204, 113, 0.08);
+}
+
+.info-item.sensor-data:hover {
+    border-left-color: #2ecc71;
+    background: rgba(46, 204, 113, 0.15);
+}
+
+/* 追跡精度グループ - オレンジがかった色調 */
+.info-item.tracking-accuracy {
+    border-left-color: rgba(230, 126, 34, 0.4);
+    background: rgba(230, 126, 34, 0.08);
+}
+
+.info-item.tracking-accuracy:hover {
+    border-left-color: #e67e22;
+    background: rgba(230, 126, 34, 0.15);
+}
+
+/* 位置情報グループ - 青がかった色調 */
+.info-item.location-data {
+    border-left-color: rgba(52, 152, 219, 0.4);
+    background: rgba(52, 152, 219, 0.08);
+}
+
+.info-item.location-data:hover {
+    border-left-color: #3498db;
+    background: rgba(52, 152, 219, 0.15);
+}
+
+/* グループ間の視覚的区切り */
+.moon-group, .sensor-group {
+    position: relative;
+}
+
+.moon-group:not(:first-child), .sensor-group:not(:first-child) {
+    margin-top: 8px;
+}
+
+.moon-group:not(:first-child)::before, .sensor-group:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 480px) {
+    .moon-basic-group,
+    .moon-time-group,
+    .tracking-accuracy-items {
+        grid-template-columns: 1fr;
+    }
+    
+    .moon-position-group {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+/* レスポンシブ対応 */
+@media (max-width: 480px) {
+    .moon-basic-group,
+    .moon-time-group,
+    .tracking-accuracy-items {
+        grid-template-columns: 1fr;
+    }
+    
+    .moon-position-group {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    /* 小さな画面では座標テキストを短縮 */
+    .coordinates-with-map {
+        gap: 4px;
+    }
+    
+    .map-link-inline {
+        padding: 2px 4px;
+        min-width: 32px;
+        height: 18px;
+        font-size: 9px;
+    }
+    
+    .map-icon {
+        font-size: 9px;
+    }
+    
+    .map-text {
+        font-size: 8px;
+    }
+}
+
+/* 中サイズ画面での追跡精度調整 */
+@media (max-width: 600px) and (min-width: 481px) {
+    .tracking-accuracy-items .info-item {
+        font-size: 12px;
+        padding: 5px 8px;
+    }
+}
+}
+
+.map-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #3498db, #5dade2);
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 13px;
+}
+
+.map-link:hover {
+    background: linear-gradient(135deg, #2980b9, #3498db);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+    text-decoration: none;
+    color: white;
+}
+
+/* インライン地図リンク用のスタイル */
+.coordinates-with-map {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.map-link-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 3px 6px;
+    min-width: 40px;
+    height: 22px;
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.map-link-inline:hover {
+    background: rgba(255, 255, 255, 0.22);
+    color: rgba(255, 255, 255, 1);
+    border-color: rgba(255, 255, 255, 0.4);
+    text-decoration: none;
+}
+
+.map-icon {
+    font-size: 10px;
+    line-height: 1;
+}
+
+.map-text {
+    font-size: 10px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* 詳細情報の特定要素スタイル - シンプルな色使い */
+#moon-direction, #distance, #altitude, #moon-phase, #illumination, #moon-rise, #moon-set {
+    color: #ecf0f1;
+}
+
+#geo-info {
+    color: #4dd0e1;
+}
+
+#device-orientation {
+    font-family: 'Courier New', monospace;
+    background: rgba(0, 255, 0, 0.05);
+    color: #00ff88;
+    font-size: 12px;
+}
+
+#direction-match-detail, #altitude-match-detail {
+    font-size: 12px;
+    color: #bdc3c7;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* レスポンシブデザイン - 小さな画面向け調整 */
+@media (max-height: 600px) {
+    body {
+        padding: 10px;
+    }
+    
+    .main-container {
+        gap: 10px;
+    }
+    
+    #compass-canvas {
+        width: min(300px, 70vw, 40vh);
+    }
+    
+    .button-group {
+        margin: 15px 0 10px 0;
+    }
+    
+    .dialog-content {
+        max-height: 90vh;
+    }
+    
+    .dialog-body {
+        max-height: calc(90vh - 120px);
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+    
+    #compass-canvas {
+        width: min(80vw, 50vh);
+    }
+    
+    .dialog-content {
+        width: 95%;
+    }
+    
+    .button-group .info-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1em;
+    }
+}
+
+/* 言語選択スタイル */
+.language-selector {
+    background: rgba(52, 73, 94, 0.9);
+    color: #ecf0f1;
+    border: 1px solid rgba(149, 165, 166, 0.3);
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 200px;
+}
+
+.language-selector:hover {
+    background: rgba(52, 73, 94, 1);
+    border-color: rgba(149, 165, 166, 0.5);
+}
+
+.language-selector:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+}
+
+.language-selector option {
+    background: #34495e;
+    color: #ecf0f1;
+    padding: 5px;
+}
+
+/* 設定カードでの言語選択 */
+.setting-card .language-selector {
+    margin-top: 10px;
+}
+
+/* 大きな画面でのコンパスサイズ制限 */
+@media (min-width: 700px) {
+    #compass-canvas {
+        width: min(320px, 45vw, 40vh);
+    }
+}
+
+@media (min-width: 1000px) {
+    #compass-canvas {
+        width: min(300px, 30vw, 35vh);
+    }
+}
+
+@media (min-width: 1200px) {
+    #compass-canvas {
+        width: min(280px, 25vw, 30vh);
+    }
 }

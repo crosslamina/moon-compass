@@ -1,0 +1,130 @@
+{
+  "ui": {
+    "title": "月亮指南针",
+    "permissionRequest": "允许传感器权限",
+    "locationPermission": "允许位置权限",
+    "info": "详细信息",
+    "settings": "设置",
+    "close": "关闭"
+  },
+  "compass": {
+    "userDirection": "您的方向",
+    "moonPosition": "月亮位置",
+    "needle": {
+      "red": "红针",
+      "gold": "金针"
+    }
+  },
+  "moon": {
+    "direction": "方向",
+    "distance": "距离",
+    "altitude": "高度",
+    "phase": "月相",
+    "illumination": "照明率",
+    "rise": "月出",
+    "set": "月落",
+    "currentTime": "当前时间",
+    "state": "月亮状态",
+    "status": "月亮状态",
+    "noTimeData": "无月亮时间数据",
+    "alwaysBelowOrAboveHorizon": "始终在地平线下或上"
+  },
+  "moonPhase": {
+    "newMoon": "新月",
+    "crescentMoon": "娥眉月",
+    "firstQuarterApproaching": "上弦前",
+    "firstQuarter": "上弦月",
+    "firstQuarterPast": "上弦后",
+    "fullMoonApproaching": "满月前",
+    "fullMoon": "满月",
+    "lastQuarterApproaching": "下弦前",
+    "lastQuarter": "下弦月",
+    "waningMoon": "残月"
+  },
+  "time": {
+    "today": "今日",
+    "none": "无",
+    "remaining": "还有{{hours}}:{{minutes}}",
+    "after": "还有",
+    "alwaysBelow": "始终在地平线下",
+    "alwaysAbove": "始终在地平线上",
+    "specialStatus": "始终在地平线下或地平线上"
+  },
+  "location": {
+    "detecting": "正在获取位置信息...",
+    "denied": "位置信息获取被拒绝",
+    "unavailable": "位置信息不可用",
+    "timeout": "位置信息获取超时",
+    "error": "位置信息获取发生错误",
+    "unsupported": "此浏览器不支持位置信息",
+    "permissionDenied": "位置信息权限被拒绝"
+  },
+  "settings": {
+    "title": "设置",
+    "sensitivity": "灵敏度设置",
+    "volume": "音量",
+    "orientationCorrection": "方位角校正",
+    "display": "显示设置",
+    "language": "语言设置",
+    "eastWestReverse": "东西反转校正",
+    "resetCorrection": "重置校正",
+    "status": {
+      "on": "开",
+      "off": "关"
+    }
+  },
+  "status": {
+    "correctionEnabled": "已启用东西反转校正",
+    "correctionDisabled": "已停用东西反转校正",
+    "correctionReset": "已重置校正",
+    "correctionReversed": "方位角东西反转校正: {{status}}",
+    "correctionOffset": "方位角偏移设置: {{offset}}°",
+    "enabled": "启用",
+    "disabled": "停用",
+    "searching": "搜索中",
+    "weakDetection": "微弱检测",
+    "strongField": "强磁场",
+    "moonLocked": "月球锁定！"
+  },
+  "info": {
+    "title": "详细信息",
+    "moonState": "月亮状态",
+    "locationSensor": "位置・传感器",
+    "sensorData": "传感器数据",
+    "deviceOrientation": "设备方位: {{azimuth}}° | 倾斜: {{tilt}}°",
+    "trackingAccuracy": "跟踪精度",
+    "azimuthAccuracy": "方位精度",
+    "altitudeAccuracy": "高度精度",
+    "locationData": "位置信息",
+    "coordinates": "坐标",
+    "viewOnMap": "在地图上查看"
+  },
+  "error": {
+    "sensorNotSupported": "不支持传感器",
+    "permissionRequired": "需要权限",
+    "loadFailed": "加载失败"
+  },
+  "unit": {
+    "degree": "°",
+    "km": "km",
+    "percent": "%",
+    "days": "日"
+  },
+  "direction": {
+    "north": "北",
+    "northeast": "东北",
+    "east": "东",
+    "southeast": "东南",
+    "south": "南",
+    "southwest": "西南",
+    "west": "西",
+    "northwest": "西北",
+    "left": "左",
+    "right": "右"
+  },
+  "label": {
+    "noData": "无数据",
+    "loading": "加载中...",
+    "unknown": "未知"
+  }
+}
