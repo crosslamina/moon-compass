@@ -131,6 +131,10 @@ export class DialogManager {
             // フェードイン効果
             setTimeout(() => {
                 this.settingsDialog!.style.opacity = '1';
+                
+                // 設定ダイアログが表示された後にボタンテキストを更新
+                // カスタムイベントを発行してコンパスモードボタンの更新を通知
+                window.dispatchEvent(new CustomEvent('settingsDialogOpened'));
             }, 10);
         }
     }

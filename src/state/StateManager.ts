@@ -35,6 +35,7 @@ export interface AppState {
         isSettingsDialogOpen: boolean;
         isMuted: boolean;
         volume: number;
+        compassMode: 'moon' | 'user' | 'compass';
     };
     
     // 方位補正
@@ -58,9 +59,11 @@ export class StateManager {
     private static instance: StateManager;
     private state: AppState;
     private listeners: Map<keyof AppState, StateChangeListener<any>[]> = new Map();
+    private readonly STORAGE_KEY = 'tsuki_ui_settings';
 
     private constructor() {
         this.state = this.getInitialState();
+        this.loadUISettings();
     }
 
     static getInstance(): StateManager {
@@ -95,7 +98,8 @@ export class StateManager {
                 isInfoDialogOpen: false,
                 isSettingsDialogOpen: false,
                 isMuted: false,
-                volume: 0.45
+                volume: 0.45,
+                compassMode: 'moon'
             },
             orientation: {
                 isReversed: false,
@@ -103,6 +107,42 @@ export class StateManager {
                 correctionMode: 'auto'
             }
         };
+    }
+
+    /**
+     * UI設定をLocalStorageから読み込み
+     */
+    private loadUISettings(): void {
+        try {
+            const saved = localStorage.getItem(this.STORAGE_KEY);
+            if (saved) {
+                const settings = JSON.parse(saved);
+                this.state.ui = {
+                    ...this.state.ui,
+                    ...settings
+                };
+                console.log('✅ UI設定をLocalStorageから読み込みました:', settings);
+            }
+        } catch (error) {
+            console.warn('⚠️ UI設定の読み込みに失敗しました:', error);
+        }
+    }
+
+    /**
+     * UI設定をLocalStorageに保存
+     */
+    private saveUISettings(): void {
+        try {
+            const uiSettings = {
+                compassMode: this.state.ui.compassMode,
+                volume: this.state.ui.volume,
+                isMuted: this.state.ui.isMuted
+            };
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(uiSettings));
+            console.log('✅ UI設定をLocalStorageに保存しました:', uiSettings);
+        } catch (error) {
+            console.warn('⚠️ UI設定の保存に失敗しました:', error);
+        }
     }
 
     /**
@@ -125,6 +165,12 @@ export class StateManager {
     set<K extends keyof AppState>(key: K, value: AppState[K]): void {
         const oldValue = this.state[key];
         this.state[key] = value;
+        
+        // UI設定が変更された場合はLocalStorageに保存
+        if (key === 'ui') {
+            this.saveUISettings();
+        }
+        
         this.notifyListeners(key, value, oldValue);
     }
 
@@ -138,6 +184,12 @@ export class StateManager {
         const oldValue = this.state[key];
         const newValue = updater(oldValue);
         this.state[key] = newValue;
+        
+        // UI設定が変更された場合はLocalStorageに保存
+        if (key === 'ui') {
+            this.saveUISettings();
+        }
+        
         this.notifyListeners(key, newValue, oldValue);
     }
 
