@@ -28,6 +28,319 @@ body {
     min-height: 0;
 }
 
+/* 通知アイコンボタン（左上固定） */
+.notification-icon-button {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(44, 62, 80, 0.9);
+    border: 2px solid rgba(149, 165, 166, 0.3);
+    color: #ecf0f1;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.notification-icon-button:hover {
+    background: rgba(52, 73, 94, 0.95);
+    border-color: rgba(149, 165, 166, 0.5);
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.notification-icon-button.has-notifications {
+    animation: notificationPulse 2s ease-in-out infinite;
+}
+
+/* 通知バッジ */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #000;
+    line-height: 1;
+}
+
+/* 通知ポップアップ */
+.notification-popup {
+    position: fixed;
+    top: 80px;
+    left: 20px;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 120px);
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border-radius: 15px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 1px solid #34495e;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ポップアップヘッダー */
+.notification-popup-header {
+    background: #3498db;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #2980b9;
+    flex-shrink: 0;
+}
+
+.notification-popup-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.notification-popup-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+    line-height: 1;
+}
+
+.notification-popup-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ポップアップボディ */
+.notification-popup-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* 通知なしメッセージ */
+.no-notifications {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+    padding: 40px 20px;
+}
+
+/* 通知アイテム（ポップアップ内） */
+.notification-popup .notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+    border: 1px solid;
+    position: relative;
+    animation: notificationSlideIn 0.3s ease-out;
+}
+
+.notification-popup .notification-item:last-child {
+    margin-bottom: 0;
+}
+
+/* 通知タイプ別のスタイル（ポップアップ内） */
+.notification-popup .notification-compatibility {
+    background: rgba(52, 152, 219, 0.15);
+    border-color: rgba(52, 152, 219, 0.3);
+    color: #ecf0f1;
+}
+
+.notification-popup .notification-privacy {
+    background: rgba(46, 204, 113, 0.15);
+    border-color: rgba(46, 204, 113, 0.3);
+    color: #ecf0f1;
+}
+
+.notification-popup .notification-announcement {
+    background: rgba(243, 156, 18, 0.15);
+    border-color: rgba(243, 156, 18, 0.3);
+    color: #ecf0f1;
+}
+
+.notification-popup .notification-info {
+    background: rgba(155, 89, 182, 0.15);
+    border-color: rgba(155, 89, 182, 0.3);
+    color: #ecf0f1;
+}
+
+.notification-popup .notification-icon {
+    font-size: 18px;
+    line-height: 1;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.notification-popup .notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-popup .notification-title {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #ecf0f1 !important;
+}
+
+.notification-popup .notification-message {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.notification-popup .notification-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.notification-popup .notification-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    text-decoration: none;
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.notification-popup .notification-dismiss {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.notification-popup .notification-dismiss:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    transform: scale(1.1);
+}
+
+/* アニメーション */
+@keyframes notificationSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes notificationPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+    }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 480px) {
+    .notification-icon-button {
+        top: 15px;
+        left: 15px;
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+    
+    .notification-popup {
+        top: 70px;
+        left: 15px;
+        right: 15px;
+        width: auto;
+        max-width: none;
+    }
+    
+    .notification-popup-header {
+        padding: 12px 16px;
+    }
+    
+    .notification-popup-header h3 {
+        font-size: 1.1em;
+    }
+    
+    .notification-popup-body {
+        padding: 16px;
+    }
+    
+    .notification-popup .notification-item {
+        padding: 14px;
+        gap: 10px;
+    }
+    
+    .notification-popup .notification-title {
+        font-size: 14px;
+    }
+    
+    .notification-popup .notification-message {
+        font-size: 12px;
+    }
+}
+
 #moon-detector {
     margin: 0;
     padding: 0;

@@ -1,6 +1,7 @@
 import { getMoonData, getMoonTimes, MoonData, calculateAngleDifference, resetBlinkTimer } from './moon';
 import { CompassManager } from './components/CompassManager';
 import { MoonStatusDisplay } from './components/MoonStatusDisplay';
+import { NotificationPanel } from './components/NotificationPanel';
 import { DialogManager } from './ui/DialogManager';
 import { StateManager } from './state/StateManager';
 import { LocationManager } from './location/LocationManager';
@@ -32,6 +33,7 @@ const orientationManager = DeviceOrientationManager.getInstance();
 const accuracyManager = AccuracyDisplayManager.getInstance();
 const moonDisplayManager = MoonDisplayManager.getInstance();
 const domTranslationManager = DOMTranslationManager.getInstance();
+const notificationPanel = NotificationPanel.getInstance();
 const i18nManager = I18nManager.getInstance();
 // HTML言語属性の初期化
 i18nManager.initialize();
@@ -121,6 +123,7 @@ async function initializeApp() {
         await orientationManager.initialize();
         accuracyManager.initialize();
         moonDisplayManager.initialize();
+        notificationPanel.initialize();
         await initializeCompassManager();
         initializeMoonStatusDisplay();
         

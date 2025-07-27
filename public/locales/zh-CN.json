@@ -132,5 +132,24 @@
     "noData": "无数据",
     "loading": "加载中...",
     "unknown": "未知"
+  },
+  "notification": {
+    "title": "通知",
+    "noNotifications": "暂无新通知",
+    "compatibility": {
+      "title": "支持设备",
+      "message": "在Android设备的Chrome浏览器上运行最佳"
+    },
+    "privacy": {
+      "title": "隐私保护",
+      "message": "所有处理均在您的设备上本地执行，不向服务器发送数据"
+    },
+    "release": {
+      "title": "发布信息",
+      "message": "查看最新更新和发布说明",
+      "url": "https://github.com/crosslamina/tsuki-ga-kirei/releases"
+    },
+    "moreInfo": "了解更多",
+    "dismiss": "关闭"
   }
 }

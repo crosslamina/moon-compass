@@ -132,5 +132,24 @@
     "noData": "No data",
     "loading": "Loading...",
     "unknown": "Unknown"
+  },
+  "notification": {
+    "title": "Notifications",
+    "noNotifications": "No new notifications",
+    "compatibility": {
+      "title": "Supported Devices",
+      "message": "Works best on Android devices with Chrome browser"
+    },
+    "privacy": {
+      "title": "Privacy Protection",
+      "message": "All processing is done locally on your device. No data is sent to servers"
+    },
+    "release": {
+      "title": "Release Information",
+      "message": "Check the latest updates and release notes",
+      "url": "https://github.com/crosslamina/tsuki-ga-kirei/releases"
+    },
+    "moreInfo": "Learn more",
+    "dismiss": "Dismiss"
   }
 }
