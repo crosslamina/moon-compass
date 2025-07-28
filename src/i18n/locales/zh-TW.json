@@ -132,5 +132,10 @@
     "noData": "無資料",
     "loading": "載入中...",
     "unknown": "未知"
+  },
+  "notification": {
+    "title": "通知",
+    "body": "在Android裝置的Chrome瀏覽器上運作最佳。所有處理均在您的裝置上本地執行，不向伺服器發送資料。",
+    "noNotifications": "暫無新通知"
   }
 }

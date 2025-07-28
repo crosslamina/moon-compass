@@ -30,7 +30,6 @@ export class NotificationPanel {
      */
     public initialize(): void {
         this.initializeNotification();
-        this.createButtonElement();
         this.createPanelElement();
         this.updatePanelTitles();
         this.refreshNotification();
@@ -48,34 +47,7 @@ export class NotificationPanel {
     private initializeNotification(): void {
         // 現在表示するお知らせの翻訳キー
         // 空文字列にするとお知らせが非表示になります
-        this.currentNotification = this.i18n.t('notification.current');
-    }
-    
-    /**
-     * 通知ボタン要素を作成
-     */
-    private createButtonElement(): void {
-        // 既存のボタンがあれば削除
-        const existingButton = document.getElementById('notification-button');
-        if (existingButton) {
-            existingButton.remove();
-        }
-        
-        // ボタン要素を作成
-        const button = document.createElement('button');
-        button.id = 'notification-button';
-        button.className = 'notification-icon-button';
-        button.innerHTML = `
-            <span class="notification-icon">📢</span>
-            <span id="notification-badge" class="notification-badge"></span>
-        `;
-        button.title = this.i18n.t('notification.title');
-        
-        // クリックイベント
-        button.addEventListener('click', () => this.showPanel());
-        
-        // ページに追加
-        document.body.appendChild(button);
+        this.currentNotification = this.i18n.t('notification.body');
     }
     
     /**
@@ -153,6 +125,11 @@ export class NotificationPanel {
         const body = document.createElement('div');
         body.className = 'notification-popup-body';
         body.id = 'notification-popup-body';
+        
+        // 通知内容を直接追加
+        const notificationContent = document.createElement('div');
+        notificationContent.className = 'notification-content';
+        body.appendChild(notificationContent);
         
         this.panelElement.appendChild(header);
         this.panelElement.appendChild(body);
@@ -242,6 +219,7 @@ export class NotificationPanel {
     private setupEventListeners(): void {
         // 言語変更時の更新
         this.i18n.subscribe(() => {
+            this.initializeNotification(); // 通知内容を再取得
             this.refreshNotification();
             this.updatePanelTitles();
         });
@@ -273,20 +251,33 @@ export class NotificationPanel {
     private refreshNotification(): void {
         console.log('Refreshing notification');
         
+        // ボタンの表示状態を更新
+        this.updateButtonVisibility();
+        
         // 通知コンテンツ要素を更新
         const content = this.panelElement?.querySelector('.notification-content');
         if (content) {
             content.innerHTML = '';
             
-            // ボタンの表示状態を更新
-            this.updateButtonVisibility();
-            
-            // お知らせがある場合は追加
+            // お知らせがある場合は表示
             if (this.shouldShowNotification()) {
-                const notificationText = document.createElement('div');
-                notificationText.className = 'notification-text';
-                notificationText.textContent = this.currentNotification || '';
-                content.appendChild(notificationText);
+                const notificationItem = document.createElement('div');
+                notificationItem.className = 'notification-item notification-info';
+                
+                notificationItem.innerHTML = `
+                    <span class="notification-icon">📢</span>
+                    <div class="notification-content">
+                        <div class="notification-message">${this.currentNotification || ''}</div>
+                    </div>
+                `;
+                
+                content.appendChild(notificationItem);
+            } else {
+                // お知らせがない場合のメッセージ
+                const noNotifications = document.createElement('div');
+                noNotifications.className = 'no-notifications';
+                noNotifications.textContent = this.i18n.t('notification.noNotifications');
+                content.appendChild(noNotifications);
             }
         }
     }

@@ -135,25 +135,7 @@
   },
   "notification": {
     "title": "お知らせ",
-    "noNotifications": "新しいお知らせはありません",
-    "compatibility": {
-      "title": "対応端末",
-      "message": "Android端末のChromeブラウザで最適に動作します"
-    },
-    "privacy": {
-      "title": "プライバシー保護",
-      "message": "全ての処理はお使いの端末内で実行され、サーバーにデータを送信しません"
-    },
-    "release": {
-      "title": "リリース情報",
-      "message": "最新版の更新情報をご確認ください",
-      "url": "https://github.com/crosslamina/tsuki-ga-kirei/releases"
-    },
-    "update": {
-      "title": "アップデート v2.0",
-      "message": "新機能が追加されました！詳細をご確認ください"
-    },
-    "moreInfo": "詳細を見る",
-    "dismiss": "非表示にする"
+    "body": "Android端末のChromeブラウザで最適に動作します。全ての処理はお使いの端末内で実行され、サーバーにデータを送信しません。",
+    "noNotifications": "新しいお知らせはありません"
   }
 }
