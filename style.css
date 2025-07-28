@@ -226,82 +226,6 @@ body {
     }
 }
 
-#moon-detector {
-    margin: 0;
-    padding: 0;
-    border: none;
-    border-radius: 0;
-    background: none;
-}
-
-
-#permission-button,
-#location-permission-button {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-size: 1em;
-    cursor: pointer;
-    margin: 5px;
-    transition: background 0.3s ease;
-}
-
-#permission-button:hover,
-#location-permission-button:hover {
-    background: #2980b9;
-}
-
-#location-permission-button {
-    background: #e67e22;
-}
-
-#location-permission-button:hover {
-    background: #d35400;
-}
-
-#location-status {
-    margin: 10px 0;
-    padding: 10px;
-    border-radius: 5px;
-    font-size: 0.9em;
-}
-
-.detector-inactive {
-    background: rgba(231, 76, 60, 0.3);
-    color: #e74c3c;
-    border: 1px solid #e74c3c;
-}
-
-.detector-close {
-    background: rgba(241, 196, 15, 0.3);
-    color: #f1c40f;
-    border: 1px solid #f1c40f;
-}
-
-.detector-found {
-    background: rgba(46, 204, 113, 0.3);
-    color: #2ecc71;
-    border: 1px solid #2ecc71;
-    animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.7; }
-    100% { opacity: 1; }
-}
-
-#detector-instructions {
-    font-size: 0.8em;
-    color: #bdc3c7;
-    margin-top: 10px;
-}
-
-#detector-instructions p {
-    margin: 5px 0;
-}
 
 #geo-info,
 #device-orientation {
@@ -314,26 +238,6 @@ body {
 }
 
 /* 月の規則的な点滅リングアニメーション */
-.moon-ring-slow {
-    animation: moonRegularBlink 2s ease-in-out infinite;
-}
-
-.moon-ring-medium {
-    animation: moonRegularBlink 1s ease-in-out infinite;
-}
-
-.moon-ring-fast {
-    animation: moonRegularBlink 0.3s ease-in-out infinite;
-}
-
-@keyframes moonRegularBlink {
-    0%, 49% {
-        box-shadow: 0 0 20px rgba(52, 73, 94, 0.8);
-    }
-    50%, 100% {
-        box-shadow: 0 0 30px rgba(135, 206, 250, 0.6), 0 0 40px rgba(135, 206, 250, 0.3);
-    }
-}
 
 /* 情報ボタンのスタイル - 控えめなデザイン */
 .info-btn {
@@ -739,41 +643,6 @@ body {
 }
 
 /* 検知状態に応じたスタイル */
-.detector-locked {
-    background: rgba(255, 255, 255, 0.3) !important;
-    color: #ffffff !important;
-    border-color: #ffffff !important;
-    animation: pulse-white 0.5s ease-in-out infinite alternate;
-}
-
-.detector-found {
-    background: rgba(46, 204, 113, 0.3) !important;
-    color: #2ecc71 !important;
-    border-color: #2ecc71 !important;
-    animation: pulse-green 0.8s ease-in-out infinite alternate;
-}
-
-.detector-close {
-    background: rgba(241, 196, 15, 0.3) !important;
-    color: #f1c40f !important;
-    border-color: #f1c40f !important;
-    animation: pulse-yellow 1.2s ease-in-out infinite alternate;
-}
-
-@keyframes pulse-white {
-    from { box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
-    to { box-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
-}
-
-@keyframes pulse-green {
-    from { box-shadow: 0 0 10px rgba(46, 204, 113, 0.5); }
-    to { box-shadow: 0 0 20px rgba(46, 204, 113, 0.8); }
-}
-
-@keyframes pulse-yellow {
-    from { box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
-    to { box-shadow: 0 0 20px rgba(241, 196, 15, 0.8); }
-}
 
 
 
@@ -825,27 +694,6 @@ body {
     display: none;
 }
 
-#compass-controls {
-    margin-top: 15px;
-}
-
-.compass-control {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    color: #cd853f;
-}
-
-.compass-control label {
-    min-width: 120px;
-    margin-right: 10px;
-}
-
-.compass-control input[type="range"] {
-    flex: 1;
-    margin-right: 10px;
-    accent-color: #8b4513;
-}
 
 #compass-mute-button {
     background: none;
@@ -925,54 +773,6 @@ body {
     backdrop-filter: blur(10px);
 }
 
-.setting-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 16px;
-    gap: 12px;
-}
-
-.setting-icon {
-    font-size: 24px;
-    line-height: 1;
-}
-
-.setting-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #ecf0f1;
-}
-
-.setting-control {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.modern-slider {
-    width: 100%;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    outline: none;
-    transition: all 0.3s ease;
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-.modern-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: #ffd700;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
-    transition: all 0.3s ease;
-}
-
-.modern-slider::-webkit-slider-thumb:hover {
     transform: scale(1.2);
     box-shadow: 0 4px 16px rgba(255, 215, 0, 0.6);
 }
