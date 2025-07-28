@@ -58,7 +58,7 @@ export class StateManager {
     private static instance: StateManager;
     private state: AppState;
     private listeners: Map<keyof AppState, StateChangeListener<any>[]> = new Map();
-    private readonly STORAGE_KEY = 'tsuki_ui_settings';
+    private readonly STORAGE_KEY = 'moon-compass__ui_settings';
 
     private constructor() {
         this.state = this.getInitialState();

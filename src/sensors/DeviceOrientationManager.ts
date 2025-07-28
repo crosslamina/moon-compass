@@ -17,7 +17,7 @@ export class DeviceOrientationManager {
     private globalUpdater: GlobalTranslationUpdater;
     private deviceOrientationElement: HTMLElement | null;
     private permissionButton: HTMLButtonElement | null;
-    private readonly STORAGE_KEY = 'tsuki-ga-kirei-orientation-correction';
+    private readonly STORAGE_KEY = 'moon-compass_orientation-correction';
     
     private deviceOrientation = {
         alpha: null as number | null,

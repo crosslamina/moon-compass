@@ -185,7 +185,7 @@ export class I18nManager {
      */
     private saveUserPreference(): void {
         try {
-            localStorage.setItem('tsuki_locale', this.currentLocale);
+            localStorage.setItem('moon-compass_locale', this.currentLocale);
         } catch (error) {
             console.warn('Failed to save locale preference:', error);
         }
@@ -196,7 +196,7 @@ export class I18nManager {
      */
     private loadUserPreference(): void {
         try {
-            const savedLocale = localStorage.getItem('tsuki_locale') as SupportedLocale;
+            const savedLocale = localStorage.getItem('moon-compass_locale') as SupportedLocale;
             if (savedLocale) {
                 this.currentLocale = savedLocale;
             } else {

@@ -62,10 +62,7 @@ function resizeCanvas() {
     // CSSサイズを設定
     compassCanvas.style.width = targetSize + 'px';
     compassCanvas.style.height = targetSize + 'px';
-    
-    // デバッグ情報
-    console.log(`Canvas resized: ${targetSize}px (canvas: ${canvasSize}px, dpr: ${dpr})`);
-    
+        
     // コンパス表示を再描画
     if (compassManager) {
         compassManager.drawCompass(compassCanvas, currentMoonData);
@@ -397,9 +394,7 @@ function toggleOrientationReverseUI() {
     const message = result ? 
         i18nManager.t('status.correctionEnabled') : 
         i18nManager.t('status.correctionDisabled');
-    
-    console.log(message);
-    
+        
     // 一時的にステータスにメッセージを表示
     if (correctionStatusElement) {
         correctionStatusElement.textContent = message;
@@ -421,7 +416,6 @@ function resetOrientationCorrectionUI() {
     updateCorrectionStatus();
     
     const message = i18nManager.t('status.correctionReset');
-    console.log(message);
     
     // 一時的にステータスにメッセージを表示
     if (correctionStatusElement) {
