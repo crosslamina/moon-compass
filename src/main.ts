@@ -15,7 +15,7 @@ import { I18nManager } from './i18n/I18nManager';
 
 // 磁気コンパス関連の要素
 const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasElement;
-// 音量、ミュート、感度コントロールはCompassManager内で管理されるため、ここでは取得しない
+// 音量、ミュートコントロールはCompassManager内で管理されるため、ここでは取得しない
 
 // 方位角補正コントロール関連の要素
 const toggleReverseBtn = document.getElementById('toggle-reverse-btn') as HTMLButtonElement;
@@ -317,7 +317,7 @@ function startSonarAnimation() {
 // 音波探知機の初期化
 async function initializeSonar() {
     // CompassManagerのオーディオシステムは内部で初期化される
-    // 音量、ミュート、感度コントロールはすべてCompassManager内で管理される
+    // 音量、ミュートコントロールはすべてCompassManager内で管理される
     
     // アニメーション開始
     startSonarAnimation();

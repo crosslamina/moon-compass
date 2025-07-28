@@ -21,7 +21,6 @@ export interface AppState {
         magneticField: number;
         compassBearing: number;
         deviationAngle: number;
-        sensitivity: number;
         needleAngle: number;
         magneticNoise: number;
         lastTick: number;
@@ -87,7 +86,6 @@ export class StateManager {
                 magneticField: 0,
                 compassBearing: 0,
                 deviationAngle: 0,
-                sensitivity: 5,
                 needleAngle: 0,
                 magneticNoise: 0,
                 lastTick: 0,

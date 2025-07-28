@@ -10,7 +10,6 @@ export interface CompassState {
     magneticField: number;
     compassBearing: number;
     deviationAngle: number;
-    sensitivity: number;
     needleAngle: number;
     magneticNoise: number;
     lastTick: number;
@@ -210,7 +209,6 @@ export class CompassManager {
         magneticField: 0,
         compassBearing: 0,
         deviationAngle: 0,
-        sensitivity: 5,
         needleAngle: 0,
         magneticNoise: 0,
         lastTick: 0,
@@ -284,7 +282,6 @@ export class CompassManager {
     private setupUI(): void {
         this.setupVolumeControl();
         this.setupMuteButton();
-        this.setupSensitivityControl();
     }
 
     /**
@@ -324,28 +321,6 @@ export class CompassManager {
                     muteButton.classList.add('muted');
                     muteButton.textContent = '🔇';
                 }
-            });
-        }
-    }
-
-    /**
-     * 感度コントロールの設定
-     */
-    private setupSensitivityControl(): void {
-        const sensitivitySlider = this.domManager.getElement<HTMLInputElement>('sensitivity-slider');
-        const sensitivityValue = this.domManager.getElement('sensitivity-value');
-        
-        if (sensitivitySlider) {
-            sensitivitySlider.value = '5';
-            sensitivitySlider.addEventListener('input', (e) => {
-                const value = parseInt((e.target as HTMLInputElement).value);
-                this.compassState.sensitivity = value;
-                if (sensitivityValue) {
-                    sensitivityValue.textContent = value.toString();
-                }
-                
-                // ユーザーインタラクションによりオーディオコンテキストを再開
-                this.audio.resumeAudioContext();
             });
         }
     }
@@ -474,8 +449,8 @@ export class CompassManager {
         const altitudeBonus = Math.max(0, clampedMoonAltitude / 90) * 0.3;
         const baseField = normalizedDiff + altitudeBonus;
         
-        // 感度による調整
-        this.compassState.magneticField = Math.min(1, baseField * (this.compassState.sensitivity / 5));
+        // 磁場強度を設定
+        this.compassState.magneticField = Math.min(1, baseField);
         
         // 検知レベルの決定（ヒステリシス付き）- 平滑化された角度差を使用
         const currentLevel = this.compassState.detectionLevel;
@@ -1634,13 +1609,6 @@ export class CompassManager {
      */
     public setMuted(muted: boolean): void {
         this.audio.setMuted(muted);
-    }
-
-    /**
-     * 感度を設定
-     */
-    public setSensitivity(sensitivity: number): void {
-        this.compassState.sensitivity = sensitivity;
     }
 
     /**

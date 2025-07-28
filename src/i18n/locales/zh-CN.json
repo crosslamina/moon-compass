@@ -66,7 +66,6 @@
   },
   "settings": {
     "title": "设置",
-    "sensitivity": "灵敏度设置",
     "volume": "音量",
     "compassMode": "指南针模式",
     "orientationCorrection": "方位角校正",
