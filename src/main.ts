@@ -15,10 +15,7 @@ import { I18nManager } from './i18n/I18nManager';
 
 // 磁気コンパス関連の要素
 const compassCanvas = document.getElementById('compass-canvas') as HTMLCanvasElement;
-const compassVolumeSlider = document.getElementById('compass-volume-slider') as HTMLInputElement;
-const compassMuteButton = document.getElementById('compass-mute-button') as HTMLButtonElement;
-const sensitivitySlider = document.getElementById('sensitivity-slider') as HTMLInputElement;
-const sensitivityValue = document.querySelector('.sensitivity-value') as HTMLElement;
+// 音量、ミュート、感度コントロールはCompassManager内で管理されるため、ここでは取得しない
 
 // 方位角補正コントロール関連の要素
 const toggleReverseBtn = document.getElementById('toggle-reverse-btn') as HTMLButtonElement;
@@ -320,49 +317,7 @@ function startSonarAnimation() {
 // 音波探知機の初期化
 async function initializeSonar() {
     // CompassManagerのオーディオシステムは内部で初期化される
-    
-    // 磁気コンパス音量スライダーのイベントリスナー
-    if (compassVolumeSlider) {
-        compassVolumeSlider.value = '45'; // 初期音量45%
-        compassVolumeSlider.addEventListener('input', (e) => {
-            const volume = parseInt((e.target as HTMLInputElement).value) / 100;
-            if (compassManager) {
-                compassManager.setVolume(volume);
-            }
-        });
-    }
-    
-    // 磁気コンパスミュートボタンのイベントリスナー
-    if (compassMuteButton) {
-        compassMuteButton.addEventListener('click', () => {
-            const isMuted = compassMuteButton.classList.contains('muted');
-            if (compassManager) {
-                compassManager.setMuted(!isMuted);
-            }
-            
-            if (isMuted) {
-                compassMuteButton.classList.remove('muted');
-                compassMuteButton.textContent = '🔊';
-            } else {
-                compassMuteButton.classList.add('muted');
-                compassMuteButton.textContent = '🔇';
-            }
-        });
-    }
-    
-    // 磁気感度スライダーのイベントリスナー
-    if (sensitivitySlider) {
-        sensitivitySlider.value = '5'; // 初期感度
-        sensitivitySlider.addEventListener('input', (e) => {
-            const value = parseInt((e.target as HTMLInputElement).value);
-            if (compassManager) {
-                compassManager.setSensitivity(value);
-            }
-            if (sensitivityValue) {
-                sensitivityValue.textContent = value.toString();
-            }
-        });
-    }
+    // 音量、ミュート、感度コントロールはすべてCompassManager内で管理される
     
     // アニメーション開始
     startSonarAnimation();
