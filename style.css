@@ -773,8 +773,12 @@ body {
     backdrop-filter: blur(10px);
 }
 
-    transform: scale(1.2);
-    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.6);
+.setting-header{
+  text-align: left;
+}
+
+.compass-mode-toggle{
+  width: 100%;
 }
 
 .modern-slider::-moz-range-thumb {
