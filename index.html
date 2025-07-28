@@ -81,19 +81,6 @@
                 <button id="close-settings-dialog" class="close-btn">×</button>
             </div>
             <div class="dialog-body">
-                <!-- 音量設定カード -->
-                <div class="setting-card" data-setting="volume">
-                    <div class="setting-header">
-                        <span class="setting-icon">🔊</span>
-                        <span class="setting-title" data-key="volume">音量</span>
-                    </div>
-                    <div class="setting-control">
-                        <input type="range" id="compass-volume-slider" min="0" max="100" value="45" class="modern-slider">
-                        <button id="compass-mute-button" class="mute-btn">🔊</button>
-                    </div>
-                </div>
-                
-
                 
                 <!-- コンパスモード設定カード -->
                 <div class="setting-card" data-setting="compass-mode">
@@ -118,6 +105,18 @@
                             <button id="reset-correction-btn" class="modern-btn secondary">補正リセット</button>
                         </div>
                         <div id="correction-status" class="status-text"></div>
+                    </div>
+                </div>
+
+                <!-- 音量設定カード -->
+                <div class="setting-card" data-setting="volume">
+                    <div class="setting-header">
+                        <span class="setting-icon">🔊</span>
+                        <span class="setting-title" data-key="volume">音量</span>
+                    </div>
+                    <div class="setting-control">
+                        <input type="range" id="compass-volume-slider" min="0" max="100" value="45" class="modern-slider">
+                        <button id="compass-mute-button" class="mute-btn">🔊</button>
                     </div>
                 </div>
                 
