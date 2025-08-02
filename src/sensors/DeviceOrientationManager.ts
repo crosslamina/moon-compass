@@ -10,6 +10,11 @@ interface OrientationCorrection {
     lastKnownTrueDirection: number | null;
 }
 
+// iOS Safari の webkitCompassHeading をサポートするための型拡張
+interface DeviceOrientationEventIOS extends DeviceOrientationEvent {
+    webkitCompassHeading?: number;
+}
+
 export class DeviceOrientationManager {
     private static instance: DeviceOrientationManager;
     private stateManager: StateManager;
@@ -35,6 +40,7 @@ export class DeviceOrientationManager {
 
     private currentEventType: 'deviceorientationabsolute' | 'deviceorientation' | null = null;
     private readonly CALIBRATION_SAMPLE_SIZE = 10;
+    private useWebkitCompassHeading = false; // iOS Safari用フラグ
 
     private constructor() {
         this.stateManager = StateManager.getInstance();
@@ -73,10 +79,18 @@ export class DeviceOrientationManager {
             return;
         }
 
+        // iOS Safari の検出
+        const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent);
+        
         // 開発モードでは deviceorientation を使用（DevToolsのSensorsでデバッグ可能）
         if (import.meta.env.DEV) {
             console.log('🔧 開発モード: deviceorientation（相対センサー）を使用します');
             console.log('💡 Chrome DevTools > Sensors パネルでセンサー値をシミュレートできます');
+            this.setupSensorListener('deviceorientation');
+        } else if (isIOSSafari) {
+            // iOS Safari では webkitCompassHeading 付きの deviceorientation を使用
+            console.log('🍎 iOS Safari: webkitCompassHeading付きdeviceorientationを使用します');
+            this.useWebkitCompassHeading = true;
             this.setupSensorListener('deviceorientation');
         } else {
             // 本番モードでは deviceorientationabsolute を使用
@@ -87,9 +101,8 @@ export class DeviceOrientationManager {
                 console.log('✅ 本番モード: 絶対方位センサー（deviceorientationabsolute）を使用します');
                 this.setupSensorListener('deviceorientationabsolute');
             } else {
-                console.error('❌ deviceorientationabsolute が利用できません');
-                this.updateOrientationDisplay(this.i18nManager.t('error.sensorNotSupported'));
-                return;
+                console.log('⚠️ deviceorientationabsolute が利用できません。deviceorientationにフォールバックします');
+                this.setupSensorListener('deviceorientation');
             }
         }
         console.log('=== センサー初期化完了 ===');
@@ -112,6 +125,10 @@ export class DeviceOrientationManager {
             sensorType = '絶対方位センサー（deviceorientationabsolute）- 磁北基準';
             isAbsoluteSensor = true;
             console.log('✅ 絶対方位センサーを使用します');
+        } else if (this.useWebkitCompassHeading) {
+            sensorType = 'iOS Safari webkitCompassHeading（deviceorientation）- 真北基準';
+            isAbsoluteSensor = true;
+            console.log('✅ iOS Safari webkitCompassHeadingを使用します');
         } else {
             sensorType = '相対方位センサー（deviceorientation）- 端末起動時基準';
             isAbsoluteSensor = false;
@@ -158,6 +175,8 @@ export class DeviceOrientationManager {
     }
 
     private handleOrientation(event: DeviceOrientationEvent): void {
+        const eventIOS = event as DeviceOrientationEventIOS;
+        
         if (import.meta.env.DEV) {
             // センサー値取得状況をデバッグ出力
             console.log('=== handleOrientation イベント発火 ===');
@@ -165,11 +184,27 @@ export class DeviceOrientationManager {
                 alpha: event.alpha,
                 beta: event.beta,
                 gamma: event.gamma,
-                absolute: event.absolute
+                absolute: event.absolute,
+                webkitCompassHeading: eventIOS.webkitCompassHeading
             });
         }
         
-        const rawAlpha = event.alpha;
+        let rawAlpha: number | null;
+        
+        // iOS Safari で webkitCompassHeading を優先使用
+        if (this.useWebkitCompassHeading && eventIOS.webkitCompassHeading !== undefined) {
+            // webkitCompassHeading は真北を基準とした値（0-359.9）
+            // alpha とは逆方向なので補正が必要
+            rawAlpha = 360 - eventIOS.webkitCompassHeading;
+            if (rawAlpha >= 360) rawAlpha -= 360;
+            
+            if (import.meta.env.DEV) {
+                console.log(`iOS webkitCompassHeading: ${eventIOS.webkitCompassHeading}° → alpha補正: ${rawAlpha}°`);
+            }
+        } else {
+            rawAlpha = event.alpha;
+        }
+        
         const rawBeta = event.beta;
         const rawGamma = event.gamma;
 
@@ -218,12 +253,17 @@ export class DeviceOrientationManager {
         
         let correctedAlpha = alpha;
         
-        // 基本的なブラウザ固有補正
-        if (userAgent.includes('Android')) {
-            // Android では東西が逆転している場合がある
-            if (this.orientationCorrection.isReversed) {
-                correctedAlpha = 360 - alpha;
-                console.log(`Android方位角補正: ${alpha}° → ${correctedAlpha}° (東西反転)`);
+        // iOS Safari の webkitCompassHeading を使用している場合は追加補正は不要
+        if (this.useWebkitCompassHeading) {
+            console.log(`iOS webkitCompassHeading使用中: ${alpha}° (補正なし)`);
+        } else {
+            // 基本的なブラウザ固有補正
+            if (userAgent.includes('Android')) {
+                // Android では東西が逆転している場合がある
+                if (this.orientationCorrection.isReversed) {
+                    correctedAlpha = 360 - alpha;
+                    console.log(`Android方位角補正: ${alpha}° → ${correctedAlpha}° (東西反転)`);
+                }
             }
         }
         
@@ -305,11 +345,14 @@ export class DeviceOrientationManager {
         const correctedAlpha = this.deviceOrientation.alpha;
         const filteredBeta = this.deviceOrientation.beta;
 
+        // センサータイプの表示情報を含める
+        const sensorInfo = this.useWebkitCompassHeading ? ' (iOS真北)' : '';
+
         this.deviceOrientationElement.textContent = 
             this.i18nManager.t('info.deviceOrientation', {
                 azimuth: correctedAlpha?.toFixed(1) ?? this.i18nManager.t('label.noData'),
                 tilt: filteredBeta?.toFixed(1) ?? this.i18nManager.t('label.noData')
-            });
+            }) + sensorInfo;
     }
 
     private dispatchOrientationUpdate(): void {
@@ -364,6 +407,22 @@ export class DeviceOrientationManager {
 
     public getCorrectionStatus() {
         return { ...this.orientationCorrection };
+    }
+
+    // iOS Safari の webkitCompassHeading 使用状況を取得
+    public isUsingWebkitCompassHeading(): boolean {
+        return this.useWebkitCompassHeading;
+    }
+
+    // 現在使用中のセンサータイプを取得
+    public getCurrentSensorType(): string {
+        if (this.currentEventType === 'deviceorientationabsolute') {
+            return 'deviceorientationabsolute (絶対方位センサー)';
+        } else if (this.useWebkitCompassHeading) {
+            return 'deviceorientation with webkitCompassHeading (iOS Safari)';
+        } else {
+            return 'deviceorientation (相対方位センサー)';
+        }
     }
 
     // Local Storage 関連メソッド
