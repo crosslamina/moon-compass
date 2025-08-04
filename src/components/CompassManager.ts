@@ -490,7 +490,7 @@ export class CompassManager {
      * チック間隔の計算
      */
     private calculateTickInterval(angleDiff: number): number {
-        if (angleDiff <= 3) return 200;
+        if (angleDiff <= 5) return 200;
         if (angleDiff <= 15) return 500;
         if (angleDiff <= 45) return 1000;
         if (angleDiff <= 90) return 2000;
