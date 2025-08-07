@@ -175,6 +175,84 @@ export class MoonStatusDisplay {
             `;
         }
 
+        // 正中時刻
+        if (moonTimes.transit) {
+            hasAnyTime = true;
+            const transitTime = moonTimes.transit.toLocaleTimeString('ja-JP', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            if (moonTimes.transit > now) {
+                const diffMs = moonTimes.transit.getTime() - now.getTime();
+                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                html += `
+                    <div class="moon-time moon-transit future">
+                        <span class="time-icon">🌞</span>
+                        <span class="time-label">${this.i18nManager.t('moon.transit')}:</span>
+                        <span class="time-value">${transitTime}</span>
+                        <span class="time-countdown">(${this.i18nManager.t('time.remaining', { hours: hours.toString(), minutes: minutes.toString().padStart(2, '0') })})</span>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="moon-time moon-transit past">
+                        <span class="time-icon">🌞</span>
+                        <span class="time-label">${this.i18nManager.t('moon.transit')}:</span>
+                        <span class="time-value">${transitTime}</span>
+                    </div>
+                `;
+            }
+        } else {
+            html += `
+                <div class="moon-time moon-transit no-event">
+                    <span class="time-icon">🌞</span>
+                    <span class="time-label">${this.i18nManager.t('moon.transit')}:</span>
+                    <span class="time-value no-data">${this.i18nManager.t('time.none')}</span>
+                </div>
+            `;
+        }
+
+        // 下中時刻
+        if (moonTimes.lowerTransit) {
+            hasAnyTime = true;
+            const lowerTransitTime = moonTimes.lowerTransit.toLocaleTimeString('ja-JP', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            if (moonTimes.lowerTransit > now) {
+                const diffMs = moonTimes.lowerTransit.getTime() - now.getTime();
+                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                html += `
+                    <div class="moon-time moon-lower-transit future">
+                        <span class="time-icon">🌑</span>
+                        <span class="time-label">${this.i18nManager.t('moon.lowerTransit')}:</span>
+                        <span class="time-value">${lowerTransitTime}</span>
+                        <span class="time-countdown">(${this.i18nManager.t('time.remaining', { hours: hours.toString(), minutes: minutes.toString().padStart(2, '0') })})</span>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="moon-time moon-lower-transit past">
+                        <span class="time-icon">🌑</span>
+                        <span class="time-label">${this.i18nManager.t('moon.lowerTransit')}:</span>
+                        <span class="time-value">${lowerTransitTime}</span>
+                    </div>
+                `;
+            }
+        } else {
+            html += `
+                <div class="moon-time moon-lower-transit no-event">
+                    <span class="time-icon">🌑</span>
+                    <span class="time-label">${this.i18nManager.t('moon.lowerTransit')}:</span>
+                    <span class="time-value no-data">${this.i18nManager.t('time.none')}</span>
+                </div>
+            `;
+        }
+
         // 両方とも存在しない場合の特別メッセージ
         if (!hasAnyTime) {
             html += `

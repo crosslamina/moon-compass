@@ -1161,7 +1161,7 @@ body {
 }
 
 /* 詳細情報の特定要素スタイル - シンプルな色使い */
-#moon-direction, #distance, #altitude, #moon-phase, #illumination, #moon-rise, #moon-set {
+#moon-direction, #distance, #altitude, #moon-phase, #illumination, #moon-rise, #moon-set, #moon-transit, #moon-lower-transit {
     color: #ecf0f1;
 }
 

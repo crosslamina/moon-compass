@@ -31,6 +31,10 @@ export type MoonData = {
 export type MoonTimes = {
     rise: Date | null;
     set: Date | null;
+    transit: Date | null;        // 正中時刻（月が最も高い位置に来る時刻、南半球・北半球共通）
+    lowerTransit: Date | null;   // 下中時刻（月が最も低い位置に来る時刻）
+    alwaysUp?: boolean;          // 月が一日中地平線上にある（極昼状態）
+    alwaysDown?: boolean;        // 月が一日中地平線下にある（極夜状態）
 };
 
 
@@ -123,14 +127,125 @@ export function testSunCalcCoordinates(lat: number, lon: number): void {
     console.log('========================');
 }
 
+/**
+ * 月の正中時刻（最高高度時刻）を計算
+ * 南半球では北の方角で最高高度となるため、地理的に中立な「正中」という表現を使用
+ * @param date - 計算対象の日付
+ * @param lat - 緯度
+ * @param lon - 経度
+ * @returns 正中時刻（Date | null）
+ */
+function calculateMoonTransit(date: Date, lat: number, lon: number): Date | null {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    let maxAltitude = -90;
+    let transitTime: Date | null = null;
+    
+    // 10分間隔で24時間チェック（粗い検索）
+    for (let minutes = 0; minutes < 24 * 60; minutes += 10) {
+        const testTime = new Date(startOfDay.getTime() + minutes * 60 * 1000);
+        const moonPos = SunCalc.getMoonPosition(testTime, lat, lon);
+        const altitudeDegrees = moonPos.altitude * RADIANS_TO_DEGREES;
+        
+        if (altitudeDegrees > maxAltitude) {
+            maxAltitude = altitudeDegrees;
+            transitTime = testTime;
+        }
+    }
+    
+    // 精密検索（1分間隔）
+    if (transitTime && maxAltitude > -85) { // 月が地平線近くまで上がった場合のみ
+        const searchStart = new Date(transitTime.getTime() - 30 * 60 * 1000); // 30分前
+        const searchEnd = new Date(transitTime.getTime() + 30 * 60 * 1000);   // 30分後
+        
+        let preciseMaxAltitude = -90;
+        let preciseTransitTime: Date | null = null;
+        
+        for (let time = searchStart.getTime(); time <= searchEnd.getTime(); time += 60 * 1000) {
+            const testTime = new Date(time);
+            const moonPos = SunCalc.getMoonPosition(testTime, lat, lon);
+            const altitudeDegrees = moonPos.altitude * RADIANS_TO_DEGREES;
+            
+            if (altitudeDegrees > preciseMaxAltitude) {
+                preciseMaxAltitude = altitudeDegrees;
+                preciseTransitTime = testTime;
+            }
+        }
+        
+        return preciseTransitTime;
+    }
+    
+    return transitTime;
+}
+
+/**
+ * 月の下中時刻（最低高度時刻）を計算
+ * @param date - 計算対象の日付
+ * @param lat - 緯度
+ * @param lon - 経度
+ * @returns 下中時刻（Date | null）
+ */
+function calculateMoonLowerTransit(date: Date, lat: number, lon: number): Date | null {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    let minAltitude = 90;
+    let lowerTransitTime: Date | null = null;
+    
+    // 10分間隔で24時間チェック（粗い検索）
+    for (let minutes = 0; minutes < 24 * 60; minutes += 10) {
+        const testTime = new Date(startOfDay.getTime() + minutes * 60 * 1000);
+        const moonPos = SunCalc.getMoonPosition(testTime, lat, lon);
+        const altitudeDegrees = moonPos.altitude * RADIANS_TO_DEGREES;
+        
+        if (altitudeDegrees < minAltitude) {
+            minAltitude = altitudeDegrees;
+            lowerTransitTime = testTime;
+        }
+    }
+    
+    // 精密検索（1分間隔）
+    if (lowerTransitTime) {
+        const searchStart = new Date(lowerTransitTime.getTime() - 30 * 60 * 1000); // 30分前
+        const searchEnd = new Date(lowerTransitTime.getTime() + 30 * 60 * 1000);   // 30分後
+        
+        let preciseMinAltitude = 90;
+        let preciseLowerTransitTime: Date | null = null;
+        
+        for (let time = searchStart.getTime(); time <= searchEnd.getTime(); time += 60 * 1000) {
+            const testTime = new Date(time);
+            const moonPos = SunCalc.getMoonPosition(testTime, lat, lon);
+            const altitudeDegrees = moonPos.altitude * RADIANS_TO_DEGREES;
+            
+            if (altitudeDegrees < preciseMinAltitude) {
+                preciseMinAltitude = altitudeDegrees;
+                preciseLowerTransitTime = testTime;
+            }
+        }
+        
+        return preciseLowerTransitTime;
+    }
+    
+    return lowerTransitTime;
+}
 
 export function getMoonTimes(lat: number, lon: number): MoonTimes {
 
     const now = new Date();
     const moonTimes = SunCalc.getMoonTimes(now, lat, lon);
+    
+    // 正中時刻と下中時刻を計算
+    const transitTime = calculateMoonTransit(now, lat, lon);
+    const lowerTransitTime = calculateMoonLowerTransit(now, lat, lon);
+    
     return {
       rise: moonTimes.rise ?? null,
       set: moonTimes.set ?? null,
+      transit: transitTime,
+      lowerTransit: lowerTransitTime,
+      alwaysUp: (moonTimes as any).alwaysUp,
+      alwaysDown: (moonTimes as any).alwaysDown,
     };
   
 }

@@ -25,6 +25,8 @@ export class MoonDisplayManager {
     private altitudeElement: HTMLElement | null;
     private moonRiseElement: HTMLElement | null;
     private moonSetElement: HTMLElement | null;
+    private moonTransitElement: HTMLElement | null;
+    private moonLowerTransitElement: HTMLElement | null;
     private mapLinkElement: HTMLAnchorElement | null;
     private moonCanvas: HTMLCanvasElement | null;
     
@@ -45,6 +47,8 @@ export class MoonDisplayManager {
         this.altitudeElement = document.getElementById('altitude');
         this.moonRiseElement = document.getElementById('moon-rise');
         this.moonSetElement = document.getElementById('moon-set');
+        this.moonTransitElement = document.getElementById('moon-transit');
+        this.moonLowerTransitElement = document.getElementById('moon-lower-transit');
         this.mapLinkElement = document.getElementById('map-link') as HTMLAnchorElement;
         this.moonCanvas = document.getElementById('moon-canvas') as HTMLCanvasElement;
         
@@ -178,6 +182,38 @@ export class MoonDisplayManager {
                 }
             } else {
                 this.moonSetElement.textContent = `${this.i18nManager.t('moon.set')}: ${this.i18nManager.t('label.noData')}`;
+            }
+        }
+
+        if (this.moonTransitElement) {
+            if (moonTimes.transit) {
+                const transitTime = moonTimes.transit.toLocaleTimeString();
+                if (moonTimes.transit > now) {
+                    const diffMs = moonTimes.transit.getTime() - now.getTime();
+                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    this.moonTransitElement.textContent = `${this.i18nManager.t('moon.transit')}: ${transitTime} (${this.i18nManager.t('time.remaining', { hours: hours.toString().padStart(2, '0'), minutes: minutes.toString().padStart(2, '0') })})`;
+                } else {
+                    this.moonTransitElement.textContent = `${this.i18nManager.t('moon.transit')}: ${transitTime}`;
+                }
+            } else {
+                this.moonTransitElement.textContent = `${this.i18nManager.t('moon.transit')}: ${this.i18nManager.t('label.noData')}`;
+            }
+        }
+
+        if (this.moonLowerTransitElement) {
+            if (moonTimes.lowerTransit) {
+                const lowerTransitTime = moonTimes.lowerTransit.toLocaleTimeString();
+                if (moonTimes.lowerTransit > now) {
+                    const diffMs = moonTimes.lowerTransit.getTime() - now.getTime();
+                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    this.moonLowerTransitElement.textContent = `${this.i18nManager.t('moon.lowerTransit')}: ${lowerTransitTime} (${this.i18nManager.t('time.remaining', { hours: hours.toString().padStart(2, '0'), minutes: minutes.toString().padStart(2, '0') })})`;
+                } else {
+                    this.moonLowerTransitElement.textContent = `${this.i18nManager.t('moon.lowerTransit')}: ${lowerTransitTime}`;
+                }
+            } else {
+                this.moonLowerTransitElement.textContent = `${this.i18nManager.t('moon.lowerTransit')}: ${this.i18nManager.t('label.noData')}`;
             }
         }
     }

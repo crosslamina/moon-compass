@@ -28,11 +28,15 @@
     "illumination": "照明率",
     "rise": "月出",
     "set": "月落",
+    "transit": "中天",
+    "lowerTransit": "下中天",
     "currentTime": "当前时间",
     "state": "月亮状态",
     "status": "月亮状态",
     "noTimeData": "无月亮时间数据",
-    "alwaysBelowOrAboveHorizon": "始终在地平线下或上"
+    "alwaysBelowOrAboveHorizon": "始终在地平线下或上",
+    "alwaysUp": "始终在地平线上",
+    "alwaysDown": "始终在地平线下"
   },
   "moonPhase": {
     "newMoon": "新月",
