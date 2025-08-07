@@ -28,11 +28,15 @@
     "illumination": "Illumination",
     "rise": "Moonrise",
     "set": "Moonset",
+    "transit": "Culmination",
+    "lowerTransit": "Lower Transit",
     "currentTime": "Current Time",
     "state": "Moon State",
     "status": "Moon Status",
     "noTimeData": "No moon time data",
-    "alwaysBelowOrAboveHorizon": "Always below or above horizon"
+    "alwaysBelowOrAboveHorizon": "Always below or above horizon",
+    "alwaysUp": "Always above horizon",
+    "alwaysDown": "Always below horizon"
   },
   "moonPhase": {
     "newMoon": "New Moon",

@@ -28,11 +28,15 @@
     "illumination": "照明率",
     "rise": "月の出",
     "set": "月の入り",
+    "transit": "正中",
+    "lowerTransit": "下中",
     "currentTime": "現在時刻",
     "state": "月の状態",
     "status": "月の状態",
     "noTimeData": "月時刻データなし",
-    "alwaysBelowOrAboveHorizon": "常に地平線下 または 常に地平線上"
+    "alwaysBelowOrAboveHorizon": "常に地平線下 または 常に地平線上",
+    "alwaysUp": "常に地平線上",
+    "alwaysDown": "常に地平線下"
   },
   "moonPhase": {
     "newMoon": "新月",

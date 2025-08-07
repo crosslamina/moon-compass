@@ -111,6 +111,32 @@ export class MoonInfoDisplay {
         } else {
             this.domManager.setText('moon-set', `${this.i18n.t('moon.set')}: ${this.i18n.t('time.today')}${this.i18n.t('time.none')}`);
         }
+
+        // 正中時刻
+        if (moonTimes.transit) {
+            const transitTime = moonTimes.transit.toLocaleString(this.i18n.getCurrentLocale(), {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            this.domManager.setText('moon-transit', `${this.i18n.t('moon.transit')}: ${transitTime}`);
+        } else {
+            this.domManager.setText('moon-transit', `${this.i18n.t('moon.transit')}: ${this.i18n.t('time.today')}${this.i18n.t('time.none')}`);
+        }
+
+        // 下中時刻
+        if (moonTimes.lowerTransit) {
+            const lowerTransitTime = moonTimes.lowerTransit.toLocaleString(this.i18n.getCurrentLocale(), {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            this.domManager.setText('moon-lower-transit', `${this.i18n.t('moon.lowerTransit')}: ${lowerTransitTime}`);
+        } else {
+            this.domManager.setText('moon-lower-transit', `${this.i18n.t('moon.lowerTransit')}: ${this.i18n.t('time.today')}${this.i18n.t('time.none')}`);
+        }
     }
 
     private getPhaseName(phase: number): string {
